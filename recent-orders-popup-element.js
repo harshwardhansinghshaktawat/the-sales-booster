@@ -30,6 +30,7 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     connectedCallback() {
         this.render();
+        this.showPlaceholder(); // Show placeholder initially
         this.loadOrders();
         this.observeResize();
     }
@@ -43,11 +44,15 @@ class RecentOrdersPopupElement extends HTMLElement {
             if (name === 'orders') {
                 try {
                     this.allPurchases = JSON.parse(newValue);
-                    if (this.allPurchases.length > 0 && !this.rotationInterval) {
-                        this.startRotation();
+                    if (this.allPurchases.length > 0) {
+                        if (!this.rotationInterval) {
+                            this.startRotation();
+                        }
+                    } else {
+                        this.showPlaceholder();
                     }
                 } catch (e) {
-                    // Silent error
+                    this.showPlaceholder();
                 }
             } else if (name === 'options') {
                 try {
@@ -63,10 +68,10 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     render() {
         this.innerHTML = `
-            <div class="popup-container" style="display: none;">
+            <div class="popup-container">
                 <div class="popup-content">
-                    <img class="product-image" src="" alt="Product">
-                    <div class="popup-text"></div>
+                    <img class="product-image" src="https://static.wixstatic.com/media/c837a6_d3b1c5e3f8a64d6f9c8b2a1e4f5d6c7b~mv2.png" alt="Product">
+                    <div class="popup-text">Loading recent orders...</div>
                 </div>
             </div>
         `;
@@ -82,7 +87,8 @@ class RecentOrdersPopupElement extends HTMLElement {
                 display: block;
                 width: 100%;
                 height: 100%;
-                position: relative;
+                min-width: 280px;
+                min-height: 80px;
             }
             
             * {
@@ -94,29 +100,9 @@ class RecentOrdersPopupElement extends HTMLElement {
             .popup-container {
                 width: 100%;
                 height: 100%;
-                animation: slideIn 0.5s ease-out;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             
             .popup-content {
@@ -145,7 +131,7 @@ class RecentOrdersPopupElement extends HTMLElement {
             .popup-text {
                 flex: 1;
                 min-width: 0;
-                line-height: 1.4;
+                line-height: 1.5;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 display: -webkit-box;
@@ -181,6 +167,27 @@ class RecentOrdersPopupElement extends HTMLElement {
         }
     }
 
+    showPlaceholder() {
+        const text = this.querySelector('.popup-text');
+        const image = this.querySelector('.product-image');
+        const container = this.querySelector('.popup-container');
+        
+        if (text) {
+            text.textContent = 'John Doe from New York recently purchased Awesome Product for $99.00 • 5m ago';
+        }
+        
+        if (image) {
+            image.src = 'https://static.wixstatic.com/media/c837a6_d3b1c5e3f8a64d6f9c8b2a1e4f5d6c7b~mv2.png';
+            image.style.display = 'block';
+        }
+        
+        if (container) {
+            container.style.display = 'flex';
+        }
+        
+        this.isVisible = true;
+    }
+
     observeResize() {
         if ('ResizeObserver' in window) {
             const resizeObserver = new ResizeObserver(() => {
@@ -205,12 +212,15 @@ class RecentOrdersPopupElement extends HTMLElement {
     }
 
     startRotation() {
-        if (this.allPurchases.length === 0) return;
+        if (this.allPurchases.length === 0) {
+            this.showPlaceholder();
+            return;
+        }
 
-        setTimeout(() => {
-            this.showNextPurchase();
-        }, 3000);
+        // Show first purchase immediately
+        this.showNextPurchase();
 
+        // Set up rotation interval
         this.rotationInterval = setInterval(() => {
             if (!this.isVisible) {
                 this.showNextPurchase();
@@ -219,7 +229,10 @@ class RecentOrdersPopupElement extends HTMLElement {
     }
 
     showNextPurchase() {
-        if (this.allPurchases.length === 0) return;
+        if (this.allPurchases.length === 0) {
+            this.showPlaceholder();
+            return;
+        }
 
         const purchase = this.allPurchases[this.currentIndex];
         this.displayPurchase(purchase);
@@ -241,39 +254,44 @@ class RecentOrdersPopupElement extends HTMLElement {
         const message = `${displayName} from ${purchase.location} recently purchased ${purchase.productName} for ${purchase.price} • ${this.getTimeAgo(purchase.purchaseDate)}`;
 
         // Set text
-        text.textContent = message;
+        if (text) {
+            text.textContent = message;
+        }
 
         // Set product image
-        if (purchase.imageUrl) {
+        if (image && purchase.imageUrl) {
             image.src = purchase.imageUrl;
             image.style.display = 'block';
-        } else {
+        } else if (image) {
             image.style.display = 'none';
         }
 
         // Make clickable
         const content = this.querySelector('.popup-content');
-        content.onclick = () => {
-            if (purchase.productId) {
-                this.navigateToProduct(purchase.productId);
-            }
-        };
+        if (content) {
+            content.onclick = () => {
+                if (purchase.productId) {
+                    this.navigateToProduct(purchase.productId);
+                }
+            };
+        }
 
         // Show popup
-        container.style.display = 'block';
+        if (container) {
+            container.style.display = 'flex';
+        }
         this.isVisible = true;
     }
 
     hidePopup() {
-        const container = this.querySelector('.popup-container');
-        if (container) {
-            container.style.animation = 'slideOut 0.5s ease-out';
-            setTimeout(() => {
-                container.style.display = 'none';
-                container.style.animation = 'slideIn 0.5s ease-out';
-                this.isVisible = false;
-            }, 500);
-        }
+        this.isVisible = false;
+        
+        // Wait a bit before showing next
+        setTimeout(() => {
+            if (!this.isVisible && this.allPurchases.length > 0) {
+                this.showNextPurchase();
+            }
+        }, 100);
     }
 
     navigateToProduct(productId) {
