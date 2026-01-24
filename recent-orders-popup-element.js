@@ -8,19 +8,38 @@ class RecentOrdersPopupElement extends HTMLElement {
         this.isVisible = false;
         
         this.settings = {
+            // Colors
             backgroundColor: '#ffffff',
             textColor: '#333333',
+            nameColor: '#2c3e50',
+            productColor: '#3498db',
+            locationColor: '#7f8c8d',
+            timeColor: '#95a5a6',
             borderColor: '#e0e0e0',
+            badgeColor: '#2ecc71',
+            
+            // Fonts
             fontFamily: 'Arial, sans-serif',
             fontSize: 14,
+            
+            // Timing
             displayDuration: 8000,
             delayBetweenPopups: 15000,
+            
+            // Settings
             showName: true,
+            showBadge: true,
+            sticky: false,
+            position: 'bottom-left',
+            marginX: 20,
+            marginY: 20,
             maxOrders: 20,
-            borderRadius: 8,
+            
+            // Styling
+            borderRadius: 12,
             borderWidth: 1,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            paddingSize: 12
+            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+            paddingSize: 16
         };
     }
 
@@ -29,6 +48,7 @@ class RecentOrdersPopupElement extends HTMLElement {
         this.showPlaceholder();
         this.loadOrders();
         this.observeResize();
+        this.setupPositioning();
     }
 
     static get observedAttributes() {
@@ -55,6 +75,7 @@ class RecentOrdersPopupElement extends HTMLElement {
                     const newOptions = JSON.parse(newValue);
                     Object.assign(this.settings, newOptions);
                     this.updateStyles();
+                    this.updatePosition();
                 } catch (e) {
                     // Silent
                 }
@@ -64,85 +85,225 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     render() {
         this.innerHTML = `
-            <div class="popup-container">
+            <style>
+                :host {
+                    display: block !important;
+                    position: fixed !important;
+                    z-index: 9999 !important;
+                    pointer-events: none !important;
+                }
+                
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                .popup-wrapper {
+                    position: relative;
+                    display: none;
+                    pointer-events: auto !important;
+                }
+                
+                .popup-wrapper.visible {
+                    display: block;
+                    animation: slideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                }
+                
+                .popup-wrapper.hiding {
+                    animation: slideOut 0.3s ease-out forwards;
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px) scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+                
+                @keyframes slideOut {
+                    from {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(20px) scale(0.95);
+                    }
+                }
+                
+                .popup-content {
+                    position: relative;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    min-width: 300px;
+                    max-width: 400px;
+                    cursor: pointer;
+                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                    overflow: hidden;
+                }
+                
+                .popup-content:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+                }
+                
+                .verified-badge {
+                    position: absolute;
+                    top: -6px;
+                    right: -6px;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    z-index: 10;
+                }
+                
+                .verified-badge::before {
+                    content: '✓';
+                    color: white;
+                    font-weight: bold;
+                }
+                
+                .product-image {
+                    width: 70px;
+                    height: 70px;
+                    object-fit: cover;
+                    flex-shrink: 0;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                }
+                
+                .popup-info {
+                    flex: 1;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                
+                .customer-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                
+                .customer-name {
+                    font-weight: 600;
+                    line-height: 1.3;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+                .customer-location {
+                    font-size: 0.85em;
+                    line-height: 1.3;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+                .purchase-label {
+                    font-size: 0.75em;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    font-weight: 600;
+                    opacity: 0.7;
+                }
+                
+                .product-name {
+                    font-weight: 600;
+                    line-height: 1.3;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+                .bottom-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: 8px;
+                }
+                
+                .product-price {
+                    font-weight: 700;
+                    font-size: 1.1em;
+                    white-space: nowrap;
+                }
+                
+                .time-ago {
+                    font-size: 0.8em;
+                    opacity: 0.7;
+                    white-space: nowrap;
+                }
+                
+                @media (max-width: 480px) {
+                    :host {
+                        left: 10px !important;
+                        right: 10px !important;
+                        bottom: 10px !important;
+                        top: auto !important;
+                        width: calc(100% - 20px) !important;
+                    }
+                    
+                    .popup-content {
+                        min-width: auto;
+                        max-width: none;
+                        width: 100%;
+                    }
+                    
+                    .product-image {
+                        width: 60px;
+                        height: 60px;
+                    }
+                }
+            </style>
+            
+            <div class="popup-wrapper">
                 <div class="popup-content">
-                    <img class="product-image" src="https://static.wixstatic.com/media/c837a6_d3b1c5e3f8a64d6f9c8b2a1e4f5d6c7b~mv2.png" alt="Product">
-                    <div class="popup-text">Loading recent orders...</div>
+                    <div class="verified-badge"></div>
+                    <img class="product-image" src="" alt="Product">
+                    <div class="popup-info">
+                        <div class="customer-info">
+                            <div class="customer-name"></div>
+                            <div class="customer-location"></div>
+                        </div>
+                        <div class="purchase-label">Recently Purchased</div>
+                        <div class="product-name"></div>
+                        <div class="bottom-row">
+                            <div class="product-price"></div>
+                            <div class="time-ago"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
 
-        this.applyBaseStyles();
         this.updateStyles();
-    }
-
-    applyBaseStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            :host {
-                display: block;
-                width: 100%;
-                height: 100%;
-                min-width: 280px;
-                min-height: 80px;
-            }
-            
-            * {
-                box-sizing: border-box;
-                margin: 0;
-                padding: 0;
-            }
-            
-            .popup-container {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            
-            .popup-content {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                width: 100%;
-                height: 100%;
-                cursor: pointer;
-                transition: transform 0.2s ease;
-                overflow: hidden;
-            }
-            
-            .popup-content:hover {
-                transform: scale(1.02);
-            }
-            
-            .product-image {
-                width: 60px;
-                height: 60px;
-                object-fit: cover;
-                flex-shrink: 0;
-                border-radius: 4px;
-            }
-            
-            .popup-text {
-                flex: 1;
-                min-width: 0;
-                line-height: 1.5;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: -webkit-box;
-                -webkit-line-clamp: 3;
-                -webkit-box-orient: vertical;
-                word-wrap: break-word;
-            }
-        `;
-        this.appendChild(style);
+        this.updatePosition();
     }
 
     updateStyles() {
         const content = this.querySelector('.popup-content');
+        const badge = this.querySelector('.verified-badge');
         const image = this.querySelector('.product-image');
-        const text = this.querySelector('.popup-text');
+        const customerName = this.querySelector('.customer-name');
+        const customerLocation = this.querySelector('.customer-location');
+        const purchaseLabel = this.querySelector('.purchase-label');
+        const productName = this.querySelector('.product-name');
+        const productPrice = this.querySelector('.product-price');
+        const timeAgo = this.querySelector('.time-ago');
 
         if (content) {
             content.style.backgroundColor = this.settings.backgroundColor;
@@ -153,32 +314,115 @@ class RecentOrdersPopupElement extends HTMLElement {
             content.style.fontFamily = this.settings.fontFamily;
         }
 
-        if (image) {
-            image.style.borderRadius = `${Math.max(2, this.settings.borderRadius / 2)}px`;
+        if (badge) {
+            badge.style.backgroundColor = this.settings.badgeColor;
+            badge.style.display = this.settings.showBadge ? 'flex' : 'none';
         }
 
-        if (text) {
-            text.style.color = this.settings.textColor;
-            text.style.fontSize = `${this.settings.fontSize}px`;
+        if (image) {
+            image.style.borderRadius = `${Math.max(4, this.settings.borderRadius / 2)}px`;
+        }
+
+        if (customerName) {
+            customerName.style.color = this.settings.nameColor;
+            customerName.style.fontSize = `${this.settings.fontSize}px`;
+        }
+
+        if (customerLocation) {
+            customerLocation.style.color = this.settings.locationColor;
+            customerLocation.style.fontSize = `${this.settings.fontSize * 0.85}px`;
+        }
+
+        if (purchaseLabel) {
+            purchaseLabel.style.color = this.settings.textColor;
+            purchaseLabel.style.fontSize = `${this.settings.fontSize * 0.75}px`;
+        }
+
+        if (productName) {
+            productName.style.color = this.settings.productColor;
+            productName.style.fontSize = `${this.settings.fontSize}px`;
+        }
+
+        if (productPrice) {
+            productPrice.style.color = this.settings.textColor;
+            productPrice.style.fontSize = `${this.settings.fontSize * 1.1}px`;
+        }
+
+        if (timeAgo) {
+            timeAgo.style.color = this.settings.timeColor;
+            timeAgo.style.fontSize = `${this.settings.fontSize * 0.8}px`;
+        }
+    }
+
+    setupPositioning() {
+        this.updatePosition();
+        window.addEventListener('resize', () => this.updatePosition());
+    }
+
+    updatePosition() {
+        const isMobile = window.innerWidth <= 480;
+        
+        if (isMobile) {
+            this.style.left = '10px';
+            this.style.right = '10px';
+            this.style.bottom = '10px';
+            this.style.top = 'auto';
+            this.style.width = 'calc(100% - 20px)';
+            return;
+        }
+
+        this.style.left = 'auto';
+        this.style.right = 'auto';
+        this.style.top = 'auto';
+        this.style.bottom = 'auto';
+        this.style.width = 'auto';
+
+        const position = this.settings.sticky ? this.settings.position : 'bottom-left';
+        const marginX = this.settings.marginX || 20;
+        const marginY = this.settings.marginY || 20;
+
+        switch (position) {
+            case 'top-left':
+                this.style.top = `${marginY}px`;
+                this.style.left = `${marginX}px`;
+                break;
+            case 'top-right':
+                this.style.top = `${marginY}px`;
+                this.style.right = `${marginX}px`;
+                break;
+            case 'bottom-left':
+                this.style.bottom = `${marginY}px`;
+                this.style.left = `${marginX}px`;
+                break;
+            case 'bottom-right':
+                this.style.bottom = `${marginY}px`;
+                this.style.right = `${marginX}px`;
+                break;
         }
     }
 
     showPlaceholder() {
-        const text = this.querySelector('.popup-text');
+        const customerName = this.querySelector('.customer-name');
+        const customerLocation = this.querySelector('.customer-location');
+        const productName = this.querySelector('.product-name');
+        const productPrice = this.querySelector('.product-price');
+        const timeAgo = this.querySelector('.time-ago');
         const image = this.querySelector('.product-image');
-        const container = this.querySelector('.popup-container');
+        const wrapper = this.querySelector('.popup-wrapper');
         
-        if (text) {
-            text.textContent = 'John Doe from New York recently purchased Awesome Product for $99.00 • 5m ago';
-        }
+        if (customerName) customerName.textContent = 'John Doe';
+        if (customerLocation) customerLocation.textContent = 'from New York, USA';
+        if (productName) productName.textContent = 'Awesome Product';
+        if (productPrice) productPrice.textContent = '$99.00';
+        if (timeAgo) timeAgo.textContent = '5m ago';
         
         if (image) {
             image.src = 'https://static.wixstatic.com/media/c837a6_d3b1c5e3f8a64d6f9c8b2a1e4f5d6c7b~mv2.png';
             image.style.display = 'block';
         }
         
-        if (container) {
-            container.style.display = 'flex';
+        if (wrapper) {
+            wrapper.classList.add('visible');
         }
         
         this.isVisible = true;
@@ -187,19 +431,9 @@ class RecentOrdersPopupElement extends HTMLElement {
     observeResize() {
         if ('ResizeObserver' in window) {
             const resizeObserver = new ResizeObserver(() => {
-                this.adjustToSize();
+                this.updatePosition();
             });
             resizeObserver.observe(this);
-        }
-    }
-
-    adjustToSize() {
-        const rect = this.getBoundingClientRect();
-        const text = this.querySelector('.popup-text');
-        if (text && rect.height < 80) {
-            text.style.webkitLineClamp = '2';
-        } else if (text) {
-            text.style.webkitLineClamp = '3';
         }
     }
 
@@ -213,13 +447,17 @@ class RecentOrdersPopupElement extends HTMLElement {
             return;
         }
 
-        this.showNextPurchase();
+        if (!this.settings.sticky) {
+            this.showNextPurchase();
 
-        this.rotationInterval = setInterval(() => {
-            if (!this.isVisible) {
-                this.showNextPurchase();
-            }
-        }, this.settings.delayBetweenPopups);
+            this.rotationInterval = setInterval(() => {
+                if (!this.isVisible) {
+                    this.showNextPurchase();
+                }
+            }, this.settings.delayBetweenPopups);
+        } else {
+            this.showNextPurchase();
+        }
     }
 
     showNextPurchase() {
@@ -233,22 +471,29 @@ class RecentOrdersPopupElement extends HTMLElement {
 
         this.currentIndex = (this.currentIndex + 1) % this.allPurchases.length;
 
-        this.hideTimeout = setTimeout(() => {
-            this.hidePopup();
-        }, this.settings.displayDuration);
+        if (!this.settings.sticky) {
+            this.hideTimeout = setTimeout(() => {
+                this.hidePopup();
+            }, this.settings.displayDuration);
+        }
     }
 
     displayPurchase(purchase) {
-        const container = this.querySelector('.popup-container');
+        const wrapper = this.querySelector('.popup-wrapper');
+        const customerName = this.querySelector('.customer-name');
+        const customerLocation = this.querySelector('.customer-location');
+        const productName = this.querySelector('.product-name');
+        const productPrice = this.querySelector('.product-price');
+        const timeAgo = this.querySelector('.time-ago');
         const image = this.querySelector('.product-image');
-        const text = this.querySelector('.popup-text');
 
         const displayName = this.settings.showName ? purchase.buyerName : 'Someone';
-        const message = `${displayName} from ${purchase.location} recently purchased ${purchase.productName} for ${purchase.price} • ${this.getTimeAgo(purchase.purchaseDate)}`;
-
-        if (text) {
-            text.textContent = message;
-        }
+        
+        if (customerName) customerName.textContent = displayName;
+        if (customerLocation) customerLocation.textContent = `from ${purchase.location}`;
+        if (productName) productName.textContent = purchase.productName;
+        if (productPrice) productPrice.textContent = purchase.price;
+        if (timeAgo) timeAgo.textContent = this.getTimeAgo(purchase.purchaseDate);
 
         if (image && purchase.imageUrl) {
             image.src = purchase.imageUrl;
@@ -266,20 +511,24 @@ class RecentOrdersPopupElement extends HTMLElement {
             };
         }
 
-        if (container) {
-            container.style.display = 'flex';
+        if (wrapper) {
+            wrapper.classList.remove('hiding');
+            wrapper.classList.add('visible');
         }
+        
         this.isVisible = true;
     }
 
     hidePopup() {
-        this.isVisible = false;
+        const wrapper = this.querySelector('.popup-wrapper');
         
-        setTimeout(() => {
-            if (!this.isVisible && this.allPurchases.length > 0) {
-                this.showNextPurchase();
-            }
-        }, 100);
+        if (wrapper) {
+            wrapper.classList.add('hiding');
+            setTimeout(() => {
+                wrapper.classList.remove('visible', 'hiding');
+                this.isVisible = false;
+            }, 300);
+        }
     }
 
     navigateToProduct(productId) {
