@@ -10,10 +10,6 @@ class RecentOrdersPopupElement extends HTMLElement {
         this.settings = {
             backgroundColor: '#ffffff',
             textColor: '#333333',
-            accentColor: '#3498db',
-            priceColor: '#e74c3c',
-            locationColor: '#7f8c8d',
-            timeColor: '#95a5a6',
             borderColor: '#e0e0e0',
             fontFamily: 'Arial, sans-serif',
             fontSize: 14,
@@ -30,7 +26,7 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     connectedCallback() {
         this.render();
-        this.showPlaceholder(); // Show placeholder initially
+        this.showPlaceholder();
         this.loadOrders();
         this.observeResize();
     }
@@ -60,7 +56,7 @@ class RecentOrdersPopupElement extends HTMLElement {
                     Object.assign(this.settings, newOptions);
                     this.updateStyles();
                 } catch (e) {
-                    // Silent error
+                    // Silent
                 }
             }
         }
@@ -208,7 +204,7 @@ class RecentOrdersPopupElement extends HTMLElement {
     }
 
     async loadOrders() {
-        // Waiting for orders
+        // Waiting
     }
 
     startRotation() {
@@ -217,10 +213,8 @@ class RecentOrdersPopupElement extends HTMLElement {
             return;
         }
 
-        // Show first purchase immediately
         this.showNextPurchase();
 
-        // Set up rotation interval
         this.rotationInterval = setInterval(() => {
             if (!this.isVisible) {
                 this.showNextPurchase();
@@ -249,16 +243,13 @@ class RecentOrdersPopupElement extends HTMLElement {
         const image = this.querySelector('.product-image');
         const text = this.querySelector('.popup-text');
 
-        // Build complete message
         const displayName = this.settings.showName ? purchase.buyerName : 'Someone';
         const message = `${displayName} from ${purchase.location} recently purchased ${purchase.productName} for ${purchase.price} • ${this.getTimeAgo(purchase.purchaseDate)}`;
 
-        // Set text
         if (text) {
             text.textContent = message;
         }
 
-        // Set product image
         if (image && purchase.imageUrl) {
             image.src = purchase.imageUrl;
             image.style.display = 'block';
@@ -266,7 +257,6 @@ class RecentOrdersPopupElement extends HTMLElement {
             image.style.display = 'none';
         }
 
-        // Make clickable
         const content = this.querySelector('.popup-content');
         if (content) {
             content.onclick = () => {
@@ -276,7 +266,6 @@ class RecentOrdersPopupElement extends HTMLElement {
             };
         }
 
-        // Show popup
         if (container) {
             container.style.display = 'flex';
         }
@@ -286,7 +275,6 @@ class RecentOrdersPopupElement extends HTMLElement {
     hidePopup() {
         this.isVisible = false;
         
-        // Wait a bit before showing next
         setTimeout(() => {
             if (!this.isVisible && this.allPurchases.length > 0) {
                 this.showNextPurchase();
