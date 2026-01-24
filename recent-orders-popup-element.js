@@ -8,7 +8,6 @@ class RecentOrdersPopupElement extends HTMLElement {
         this.isVisible = false;
         
         this.settings = {
-            // Colors
             backgroundColor: '#ffffff',
             textColor: '#333333',
             accentColor: '#3498db',
@@ -16,24 +15,12 @@ class RecentOrdersPopupElement extends HTMLElement {
             locationColor: '#7f8c8d',
             timeColor: '#95a5a6',
             borderColor: '#e0e0e0',
-            
-            // Fonts
             fontFamily: 'Arial, sans-serif',
-            nameFontSize: 14,
-            productFontSize: 13,
-            priceFontSize: 14,
-            locationFontSize: 11,
-            timeFontSize: 10,
-            
-            // Timing
+            fontSize: 14,
             displayDuration: 8000,
             delayBetweenPopups: 15000,
-            
-            // Settings
             showName: true,
             maxOrders: 20,
-            
-            // Styling
             borderRadius: 8,
             borderWidth: 1,
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
@@ -56,21 +43,19 @@ class RecentOrdersPopupElement extends HTMLElement {
             if (name === 'orders') {
                 try {
                     this.allPurchases = JSON.parse(newValue);
-                    console.log('Orders updated:', this.allPurchases.length);
                     if (this.allPurchases.length > 0 && !this.rotationInterval) {
                         this.startRotation();
                     }
                 } catch (e) {
-                    console.error('Error parsing orders:', e);
+                    // Silent error
                 }
             } else if (name === 'options') {
                 try {
                     const newOptions = JSON.parse(newValue);
                     Object.assign(this.settings, newOptions);
-                    console.log('Options updated:', this.settings);
                     this.updateStyles();
                 } catch (e) {
-                    console.error('Error parsing options:', e);
+                    // Silent error
                 }
             }
         }
@@ -81,22 +66,7 @@ class RecentOrdersPopupElement extends HTMLElement {
             <div class="popup-container" style="display: none;">
                 <div class="popup-content">
                     <img class="product-image" src="" alt="Product">
-                    <div class="popup-info">
-                        <div class="popup-top">
-                            <span class="buyer-name"></span>
-                            <span class="buyer-location"></span>
-                        </div>
-                        <div class="popup-middle">
-                            <span class="purchased-text">Recently Purchased</span>
-                        </div>
-                        <div class="popup-product">
-                            <span class="product-name"></span>
-                        </div>
-                        <div class="popup-bottom">
-                            <span class="product-price"></span>
-                            <span class="time-ago"></span>
-                        </div>
-                    </div>
+                    <div class="popup-text"></div>
                 </div>
             </div>
         `;
@@ -108,17 +78,23 @@ class RecentOrdersPopupElement extends HTMLElement {
     applyBaseStyles() {
         const style = document.createElement('style');
         style.textContent = `
+            :host {
+                display: block;
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+            
             * {
                 box-sizing: border-box;
+                margin: 0;
+                padding: 0;
             }
             
             .popup-container {
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                z-index: 9999;
+                width: 100%;
+                height: 100%;
                 animation: slideIn 0.5s ease-out;
-                max-width: calc(100vw - 40px);
             }
             
             @keyframes slideIn {
@@ -147,9 +123,8 @@ class RecentOrdersPopupElement extends HTMLElement {
                 display: flex;
                 align-items: center;
                 gap: 12px;
-                min-width: 280px;
-                max-width: 380px;
                 width: 100%;
+                height: 100%;
                 cursor: pointer;
                 transition: transform 0.2s ease;
                 overflow: hidden;
@@ -167,108 +142,16 @@ class RecentOrdersPopupElement extends HTMLElement {
                 border-radius: 4px;
             }
             
-            .popup-info {
+            .popup-text {
                 flex: 1;
                 min-width: 0;
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-            
-            .popup-top {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            
-            .buyer-name {
-                font-weight: bold;
+                line-height: 1.4;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
-                flex-shrink: 1;
-            }
-            
-            .buyer-location {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                flex-shrink: 1;
-            }
-            
-            .popup-middle {
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            
-            .purchased-text {
-                text-transform: uppercase;
-                letter-spacing: 0.3px;
-                font-size: 0.85em;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: inline-block;
-                max-width: 100%;
-            }
-            
-            .popup-product {
-                white-space: nowrap;
-                overflow: hidden;
-            }
-            
-            .product-name {
-                font-weight: 600;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: inline-block;
-                max-width: 100%;
-            }
-            
-            .popup-bottom {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 8px;
-                white-space: nowrap;
-            }
-            
-            .product-price {
-                font-weight: bold;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                flex-shrink: 0;
-            }
-            
-            .time-ago {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                text-align: right;
-                flex-shrink: 1;
-                min-width: 0;
-            }
-            
-            @media (max-width: 360px) {
-                .popup-container {
-                    left: 10px;
-                    bottom: 10px;
-                    max-width: calc(100vw - 20px);
-                }
-                
-                .popup-content {
-                    min-width: 260px;
-                    gap: 8px;
-                }
-                
-                .product-image {
-                    width: 50px;
-                    height: 50px;
-                }
+                display: -webkit-box;
+                -webkit-line-clamp: 3;
+                -webkit-box-orient: vertical;
+                word-wrap: break-word;
             }
         `;
         this.appendChild(style);
@@ -277,12 +160,7 @@ class RecentOrdersPopupElement extends HTMLElement {
     updateStyles() {
         const content = this.querySelector('.popup-content');
         const image = this.querySelector('.product-image');
-        const buyerName = this.querySelector('.buyer-name');
-        const buyerLocation = this.querySelector('.buyer-location');
-        const purchasedText = this.querySelector('.purchased-text');
-        const productName = this.querySelector('.product-name');
-        const productPrice = this.querySelector('.product-price');
-        const timeAgo = this.querySelector('.time-ago');
+        const text = this.querySelector('.popup-text');
 
         if (content) {
             content.style.backgroundColor = this.settings.backgroundColor;
@@ -297,34 +175,9 @@ class RecentOrdersPopupElement extends HTMLElement {
             image.style.borderRadius = `${Math.max(2, this.settings.borderRadius / 2)}px`;
         }
 
-        if (buyerName) {
-            buyerName.style.color = this.settings.textColor;
-            buyerName.style.fontSize = `${this.settings.nameFontSize}px`;
-        }
-
-        if (buyerLocation) {
-            buyerLocation.style.color = this.settings.locationColor;
-            buyerLocation.style.fontSize = `${this.settings.locationFontSize}px`;
-        }
-
-        if (purchasedText) {
-            purchasedText.style.color = this.settings.accentColor;
-            purchasedText.style.fontSize = `${this.settings.locationFontSize}px`;
-        }
-
-        if (productName) {
-            productName.style.color = this.settings.textColor;
-            productName.style.fontSize = `${this.settings.productFontSize}px`;
-        }
-
-        if (productPrice) {
-            productPrice.style.color = this.settings.priceColor;
-            productPrice.style.fontSize = `${this.settings.priceFontSize}px`;
-        }
-
-        if (timeAgo) {
-            timeAgo.style.color = this.settings.timeColor;
-            timeAgo.style.fontSize = `${this.settings.timeFontSize}px`;
+        if (text) {
+            text.style.color = this.settings.textColor;
+            text.style.fontSize = `${this.settings.fontSize}px`;
         }
     }
 
@@ -338,17 +191,17 @@ class RecentOrdersPopupElement extends HTMLElement {
     }
 
     adjustToSize() {
-        const container = this.querySelector('.popup-container');
-        if (container) {
-            const rect = this.getBoundingClientRect();
-            if (rect.width < 320) {
-                container.style.maxWidth = `${rect.width - 20}px`;
-            }
+        const rect = this.getBoundingClientRect();
+        const text = this.querySelector('.popup-text');
+        if (text && rect.height < 80) {
+            text.style.webkitLineClamp = '2';
+        } else if (text) {
+            text.style.webkitLineClamp = '3';
         }
     }
 
     async loadOrders() {
-        console.log('Waiting for orders data...');
+        // Waiting for orders
     }
 
     startRotation() {
@@ -381,18 +234,14 @@ class RecentOrdersPopupElement extends HTMLElement {
     displayPurchase(purchase) {
         const container = this.querySelector('.popup-container');
         const image = this.querySelector('.product-image');
-        const buyerName = this.querySelector('.buyer-name');
-        const buyerLocation = this.querySelector('.buyer-location');
-        const productName = this.querySelector('.product-name');
-        const productPrice = this.querySelector('.product-price');
-        const timeAgo = this.querySelector('.time-ago');
+        const text = this.querySelector('.popup-text');
 
-        // Set buyer name
+        // Build complete message
         const displayName = this.settings.showName ? purchase.buyerName : 'Someone';
-        buyerName.textContent = displayName;
+        const message = `${displayName} from ${purchase.location} recently purchased ${purchase.productName} for ${purchase.price} • ${this.getTimeAgo(purchase.purchaseDate)}`;
 
-        // Set location
-        buyerLocation.textContent = `from ${purchase.location}`;
+        // Set text
+        text.textContent = message;
 
         // Set product image
         if (purchase.imageUrl) {
@@ -401,15 +250,6 @@ class RecentOrdersPopupElement extends HTMLElement {
         } else {
             image.style.display = 'none';
         }
-
-        // Set product name
-        productName.textContent = purchase.productName;
-
-        // Set price
-        productPrice.textContent = purchase.price;
-
-        // Set time ago
-        timeAgo.textContent = this.getTimeAgo(purchase.purchaseDate);
 
         // Make clickable
         const content = this.querySelector('.popup-content');
@@ -422,8 +262,6 @@ class RecentOrdersPopupElement extends HTMLElement {
         // Show popup
         container.style.display = 'block';
         this.isVisible = true;
-
-        console.log(`Showing: ${purchase.productName} by ${displayName}`);
     }
 
     hidePopup() {
@@ -460,7 +298,6 @@ class RecentOrdersPopupElement extends HTMLElement {
             const diffWeeks = Math.floor(diffDays / 7);
             return `${diffWeeks}w ago`;
         } catch (error) {
-            console.error('Error calculating time ago:', error);
             return 'Recently';
         }
     }
