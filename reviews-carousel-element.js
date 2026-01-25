@@ -24,6 +24,7 @@ class ReviewsCarouselElement extends HTMLElement {
 
     connectedCallback() {
         this.render();
+        console.log('Reviews carousel connected');
     }
 
     static get observedAttributes() {
@@ -32,23 +33,27 @@ class ReviewsCarouselElement extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
+            console.log(`Attribute changed: ${name}`, newValue);
+            
             if (name === 'reviews') {
                 try {
-                    this.reviews = JSON.parse(newValue);
+                    const parsedReviews = JSON.parse(newValue);
+                    console.log('Parsed reviews:', parsedReviews);
+                    this.reviews = parsedReviews;
                     this.currentIndex = 0;
                     this.updateCarousel(0);
-                    this.updateDots();
                     
-                    if (this.settings.autoPlay) {
+                    if (this.settings.autoPlay && this.reviews.length > 1) {
                         this.startAutoPlay();
                     }
                 } catch (e) {
-                    // Silent
+                    console.error('Error parsing reviews:', e);
                 }
             } else if (name === 'options') {
                 try {
                     const oldAutoPlay = this.settings.autoPlay;
                     const newSettings = JSON.parse(newValue);
+                    console.log('New settings:', newSettings);
                     Object.assign(this.settings, newSettings);
                     this.updateStyles();
                     
@@ -61,7 +66,7 @@ class ReviewsCarouselElement extends HTMLElement {
                         this.startAutoPlay();
                     }
                 } catch (e) {
-                    // Silent
+                    console.error('Error parsing options:', e);
                 }
             }
         }
@@ -492,7 +497,9 @@ class ReviewsCarouselElement extends HTMLElement {
                 <div class="bg-blur bg-blur-2"></div>
                 
                 <div class="carousel-container">
-                    <div class="carousel-track"></div>
+                    <div class="carousel-track">
+                        <div class="no-reviews">Loading reviews...</div>
+                    </div>
                     <button class="nav-arrow left">‹</button>
                     <button class="nav-arrow right">›</button>
                 </div>
@@ -516,12 +523,11 @@ class ReviewsCarouselElement extends HTMLElement {
             rightBtn.addEventListener('click', () => this.nextSlide());
         }
 
-        // Touch support
-        let touchStartX = 0;
-        let touchEndX = 0;
-        
         const track = this.querySelector('.carousel-track');
         if (track) {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
             track.addEventListener('touchstart', (e) => {
                 touchStartX = e.changedTouches[0].screenX;
             });
@@ -570,8 +576,7 @@ class ReviewsCarouselElement extends HTMLElement {
 
     updateCarousel(newIndex) {
         if (this.isAnimating) return;
-        this.isAnimating = true;
-
+        
         const track = this.querySelector('.carousel-track');
         if (!track) return;
 
@@ -580,9 +585,11 @@ class ReviewsCarouselElement extends HTMLElement {
             return;
         }
 
+        this.isAnimating = true;
         this.currentIndex = (newIndex + this.reviews.length) % this.reviews.length;
 
-        // Clear and rebuild cards
+        console.log('Updating carousel, current index:', this.currentIndex, 'Total reviews:', this.reviews.length);
+
         track.innerHTML = '';
         
         this.reviews.forEach((review, i) => {
@@ -625,7 +632,7 @@ class ReviewsCarouselElement extends HTMLElement {
         const starsHTML = this.renderStars(review.rating);
         
         card.innerHTML = `
-            ${review.productImage ? `<img src="${review.productImage}" alt="${review.productName}" class="card-image">` : ''}
+            ${review.productImage ? `<img src="${review.productImage}" alt="${review.productName}" class="card-image">` : '<div class="card-image" style="background: linear-gradient(135deg, rgba(0,191,255,0.2) 0%, rgba(0,191,255,0.05) 100%);"></div>'}
             <div class="card-content">
                 <div class="product-name">${review.productName}</div>
                 <div class="product-price" style="color: ${this.settings.accentColor}">${review.productPrice}</div>
@@ -659,27 +666,24 @@ class ReviewsCarouselElement extends HTMLElement {
 
         let html = '';
 
-        // Full stars
         for (let i = 0; i < fullStars; i++) {
             html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starFilledColor}">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>`;
         }
 
-        // Half star
         if (hasHalfStar) {
-            html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starFilledColor}">
+            html += `<svg class="star" viewBox="0 0 24 24">
                 <defs>
-                    <linearGradient id="half-${rating}">
+                    <linearGradient id="half-grad-${rating}">
                         <stop offset="50%" stop-color="${this.settings.starFilledColor}"/>
                         <stop offset="50%" stop-color="${this.settings.starEmptyColor}"/>
                     </linearGradient>
                 </defs>
-                <path fill="url(#half-${rating})" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                <path fill="url(#half-grad-${rating})" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>`;
         }
 
-        // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starEmptyColor}">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
