@@ -4,10 +4,13 @@ class TabAttentionElement extends HTMLElement {
         this.originalTitle = '';
         this.settings = {
             awayMessage: '👋 Come back! We miss you!',
-            enabled: true
+            enabled: true,
+            delaySeconds: 5,
+            flashMessage: true
         };
         this.isAway = false;
         this.blinkInterval = null;
+        this.delayTimeout = null;
         this.blinkState = false;
     }
 
@@ -97,19 +100,34 @@ class TabAttentionElement extends HTMLElement {
     setAwayMessage() {
         if (!this.settings.enabled) return;
 
-        this.isAway = true;
+        // Clear any existing delay timeout
+        if (this.delayTimeout) {
+            clearTimeout(this.delayTimeout);
+        }
+
+        // Set delay before showing message
+        const delayMs = (this.settings.delaySeconds || 5) * 1000;
         
-        // Start blinking animation
-        this.startBlinking();
+        this.delayTimeout = setTimeout(() => {
+            this.isAway = true;
+            
+            if (this.settings.flashMessage) {
+                // Start flashing animation
+                this.startFlashing();
+            } else {
+                // Show message permanently
+                this.showStaticMessage();
+            }
+        }, delayMs);
     }
 
-    startBlinking() {
+    startFlashing() {
         // Clear any existing interval
         if (this.blinkInterval) {
             clearInterval(this.blinkInterval);
         }
 
-        // Alternate between message and empty/original
+        // Alternate between message and empty/dots
         this.blinkInterval = setInterval(() => {
             if (this.blinkState) {
                 document.title = this.settings.awayMessage;
@@ -117,14 +135,25 @@ class TabAttentionElement extends HTMLElement {
                 document.title = '...';
             }
             this.blinkState = !this.blinkState;
-        }, 1000); // Blink every 1 second
+        }, 1000); // Flash every 1 second
+    }
+
+    showStaticMessage() {
+        // Just show the message without flashing
+        document.title = this.settings.awayMessage;
     }
 
     restoreTitle() {
         this.isAway = false;
         this.blinkState = false;
 
-        // Stop blinking
+        // Clear delay timeout
+        if (this.delayTimeout) {
+            clearTimeout(this.delayTimeout);
+            this.delayTimeout = null;
+        }
+
+        // Stop flashing
         if (this.blinkInterval) {
             clearInterval(this.blinkInterval);
             this.blinkInterval = null;
