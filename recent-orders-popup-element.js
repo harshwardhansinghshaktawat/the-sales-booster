@@ -6,6 +6,7 @@ class RecentOrdersPopupElement extends HTMLElement {
         this.rotationInterval = null;
         this.hideTimeout = null;
         this.isVisible = false;
+        this.hasStarted = false;
         
         this.settings = {
             backgroundColor: '#ffffff',
@@ -56,20 +57,35 @@ class RecentOrdersPopupElement extends HTMLElement {
             if (name === 'orders') {
                 try {
                     this.allPurchases = JSON.parse(newValue);
-                    if (this.allPurchases.length > 0) {
-                        if (!this.rotationInterval) {
-                            this.startRotation();
-                        }
+                    if (this.allPurchases.length > 0 && !this.hasStarted) {
+                        this.hasStarted = true;
+                        this.startRotation();
                     }
                 } catch (e) {
                     // Silent
                 }
             } else if (name === 'options') {
                 try {
+                    const oldSticky = this.settings.sticky;
                     const newOptions = JSON.parse(newValue);
                     Object.assign(this.settings, newOptions);
                     this.updateStyles();
                     this.updatePosition();
+                    
+                    // If sticky mode changed or is currently sticky, update display
+                    if (this.allPurchases.length > 0) {
+                        if (this.settings.sticky) {
+                            // In sticky mode, ensure popup is visible
+                            if (!this.isVisible) {
+                                this.showNextPurchase();
+                            }
+                        } else if (oldSticky && !this.settings.sticky) {
+                            // Switched from sticky to non-sticky, restart rotation
+                            this.stopRotation();
+                            this.hasStarted = false;
+                            this.startRotation();
+                        }
+                    }
                 } catch (e) {
                     // Silent
                 }
@@ -339,12 +355,29 @@ class RecentOrdersPopupElement extends HTMLElement {
         // Waiting for orders
     }
 
+    stopRotation() {
+        if (this.rotationInterval) {
+            clearInterval(this.rotationInterval);
+            this.rotationInterval = null;
+        }
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+        }
+    }
+
     startRotation() {
         if (this.allPurchases.length === 0) {
             return;
         }
 
-        if (!this.settings.sticky) {
+        this.stopRotation();
+
+        if (this.settings.sticky) {
+            // Sticky mode: show once and keep visible
+            this.showNextPurchase();
+        } else {
+            // Auto-hide mode: show immediately, then rotate
             this.showNextPurchase();
 
             this.rotationInterval = setInterval(() => {
@@ -352,8 +385,6 @@ class RecentOrdersPopupElement extends HTMLElement {
                     this.showNextPurchase();
                 }
             }, this.settings.delayBetweenPopups);
-        } else {
-            this.showNextPurchase();
         }
     }
 
@@ -365,9 +396,16 @@ class RecentOrdersPopupElement extends HTMLElement {
         const purchase = this.allPurchases[this.currentIndex];
         this.displayPurchase(purchase);
 
-        this.currentIndex = (this.currentIndex + 1) % this.allPurchases.length;
-
+        // Move to next for rotation
         if (!this.settings.sticky) {
+            this.currentIndex = (this.currentIndex + 1) % this.allPurchases.length;
+        }
+
+        // Set auto-hide timeout only in non-sticky mode
+        if (!this.settings.sticky) {
+            if (this.hideTimeout) {
+                clearTimeout(this.hideTimeout);
+            }
             this.hideTimeout = setTimeout(() => {
                 this.hidePopup();
             }, this.settings.displayDuration);
@@ -474,12 +512,7 @@ class RecentOrdersPopupElement extends HTMLElement {
     }
 
     disconnectedCallback() {
-        if (this.rotationInterval) {
-            clearInterval(this.rotationInterval);
-        }
-        if (this.hideTimeout) {
-            clearTimeout(this.hideTimeout);
-        }
+        this.stopRotation();
         window.removeEventListener('resize', () => this.updatePosition());
     }
 }
