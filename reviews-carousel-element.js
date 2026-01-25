@@ -4,13 +4,15 @@ class ReviewsCarouselElement extends HTMLElement {
         this.currentIndex = 0;
         this.reviews = [];
         this.autoPlayInterval = null;
+        this.isAnimating = false;
         
         this.settings = {
-            backgroundColor: '#ffffff',
-            textColor: '#333333',
-            starColor: '#ffd700',
-            buttonColor: '#3498db',
-            borderColor: '#e0e0e0',
+            backgroundColor: '#0a0a0a',
+            cardColor: '#1f1f1f',
+            textColor: '#ffffff',
+            accentColor: '#00bfff',
+            starFilledColor: '#ffd700',
+            starEmptyColor: '#4a5568',
             verifiedColor: '#2ecc71',
             fontFamily: 'Arial, sans-serif',
             fontSize: 14,
@@ -34,7 +36,7 @@ class ReviewsCarouselElement extends HTMLElement {
                 try {
                     this.reviews = JSON.parse(newValue);
                     this.currentIndex = 0;
-                    this.displayCurrentReview();
+                    this.updateCarousel(0);
                     this.updateDots();
                     
                     if (this.settings.autoPlay) {
@@ -50,7 +52,6 @@ class ReviewsCarouselElement extends HTMLElement {
                     Object.assign(this.settings, newSettings);
                     this.updateStyles();
                     
-                    // Handle auto-play changes
                     if (this.settings.autoPlay && !oldAutoPlay) {
                         this.startAutoPlay();
                     } else if (!this.settings.autoPlay && oldAutoPlay) {
@@ -72,60 +73,98 @@ class ReviewsCarouselElement extends HTMLElement {
                 :host {
                     display: block;
                     width: 100%;
-                    height: 100%;
-                    min-height: 300px;
+                    min-height: 500px;
+                    position: relative;
+                }
+                
+                .carousel-wrapper {
+                    width: 100%;
+                    min-height: 500px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 60px 20px;
+                    position: relative;
+                    overflow: hidden;
                 }
                 
                 .carousel-container {
+                    width: 100%;
+                    max-width: 1400px;
+                    height: 480px;
                     position: relative;
+                    perspective: 2000px;
+                    margin: 20px 0;
+                }
+                
+                .carousel-track {
                     width: 100%;
                     height: 100%;
-                    border-radius: 12px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: relative;
+                    transform-style: preserve-3d;
+                }
+                
+                .review-card {
+                    position: absolute;
+                    width: 340px;
+                    height: 450px;
+                    border-radius: 20px;
                     overflow: hidden;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+                    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+                    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+                    cursor: pointer;
+                    will-change: transform, opacity;
+                    transform-origin: center;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    backdrop-filter: blur(10px);
                 }
                 
-                .review-slide {
-                    display: none;
-                    padding: 32px;
+                .review-card::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
                     height: 100%;
-                    box-sizing: border-box;
+                    opacity: 0;
+                    transition: opacity 0.4s ease;
+                    z-index: 2;
+                    pointer-events: none;
                 }
                 
-                .review-slide.active {
+                .review-card:hover::before {
+                    opacity: 0.1;
+                }
+                
+                .card-image {
+                    width: 100%;
+                    height: 200px;
+                    object-fit: cover;
+                    transition: all 0.7s ease;
+                    filter: brightness(0.8);
+                }
+                
+                .review-card:hover .card-image {
+                    filter: brightness(1);
+                }
+                
+                .card-content {
+                    padding: 24px;
+                    height: calc(100% - 200px);
                     display: flex;
                     flex-direction: column;
-                    gap: 20px;
-                    animation: fadeIn 0.5s ease-in;
-                }
-                
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                
-                .review-header {
-                    display: flex;
-                    align-items: center;
-                    gap: 16px;
-                }
-                
-                .product-image {
-                    width: 80px;
-                    height: 80px;
-                    object-fit: cover;
-                    border-radius: 8px;
-                    flex-shrink: 0;
-                }
-                
-                .review-info {
-                    flex: 1;
-                    min-width: 0;
+                    gap: 12px;
+                    position: relative;
+                    z-index: 3;
                 }
                 
                 .product-name {
-                    font-weight: 600;
                     font-size: 1.2em;
+                    font-weight: 700;
                     margin-bottom: 4px;
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -133,194 +172,331 @@ class ReviewsCarouselElement extends HTMLElement {
                 }
                 
                 .product-price {
-                    font-weight: 700;
                     font-size: 1.1em;
+                    font-weight: 700;
                     margin-bottom: 8px;
                 }
                 
-                .stars {
+                .stars-container {
                     display: flex;
                     gap: 4px;
-                    font-size: 1.2em;
+                    margin-bottom: 8px;
                 }
                 
-                .review-content {
-                    flex: 1;
-                    overflow-y: auto;
+                .star {
+                    width: 20px;
+                    height: 20px;
+                    display: inline-block;
                 }
                 
                 .review-title {
                     font-weight: 600;
-                    font-size: 1.1em;
-                    margin-bottom: 12px;
-                    line-height: 1.4;
+                    font-size: 1em;
+                    margin-bottom: 6px;
+                    line-height: 1.3;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
                 
                 .review-body {
-                    line-height: 1.6;
-                    margin-bottom: 16px;
+                    font-size: 0.9em;
+                    line-height: 1.5;
+                    opacity: 0.8;
+                    flex: 1;
+                    overflow: hidden;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 3;
+                    -webkit-box-orient: vertical;
                 }
                 
                 .review-footer {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    flex-wrap: wrap;
-                    gap: 12px;
-                    padding-top: 16px;
-                    border-top: 1px solid;
+                    padding-top: 12px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    margin-top: auto;
                 }
                 
                 .author-info {
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                    flex: 1;
+                    min-width: 0;
                 }
                 
                 .author-name {
                     font-weight: 600;
+                    font-size: 0.9em;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
                 
                 .verified-badge {
                     display: inline-flex;
                     align-items: center;
                     gap: 4px;
-                    padding: 4px 8px;
+                    padding: 3px 8px;
                     border-radius: 12px;
-                    font-size: 0.75em;
+                    font-size: 0.7em;
                     font-weight: 600;
                     color: white;
+                    white-space: nowrap;
+                    flex-shrink: 0;
                 }
                 
                 .verified-badge::before {
                     content: '✓';
+                    font-size: 1.1em;
                 }
                 
-                .review-date {
-                    font-size: 0.85em;
-                    opacity: 0.7;
+                .review-card.center {
+                    z-index: 10;
+                    transform: scale(1.1) translateZ(0);
                 }
                 
-                .nav-button {
+                .review-card.left-2 {
+                    z-index: 1;
+                    transform: translateX(-420px) scale(0.85) translateZ(-200px) rotateY(15deg);
+                    opacity: 0.6;
+                }
+                
+                .review-card.left-1 {
+                    z-index: 5;
+                    transform: translateX(-210px) scale(0.95) translateZ(-50px) rotateY(8deg);
+                    opacity: 0.8;
+                }
+                
+                .review-card.right-1 {
+                    z-index: 5;
+                    transform: translateX(210px) scale(0.95) translateZ(-50px) rotateY(-8deg);
+                    opacity: 0.8;
+                }
+                
+                .review-card.right-2 {
+                    z-index: 1;
+                    transform: translateX(420px) scale(0.85) translateZ(-200px) rotateY(-15deg);
+                    opacity: 0.6;
+                }
+                
+                .review-card.hidden {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+                
+                .nav-arrow {
                     position: absolute;
                     top: 50%;
                     transform: translateY(-50%);
-                    width: 40px;
-                    height: 40px;
+                    width: 50px;
+                    height: 50px;
                     border-radius: 50%;
-                    border: none;
-                    cursor: pointer;
+                    border: 2px solid rgba(255, 255, 255, 0.1);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 20px;
+                    cursor: pointer;
+                    z-index: 20;
+                    transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+                    font-size: 24px;
                     color: white;
-                    transition: all 0.3s ease;
-                    z-index: 10;
+                    backdrop-filter: blur(5px);
                 }
                 
-                .nav-button:hover {
+                .nav-arrow:hover {
                     transform: translateY(-50%) scale(1.1);
                 }
                 
-                .nav-button.prev {
-                    left: 16px;
+                .nav-arrow.left {
+                    left: 20px;
                 }
                 
-                .nav-button.next {
-                    right: 16px;
+                .nav-arrow.right {
+                    right: 20px;
                 }
                 
-                .nav-button.hidden {
+                .nav-arrow.hidden {
                     display: none;
                 }
                 
                 .dots-container {
-                    position: absolute;
-                    bottom: 16px;
-                    left: 50%;
-                    transform: translateX(-50%);
                     display: flex;
-                    gap: 8px;
-                    z-index: 10;
+                    justify-content: center;
+                    gap: 12px;
+                    margin-top: 40px;
                 }
                 
                 .dot {
-                    width: 10px;
-                    height: 10px;
+                    width: 12px;
+                    height: 12px;
                     border-radius: 50%;
-                    background: rgba(255,255,255,0.5);
+                    background: rgba(255, 255, 255, 0.2);
                     cursor: pointer;
-                    transition: all 0.3s ease;
+                    transition: all 0.4s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+                    border: 2px solid rgba(255, 255, 255, 0.1);
                 }
                 
                 .dot.active {
-                    background: white;
                     transform: scale(1.3);
+                    animation: pulse 1.5s infinite ease-in-out;
                 }
                 
-                .product-link {
-                    display: inline-block;
-                    padding: 8px 16px;
-                    border-radius: 6px;
-                    text-decoration: none;
-                    font-weight: 600;
-                    font-size: 0.9em;
-                    transition: all 0.3s ease;
-                    color: white;
-                }
-                
-                .product-link:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1.3); }
+                    50% { transform: scale(1.5); }
                 }
                 
                 .no-reviews {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100%;
-                    padding: 32px;
                     text-align: center;
+                    padding: 60px 20px;
                     font-size: 1.2em;
                     opacity: 0.6;
                 }
                 
+                .bg-blur {
+                    position: absolute;
+                    width: 500px;
+                    height: 500px;
+                    border-radius: 50%;
+                    filter: blur(100px);
+                    opacity: 0.15;
+                    z-index: 0;
+                    mix-blend-mode: soft-light;
+                    pointer-events: none;
+                }
+                
+                .bg-blur-1 {
+                    top: -100px;
+                    left: -100px;
+                    animation: float1 24s ease-in-out infinite alternate;
+                }
+                
+                .bg-blur-2 {
+                    bottom: -100px;
+                    right: -100px;
+                    animation: float2 30s ease-in-out infinite alternate;
+                }
+                
+                @keyframes float1 {
+                    0% { transform: translate(10%, 10%) rotate(0deg); }
+                    100% { transform: translate(-10%, -10%) rotate(360deg); }
+                }
+                
+                @keyframes float2 {
+                    0% { transform: translate(-15%, 5%) rotate(0deg); }
+                    100% { transform: translate(15%, -5%) rotate(-360deg); }
+                }
+                
+                @media (max-width: 1024px) {
+                    .review-card {
+                        width: 280px;
+                        height: 400px;
+                    }
+                    
+                    .card-image {
+                        height: 160px;
+                    }
+                    
+                    .review-card.left-2 {
+                        transform: translateX(-340px) scale(0.85) translateZ(-200px) rotateY(15deg);
+                    }
+                    
+                    .review-card.left-1 {
+                        transform: translateX(-170px) scale(0.95) translateZ(-50px) rotateY(8deg);
+                    }
+                    
+                    .review-card.right-1 {
+                        transform: translateX(170px) scale(0.95) translateZ(-50px) rotateY(-8deg);
+                    }
+                    
+                    .review-card.right-2 {
+                        transform: translateX(340px) scale(0.85) translateZ(-200px) rotateY(-15deg);
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .carousel-container {
+                        height: 400px;
+                    }
+                    
+                    .review-card {
+                        width: 240px;
+                        height: 360px;
+                    }
+                    
+                    .card-image {
+                        height: 140px;
+                    }
+                    
+                    .review-card.left-2 {
+                        transform: translateX(-280px) scale(0.85) translateZ(-200px) rotateY(15deg);
+                    }
+                    
+                    .review-card.left-1 {
+                        transform: translateX(-140px) scale(0.95) translateZ(-50px) rotateY(8deg);
+                    }
+                    
+                    .review-card.right-1 {
+                        transform: translateX(140px) scale(0.95) translateZ(-50px) rotateY(-8deg);
+                    }
+                    
+                    .review-card.right-2 {
+                        transform: translateX(280px) scale(0.85) translateZ(-200px) rotateY(-15deg);
+                    }
+                    
+                    .nav-arrow {
+                        width: 40px;
+                        height: 40px;
+                        font-size: 20px;
+                    }
+                }
+                
                 @media (max-width: 480px) {
-                    .review-slide {
-                        padding: 20px;
+                    .carousel-container {
+                        height: 380px;
                     }
                     
-                    .review-header {
-                        flex-direction: column;
-                        align-items: flex-start;
+                    .review-card {
+                        width: 200px;
+                        height: 340px;
                     }
                     
-                    .product-image {
-                        width: 100%;
-                        height: 200px;
+                    .card-image {
+                        height: 120px;
                     }
                     
-                    .nav-button {
-                        width: 32px;
-                        height: 32px;
-                        font-size: 16px;
+                    .card-content {
+                        padding: 16px;
                     }
                     
-                    .nav-button.prev {
-                        left: 8px;
+                    .review-card.left-2,
+                    .review-card.right-2 {
+                        display: none;
                     }
                     
-                    .nav-button.next {
-                        right: 8px;
+                    .review-card.left-1 {
+                        transform: translateX(-110px) scale(0.9) translateZ(-50px) rotateY(8deg);
+                    }
+                    
+                    .review-card.right-1 {
+                        transform: translateX(110px) scale(0.9) translateZ(-50px) rotateY(-8deg);
                     }
                 }
             </style>
             
-            <div class="carousel-container">
-                <div class="slides-wrapper"></div>
-                <button class="nav-button prev">‹</button>
-                <button class="nav-button next">›</button>
+            <div class="carousel-wrapper">
+                <div class="bg-blur bg-blur-1"></div>
+                <div class="bg-blur bg-blur-2"></div>
+                
+                <div class="carousel-container">
+                    <div class="carousel-track"></div>
+                    <button class="nav-arrow left">‹</button>
+                    <button class="nav-arrow right">›</button>
+                </div>
+                
                 <div class="dots-container"></div>
             </div>
         `;
@@ -330,83 +506,150 @@ class ReviewsCarouselElement extends HTMLElement {
     }
 
     setupNavigation() {
-        const prevBtn = this.querySelector('.prev');
-        const nextBtn = this.querySelector('.next');
+        const leftBtn = this.querySelector('.nav-arrow.left');
+        const rightBtn = this.querySelector('.nav-arrow.right');
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => this.prevSlide());
+        if (leftBtn) {
+            leftBtn.addEventListener('click', () => this.prevSlide());
         }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => this.nextSlide());
+        if (rightBtn) {
+            rightBtn.addEventListener('click', () => this.nextSlide());
+        }
+
+        // Touch support
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        const track = this.querySelector('.carousel-track');
+        if (track) {
+            track.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+            
+            track.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                const diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) {
+                        this.nextSlide();
+                    } else {
+                        this.prevSlide();
+                    }
+                }
+            });
         }
     }
 
     updateStyles() {
-        const container = this.querySelector('.carousel-container');
-        const prevBtn = this.querySelector('.prev');
-        const nextBtn = this.querySelector('.next');
-        const productLinks = this.querySelectorAll('.product-link');
+        const wrapper = this.querySelector('.carousel-wrapper');
+        const leftBtn = this.querySelector('.nav-arrow.left');
+        const rightBtn = this.querySelector('.nav-arrow.right');
+        const blurs = this.querySelectorAll('.bg-blur');
 
-        if (container) {
-            container.style.backgroundColor = this.settings.backgroundColor;
-            container.style.fontFamily = this.settings.fontFamily;
-            container.style.color = this.settings.textColor;
-            container.style.fontSize = `${this.settings.fontSize}px`;
+        if (wrapper) {
+            wrapper.style.backgroundColor = this.settings.backgroundColor;
+            wrapper.style.fontFamily = this.settings.fontFamily;
+            wrapper.style.fontSize = `${this.settings.fontSize}px`;
         }
 
-        // Show/hide navigation buttons based on autoPlay
         const buttonsHidden = this.settings.autoPlay;
-        if (prevBtn) {
-            prevBtn.classList.toggle('hidden', buttonsHidden);
-            prevBtn.style.backgroundColor = this.settings.buttonColor;
+        if (leftBtn) {
+            leftBtn.classList.toggle('hidden', buttonsHidden);
+            leftBtn.style.backgroundColor = this.settings.accentColor;
         }
-        if (nextBtn) {
-            nextBtn.classList.toggle('hidden', buttonsHidden);
-            nextBtn.style.backgroundColor = this.settings.buttonColor;
+        if (rightBtn) {
+            rightBtn.classList.toggle('hidden', buttonsHidden);
+            rightBtn.style.backgroundColor = this.settings.accentColor;
         }
 
-        productLinks.forEach(link => {
-            link.style.backgroundColor = this.settings.buttonColor;
-        });
+        if (blurs.length >= 2) {
+            blurs[0].style.background = this.settings.accentColor;
+            blurs[1].style.background = this.settings.cardColor;
+        }
     }
 
-    displayCurrentReview() {
-        const wrapper = this.querySelector('.slides-wrapper');
-        if (!wrapper) return;
+    updateCarousel(newIndex) {
+        if (this.isAnimating) return;
+        this.isAnimating = true;
+
+        const track = this.querySelector('.carousel-track');
+        if (!track) return;
 
         if (this.reviews.length === 0) {
-            wrapper.innerHTML = '<div class="no-reviews">No reviews yet. Be the first to review!</div>';
+            track.innerHTML = '<div class="no-reviews">No reviews yet. Be the first to review!</div>';
             return;
         }
 
-        const review = this.reviews[this.currentIndex];
+        this.currentIndex = (newIndex + this.reviews.length) % this.reviews.length;
+
+        // Clear and rebuild cards
+        track.innerHTML = '';
         
-        wrapper.innerHTML = `
-            <div class="review-slide active">
-                <div class="review-header">
-                    ${review.productImage ? `<img src="${review.productImage}" alt="${review.productName}" class="product-image">` : ''}
-                    <div class="review-info">
-                        <div class="product-name">${review.productName}</div>
-                        <div class="product-price">${review.productPrice}</div>
-                        <div class="stars">${this.renderStars(review.rating)}</div>
-                    </div>
-                </div>
-                <div class="review-content">
-                    ${review.title ? `<div class="review-title">${review.title}</div>` : ''}
-                    <div class="review-body">${review.body}</div>
-                </div>
-                <div class="review-footer" style="border-color: ${this.settings.borderColor}">
+        this.reviews.forEach((review, i) => {
+            const card = this.createCard(review, i);
+            track.appendChild(card);
+        });
+
+        this.updateDots();
+        this.updateStyles();
+
+        setTimeout(() => {
+            this.isAnimating = false;
+        }, 700);
+    }
+
+    createCard(review, index) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.dataset.index = index;
+
+        const offset = (index - this.currentIndex + this.reviews.length) % this.reviews.length;
+
+        if (offset === 0) {
+            card.classList.add('center');
+        } else if (offset === 1) {
+            card.classList.add('right-1');
+        } else if (offset === 2) {
+            card.classList.add('right-2');
+        } else if (offset === this.reviews.length - 1) {
+            card.classList.add('left-1');
+        } else if (offset === this.reviews.length - 2) {
+            card.classList.add('left-2');
+        } else {
+            card.classList.add('hidden');
+        }
+
+        card.style.backgroundColor = this.settings.cardColor;
+        card.style.color = this.settings.textColor;
+
+        const starsHTML = this.renderStars(review.rating);
+        
+        card.innerHTML = `
+            ${review.productImage ? `<img src="${review.productImage}" alt="${review.productName}" class="card-image">` : ''}
+            <div class="card-content">
+                <div class="product-name">${review.productName}</div>
+                <div class="product-price" style="color: ${this.settings.accentColor}">${review.productPrice}</div>
+                <div class="stars-container">${starsHTML}</div>
+                ${review.title ? `<div class="review-title">${review.title}</div>` : ''}
+                <div class="review-body">${review.body}</div>
+                <div class="review-footer">
                     <div class="author-info">
                         <span class="author-name">${review.authorName}</span>
                         ${review.verified ? `<span class="verified-badge" style="background-color: ${this.settings.verifiedColor}">Verified</span>` : ''}
                     </div>
-                    <div class="review-date">${this.formatDate(review.reviewDate)}</div>
                 </div>
-                <a href="${review.productUrl}" class="product-link" style="background-color: ${this.settings.buttonColor}">View Product</a>
             </div>
         `;
 
-        this.updateStyles();
+        card.addEventListener('click', () => {
+            if (offset === 0 && review.productUrl) {
+                window.location.href = review.productUrl;
+            } else {
+                this.updateCarousel(index);
+            }
+        });
+
+        return card;
     }
 
     renderStars(rating) {
@@ -414,17 +657,36 @@ class ReviewsCarouselElement extends HTMLElement {
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
-        let stars = '';
+        let html = '';
+
+        // Full stars
         for (let i = 0; i < fullStars; i++) {
-            stars += `<span style="color: ${this.settings.starColor}">★</span>`;
+            html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starFilledColor}">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>`;
         }
+
+        // Half star
         if (hasHalfStar) {
-            stars += `<span style="color: ${this.settings.starColor}">⯨</span>`;
+            html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starFilledColor}">
+                <defs>
+                    <linearGradient id="half-${rating}">
+                        <stop offset="50%" stop-color="${this.settings.starFilledColor}"/>
+                        <stop offset="50%" stop-color="${this.settings.starEmptyColor}"/>
+                    </linearGradient>
+                </defs>
+                <path fill="url(#half-${rating})" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>`;
         }
+
+        // Empty stars
         for (let i = 0; i < emptyStars; i++) {
-            stars += `<span style="color: ${this.settings.borderColor}">☆</span>`;
+            html += `<svg class="star" viewBox="0 0 24 24" fill="${this.settings.starEmptyColor}">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>`;
         }
-        return stars;
+
+        return html;
     }
 
     updateDots() {
@@ -438,12 +700,12 @@ class ReviewsCarouselElement extends HTMLElement {
             dot.className = 'dot';
             if (index === this.currentIndex) {
                 dot.classList.add('active');
+                dot.style.backgroundColor = this.settings.accentColor;
+                dot.style.boxShadow = `0 0 15px ${this.settings.accentColor}40, 0 0 0 4px ${this.settings.accentColor}33`;
             }
+            
             dot.addEventListener('click', () => {
-                this.currentIndex = index;
-                this.displayCurrentReview();
-                this.updateDots();
-                
+                this.updateCarousel(index);
                 if (this.settings.autoPlay) {
                     this.stopAutoPlay();
                     this.startAutoPlay();
@@ -454,12 +716,7 @@ class ReviewsCarouselElement extends HTMLElement {
     }
 
     prevSlide() {
-        if (this.reviews.length === 0) return;
-        
-        this.currentIndex = (this.currentIndex - 1 + this.reviews.length) % this.reviews.length;
-        this.displayCurrentReview();
-        this.updateDots();
-        
+        this.updateCarousel(this.currentIndex - 1);
         if (this.settings.autoPlay) {
             this.stopAutoPlay();
             this.startAutoPlay();
@@ -467,12 +724,7 @@ class ReviewsCarouselElement extends HTMLElement {
     }
 
     nextSlide() {
-        if (this.reviews.length === 0) return;
-        
-        this.currentIndex = (this.currentIndex + 1) % this.reviews.length;
-        this.displayCurrentReview();
-        this.updateDots();
-        
+        this.updateCarousel(this.currentIndex + 1);
         if (this.settings.autoPlay) {
             this.stopAutoPlay();
             this.startAutoPlay();
@@ -494,24 +746,6 @@ class ReviewsCarouselElement extends HTMLElement {
         if (this.autoPlayInterval) {
             clearInterval(this.autoPlayInterval);
             this.autoPlayInterval = null;
-        }
-    }
-
-    formatDate(dateString) {
-        try {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diffMs = now - date;
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 0) return 'Today';
-            if (diffDays === 1) return 'Yesterday';
-            if (diffDays < 7) return `${diffDays} days ago`;
-            if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-            if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-            return date.toLocaleDateString();
-        } catch (e) {
-            return 'Recently';
         }
     }
 
