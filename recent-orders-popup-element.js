@@ -13,11 +13,14 @@ class RecentOrdersPopupElement extends HTMLElement {
             nameColor: '#2c3e50',
             productColor: '#3498db',
             locationColor: '#7f8c8d',
+            priceColor: '#333333',
             timeColor: '#95a5a6',
             borderColor: '#e0e0e0',
             badgeColor: '#2ecc71',
             fontFamily: 'Arial, sans-serif',
-            fontSize: 14,
+            mainFontSize: 14,
+            timeFontSize: 11,
+            imageSize: 70,
             displayDuration: 8000,
             delayBetweenPopups: 15000,
             showName: true,
@@ -30,13 +33,15 @@ class RecentOrdersPopupElement extends HTMLElement {
             borderRadius: 12,
             borderWidth: 1,
             boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-            paddingSize: 16
+            paddingSize: 16,
+            purchaseText: 'just purchased',
+            fromText: 'from',
+            verifiedText: 'Verified Purchase'
         };
     }
 
     connectedCallback() {
         this.render();
-        this.showPlaceholder();
         this.loadOrders();
         this.setupPositioning();
         window.addEventListener('resize', () => this.updatePosition());
@@ -55,11 +60,9 @@ class RecentOrdersPopupElement extends HTMLElement {
                         if (!this.rotationInterval) {
                             this.startRotation();
                         }
-                    } else {
-                        this.showPlaceholder();
                     }
                 } catch (e) {
-                    this.showPlaceholder();
+                    // Silent
                 }
             } else if (name === 'options') {
                 try {
@@ -128,7 +131,7 @@ class RecentOrdersPopupElement extends HTMLElement {
                 .popup-content {
                     position: relative;
                     display: flex;
-                    align-items: center;
+                    align-items: flex-start;
                     gap: 12px;
                     width: 380px;
                     max-width: calc(100vw - 40px);
@@ -141,31 +144,7 @@ class RecentOrdersPopupElement extends HTMLElement {
                     transform: translateY(-2px);
                 }
                 
-                .verified-badge {
-                    position: absolute;
-                    top: 8px;
-                    right: 8px;
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 14px;
-                    font-weight: bold;
-                    color: white;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                    z-index: 10;
-                }
-                
-                .verified-badge::before {
-                    content: '✓';
-                }
-                
                 .product-image {
-                    width: 70px;
-                    height: 70px;
-                    min-width: 70px;
                     object-fit: cover;
                     flex-shrink: 0;
                     border-radius: 8px;
@@ -177,35 +156,12 @@ class RecentOrdersPopupElement extends HTMLElement {
                     min-width: 0;
                     display: flex;
                     flex-direction: column;
-                    gap: 6px;
-                    overflow: hidden;
+                    gap: 8px;
                 }
                 
-                .info-text {
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    line-height: 1.4;
-                }
-                
-                .customer-name {
-                    font-weight: 600;
-                }
-                
-                .customer-location {
-                    font-size: 0.85em;
-                }
-                
-                .purchase-label {
-                    font-size: 0.75em;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    font-weight: 600;
-                    opacity: 0.7;
-                }
-                
-                .product-name {
-                    font-weight: 600;
+                .main-message {
+                    line-height: 1.5;
+                    word-wrap: break-word;
                 }
                 
                 .bottom-row {
@@ -213,24 +169,42 @@ class RecentOrdersPopupElement extends HTMLElement {
                     justify-content: space-between;
                     align-items: center;
                     gap: 12px;
-                    overflow: hidden;
+                    flex-wrap: wrap;
+                }
+                
+                .price-verified {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    flex-wrap: wrap;
                 }
                 
                 .product-price {
                     font-weight: 700;
                     font-size: 1.1em;
                     white-space: nowrap;
-                    flex-shrink: 0;
+                }
+                
+                .verified-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 4px 10px;
+                    border-radius: 12px;
+                    font-size: 0.75em;
+                    font-weight: 600;
+                    color: white;
+                    white-space: nowrap;
+                }
+                
+                .verified-badge::before {
+                    content: '✓';
+                    font-size: 1.1em;
                 }
                 
                 .time-ago {
-                    font-size: 0.8em;
-                    opacity: 0.7;
                     white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    flex-shrink: 1;
-                    min-width: 0;
+                    flex-shrink: 0;
                 }
                 
                 @media (max-width: 480px) {
@@ -245,34 +219,19 @@ class RecentOrdersPopupElement extends HTMLElement {
                         width: calc(100vw - 20px);
                         max-width: none;
                     }
-                    
-                    .product-image {
-                        width: 60px;
-                        height: 60px;
-                        min-width: 60px;
-                    }
-                    
-                    .verified-badge {
-                        width: 24px;
-                        height: 24px;
-                        font-size: 12px;
-                        top: 6px;
-                        right: 6px;
-                    }
                 }
             </style>
             
             <div class="popup-container">
                 <div class="popup-content">
-                    <div class="verified-badge"></div>
                     <img class="product-image" src="" alt="Product">
                     <div class="popup-info">
-                        <div class="info-text customer-name"></div>
-                        <div class="info-text customer-location"></div>
-                        <div class="info-text purchase-label">Recently Purchased</div>
-                        <div class="info-text product-name"></div>
+                        <div class="main-message"></div>
                         <div class="bottom-row">
-                            <div class="product-price"></div>
+                            <div class="price-verified">
+                                <div class="product-price"></div>
+                                <div class="verified-badge"></div>
+                            </div>
                             <div class="time-ago"></div>
                         </div>
                     </div>
@@ -288,10 +247,7 @@ class RecentOrdersPopupElement extends HTMLElement {
         const content = this.querySelector('.popup-content');
         const badge = this.querySelector('.verified-badge');
         const image = this.querySelector('.product-image');
-        const customerName = this.querySelector('.customer-name');
-        const customerLocation = this.querySelector('.customer-location');
-        const purchaseLabel = this.querySelector('.purchase-label');
-        const productName = this.querySelector('.product-name');
+        const mainMessage = this.querySelector('.main-message');
         const productPrice = this.querySelector('.product-price');
         const timeAgo = this.querySelector('.time-ago');
 
@@ -306,41 +262,29 @@ class RecentOrdersPopupElement extends HTMLElement {
 
         if (badge) {
             badge.style.backgroundColor = this.settings.badgeColor;
-            badge.style.display = this.settings.showBadge ? 'flex' : 'none';
+            badge.style.display = this.settings.showBadge ? 'inline-flex' : 'none';
         }
 
         if (image) {
+            const size = this.settings.imageSize || 70;
+            image.style.width = `${size}px`;
+            image.style.height = `${size}px`;
+            image.style.minWidth = `${size}px`;
             image.style.borderRadius = `${Math.max(4, this.settings.borderRadius / 2)}px`;
         }
 
-        if (customerName) {
-            customerName.style.color = this.settings.nameColor;
-            customerName.style.fontSize = `${this.settings.fontSize}px`;
-        }
-
-        if (customerLocation) {
-            customerLocation.style.color = this.settings.locationColor;
-            customerLocation.style.fontSize = `${this.settings.fontSize * 0.85}px`;
-        }
-
-        if (purchaseLabel) {
-            purchaseLabel.style.color = this.settings.textColor;
-            purchaseLabel.style.fontSize = `${this.settings.fontSize * 0.75}px`;
-        }
-
-        if (productName) {
-            productName.style.color = this.settings.productColor;
-            productName.style.fontSize = `${this.settings.fontSize}px`;
+        if (mainMessage) {
+            mainMessage.style.fontSize = `${this.settings.mainFontSize}px`;
         }
 
         if (productPrice) {
-            productPrice.style.color = this.settings.textColor;
-            productPrice.style.fontSize = `${this.settings.fontSize * 1.1}px`;
+            productPrice.style.color = this.settings.priceColor;
+            productPrice.style.fontSize = `${this.settings.mainFontSize * 1.1}px`;
         }
 
         if (timeAgo) {
             timeAgo.style.color = this.settings.timeColor;
-            timeAgo.style.fontSize = `${this.settings.fontSize * 0.8}px`;
+            timeAgo.style.fontSize = `${this.settings.timeFontSize}px`;
         }
     }
 
@@ -391,40 +335,12 @@ class RecentOrdersPopupElement extends HTMLElement {
         }
     }
 
-    showPlaceholder() {
-        const customerName = this.querySelector('.customer-name');
-        const customerLocation = this.querySelector('.customer-location');
-        const productName = this.querySelector('.product-name');
-        const productPrice = this.querySelector('.product-price');
-        const timeAgo = this.querySelector('.time-ago');
-        const image = this.querySelector('.product-image');
-        const container = this.querySelector('.popup-container');
-        
-        if (customerName) customerName.textContent = 'John Doe';
-        if (customerLocation) customerLocation.textContent = 'from New York, USA';
-        if (productName) productName.textContent = 'Premium Wireless Headphones';
-        if (productPrice) productPrice.textContent = '$99.00';
-        if (timeAgo) timeAgo.textContent = '5m ago';
-        
-        if (image) {
-            image.src = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop';
-            image.style.display = 'block';
-        }
-        
-        if (container) {
-            container.classList.add('visible');
-        }
-        
-        this.isVisible = true;
-    }
-
     async loadOrders() {
-        // Waiting
+        // Waiting for orders
     }
 
     startRotation() {
         if (this.allPurchases.length === 0) {
-            this.showPlaceholder();
             return;
         }
 
@@ -443,7 +359,6 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     showNextPurchase() {
         if (this.allPurchases.length === 0) {
-            this.showPlaceholder();
             return;
         }
 
@@ -461,20 +376,37 @@ class RecentOrdersPopupElement extends HTMLElement {
 
     displayPurchase(purchase) {
         const container = this.querySelector('.popup-container');
-        const customerName = this.querySelector('.customer-name');
-        const customerLocation = this.querySelector('.customer-location');
-        const productName = this.querySelector('.product-name');
+        const mainMessage = this.querySelector('.main-message');
         const productPrice = this.querySelector('.product-price');
+        const verifiedBadge = this.querySelector('.verified-badge');
         const timeAgo = this.querySelector('.time-ago');
         const image = this.querySelector('.product-image');
 
         const displayName = this.settings.showName ? purchase.buyerName : 'Someone';
         
-        if (customerName) customerName.textContent = displayName;
-        if (customerLocation) customerLocation.textContent = `from ${purchase.location}`;
-        if (productName) productName.textContent = purchase.productName;
-        if (productPrice) productPrice.textContent = purchase.price;
-        if (timeAgo) timeAgo.textContent = this.getTimeAgo(purchase.purchaseDate);
+        // Build the continuous message with HTML for color styling
+        const messageHTML = `
+            <span style="color: ${this.settings.nameColor}; font-weight: 600;">${displayName}</span>
+            <span style="color: ${this.settings.locationColor};"> ${this.settings.fromText} ${purchase.location}</span>
+            <span style="color: ${this.settings.textColor};"> ${this.settings.purchaseText} </span>
+            <span style="color: ${this.settings.productColor}; font-weight: 600;">${purchase.productName}</span>
+        `;
+        
+        if (mainMessage) {
+            mainMessage.innerHTML = messageHTML;
+        }
+        
+        if (productPrice) {
+            productPrice.textContent = purchase.price;
+        }
+        
+        if (verifiedBadge) {
+            verifiedBadge.textContent = this.settings.verifiedText;
+        }
+        
+        if (timeAgo) {
+            timeAgo.textContent = this.getTimeAgo(purchase.purchaseDate);
+        }
 
         if (image && purchase.imageUrl) {
             image.src = purchase.imageUrl;
@@ -487,7 +419,9 @@ class RecentOrdersPopupElement extends HTMLElement {
         const content = this.querySelector('.popup-content');
         if (content) {
             content.onclick = () => {
-                if (purchase.productId) {
+                if (purchase.productUrl) {
+                    window.location.href = purchase.productUrl;
+                } else if (purchase.productId) {
                     this.navigateToProduct(purchase.productId);
                 }
             };
