@@ -5,7 +5,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
         this.popupShown = false;
         this.settings = {
             enabled: true,
-            popupStyle: 'urgency', // 'urgency', 'coupon', 'encouragement'
+            popupStyle: 'urgency',
             primaryBg: '#1a1a2e',
             secondaryBg: '#16213e',
             headingColor: '#ffffff',
@@ -38,8 +38,15 @@ class CartAbandonmentPopupElement extends HTMLElement {
             if (name === 'cart-items') {
                 try {
                     const cartData = JSON.parse(newValue);
-                    this.hasCartItems = cartData && cartData.length > 0;
-                    console.log('Cart items:', this.hasCartItems);
+                    const hasItems = cartData && cartData.length > 0;
+                    
+                    // Reset popup shown flag when cart status changes
+                    if (hasItems !== this.hasCartItems) {
+                        this.popupShown = false;
+                        console.log('Cart status changed. Has items:', hasItems);
+                    }
+                    
+                    this.hasCartItems = hasItems;
                 } catch (e) {
                     this.hasCartItems = false;
                 }
@@ -347,7 +354,6 @@ class CartAbandonmentPopupElement extends HTMLElement {
                         <p class="popup-message"></p>
                     </div>
                     <div class="popup-body">
-                        <!-- Content will be dynamically inserted based on style -->
                         <div class="dynamic-content"></div>
                         <button class="action-button"></button>
                         <div class="secondary-action">
@@ -382,7 +388,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
 
         if (actionBtn) {
             actionBtn.addEventListener('click', () => {
-                window.location.href = '/cart';
+                window.location.href = '/cart-page';
             });
         }
 
@@ -392,8 +398,6 @@ class CartAbandonmentPopupElement extends HTMLElement {
     }
 
     setupExitIntent() {
-        let isListening = false;
-
         const handleBeforeUnload = (e) => {
             if (!this.settings.enabled || !this.hasCartItems || this.popupShown) {
                 return;
@@ -420,8 +424,6 @@ class CartAbandonmentPopupElement extends HTMLElement {
 
         window.addEventListener('beforeunload', handleBeforeUnload);
         document.addEventListener('mouseleave', handleMouseLeave);
-
-        isListening = true;
     }
 
     updateStyles() {
