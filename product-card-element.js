@@ -12,11 +12,23 @@ class ProductGalleryElement extends HTMLElement {
             cornerRadius: 16,
             buttonText: 'Load More Products'
         };
+        this.isRendered = false;
+        this.pendingProductsData = null;
     }
 
     connectedCallback() {
         console.log('Custom element connected');
         this.render();
+        this.isRendered = true;
+        
+        // If we received products data before rendering, render them now
+        if (this.pendingProductsData) {
+            console.log('Rendering pending products data');
+            this.products = this.pendingProductsData.products || [];
+            this.hasMore = this.pendingProductsData.hasMore || false;
+            this.pendingProductsData = null;
+            this.renderProducts();
+        }
     }
 
     static get observedAttributes() {
@@ -30,6 +42,14 @@ class ProductGalleryElement extends HTMLElement {
                 try {
                     const data = JSON.parse(newValue);
                     console.log('Parsed products data:', data.products.length, 'products');
+                    
+                    // If not rendered yet, store data for later
+                    if (!this.isRendered) {
+                        console.log('Element not rendered yet, storing data');
+                        this.pendingProductsData = data;
+                        return;
+                    }
+                    
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
                     this.renderProducts();
@@ -41,7 +61,9 @@ class ProductGalleryElement extends HTMLElement {
                 try {
                     const newSettings = JSON.parse(newValue);
                     Object.assign(this.settings, newSettings);
-                    this.updateStyles();
+                    if (this.isRendered) {
+                        this.updateStyles();
+                    }
                 } catch (e) {
                     console.error('Error parsing settings:', e);
                 }
@@ -66,6 +88,7 @@ class ProductGalleryElement extends HTMLElement {
                     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
                     gap: 24px;
                     margin-bottom: 32px;
+                    min-height: 100px;
                 }
                 
                 .product-card {
@@ -239,6 +262,8 @@ class ProductGalleryElement extends HTMLElement {
                 <div class="load-more-container"></div>
             </div>
         `;
+        
+        console.log('DOM rendered');
     }
 
     renderProducts() {
@@ -247,10 +272,17 @@ class ProductGalleryElement extends HTMLElement {
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
 
-        if (!grid || !loadMoreContainer) {
-            console.error('Grid or load more container not found');
+        if (!grid) {
+            console.error('Products grid not found!');
             return;
         }
+        
+        if (!loadMoreContainer) {
+            console.error('Load more container not found!');
+            return;
+        }
+
+        console.log('Grid and container found successfully');
 
         if (this.products.length === 0) {
             grid.innerHTML = '<div class="empty-state">No products found. Please select a category.</div>';
@@ -259,10 +291,13 @@ class ProductGalleryElement extends HTMLElement {
         }
 
         // Render product cards
-        grid.innerHTML = this.products.map((product, index) => {
+        const cardsHTML = this.products.map((product, index) => {
             console.log(`Rendering product ${index}:`, product.name);
             return this.renderProductCard(product);
         }).join('');
+        
+        console.log('Setting grid innerHTML with', this.products.length, 'cards');
+        grid.innerHTML = cardsHTML;
 
         // Render load more button
         if (this.hasMore) {
