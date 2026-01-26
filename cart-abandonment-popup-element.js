@@ -18,19 +18,26 @@ class CartAbandonmentPopupElement extends HTMLElement {
             discountPercent: 10,
             headingText: "Wait! Don't Leave Yet!",
             messageText: "Your items are waiting for you!",
-            buttonText: "Complete My Order"
+            buttonText: "Complete My Order",
+            benefit1: "Free shipping on orders over $50",
+            benefit2: "30-day money-back guarantee",
+            benefit3: "Secure checkout with SSL encryption",
+            benefit4: "24/7 customer support",
+            benefit5: "Exclusive member rewards"
         };
         this.countdownInterval = null;
         this.timeLeft = 0;
+        this.isEditorMode = false;
     }
 
     connectedCallback() {
         this.render();
         this.setupExitIntent();
+        this.checkEditorMode();
     }
 
     static get observedAttributes() {
-        return ['cart-items', 'options'];
+        return ['cart-items', 'options', 'editor-mode'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -40,7 +47,6 @@ class CartAbandonmentPopupElement extends HTMLElement {
                     const cartData = JSON.parse(newValue);
                     const hasItems = cartData && cartData.length > 0;
                     
-                    // Reset popup shown flag when cart status changes
                     if (hasItems !== this.hasCartItems) {
                         this.popupShown = false;
                         console.log('Cart status changed. Has items:', hasItems);
@@ -58,7 +64,29 @@ class CartAbandonmentPopupElement extends HTMLElement {
                 } catch (e) {
                     // Silent
                 }
+            } else if (name === 'editor-mode') {
+                this.isEditorMode = newValue === 'true';
+                console.log('Editor mode:', this.isEditorMode);
+                
+                // Show popup in editor mode when enabled
+                if (this.isEditorMode && this.settings.enabled) {
+                    this.showPopupForEditor();
+                }
             }
+        }
+    }
+
+    checkEditorMode() {
+        // Check if we're in editor mode
+        try {
+            if (window.location.href.includes('editorx.com') || 
+                window.location.href.includes('wix.com/editor') ||
+                window.parent !== window) {
+                this.isEditorMode = true;
+            }
+        } catch (e) {
+            // Cross-origin error means we're in iframe (editor)
+            this.isEditorMode = true;
         }
     }
 
@@ -375,12 +403,17 @@ class CartAbandonmentPopupElement extends HTMLElement {
         const secondaryLink = this.querySelector('.secondary-link');
 
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.closePopup());
+            closeBtn.addEventListener('click', () => {
+                // In editor mode, don't actually close - just for preview
+                if (!this.isEditorMode) {
+                    this.closePopup();
+                }
+            });
         }
 
         if (overlay) {
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
+                if (e.target === overlay && !this.isEditorMode) {
                     this.closePopup();
                 }
             });
@@ -388,18 +421,24 @@ class CartAbandonmentPopupElement extends HTMLElement {
 
         if (actionBtn) {
             actionBtn.addEventListener('click', () => {
-                window.location.href = '/cart-page';
+                if (!this.isEditorMode) {
+                    window.location.href = '/cart-page';
+                }
             });
         }
 
         if (secondaryLink) {
-            secondaryLink.addEventListener('click', () => this.closePopup());
+            secondaryLink.addEventListener('click', () => {
+                if (!this.isEditorMode) {
+                    this.closePopup();
+                }
+            });
         }
     }
 
     setupExitIntent() {
         const handleBeforeUnload = (e) => {
-            if (!this.settings.enabled || !this.hasCartItems || this.popupShown) {
+            if (this.isEditorMode || !this.settings.enabled || !this.hasCartItems || this.popupShown) {
                 return;
             }
 
@@ -412,7 +451,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
         };
 
         const handleMouseLeave = (e) => {
-            if (!this.settings.enabled || !this.hasCartItems || this.popupShown) {
+            if (this.isEditorMode || !this.settings.enabled || !this.hasCartItems || this.popupShown) {
                 return;
             }
 
@@ -516,26 +555,36 @@ class CartAbandonmentPopupElement extends HTMLElement {
     }
 
     getEncouragementContent() {
+        const benefits = [
+            this.settings.benefit1,
+            this.settings.benefit2,
+            this.settings.benefit3,
+            this.settings.benefit4,
+            this.settings.benefit5
+        ].filter(b => b && b.trim());
+
         return `
             <div class="benefits-list">
-                <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div>Free shipping on orders over $50</div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div>30-day money-back guarantee</div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div>Secure checkout with SSL encryption</div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">✓</div>
-                    <div>24/7 customer support</div>
-                </div>
+                ${benefits.map(benefit => `
+                    <div class="benefit-item">
+                        <div class="benefit-icon">✓</div>
+                        <div>${benefit}</div>
+                    </div>
+                `).join('')}
             </div>
         `;
+    }
+
+    showPopupForEditor() {
+        // Show popup immediately in editor mode for design preview
+        const overlay = this.querySelector('.popup-overlay');
+        if (overlay) {
+            overlay.classList.add('active');
+            
+            if (this.settings.popupStyle === 'urgency') {
+                this.startCountdown();
+            }
+        }
     }
 
     showPopup() {
