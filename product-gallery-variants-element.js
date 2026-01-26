@@ -15,7 +15,7 @@ class ProductGalleryVariantsElement extends HTMLElement {
         this.isRendered = false;
         this.pendingProductsData = null;
         this.selectedVariants = {};
-        this.buttonStates = {}; // Track original button text
+        this.buttonStates = {};
     }
 
     connectedCallback() {
@@ -32,7 +32,7 @@ class ProductGalleryVariantsElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['products-data', 'settings'];
+        return ['products-data', 'settings', 'button-update'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -62,6 +62,13 @@ class ProductGalleryVariantsElement extends HTMLElement {
                 } catch (e) {
                     console.error('Error parsing settings:', e);
                 }
+            } else if (name === 'button-update') {
+                try {
+                    const update = JSON.parse(newValue);
+                    this.updateButton(update.productId, update.state);
+                } catch (e) {
+                    console.error('Error parsing button update:', e);
+                }
             }
         }
     }
@@ -69,7 +76,6 @@ class ProductGalleryVariantsElement extends HTMLElement {
     render() {
         this.innerHTML = `
             <style>
-                /* All the same styles as before */
                 * { box-sizing: border-box; }
                 :host { display: block; width: 100%; }
                 .gallery-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
@@ -119,10 +125,35 @@ class ProductGalleryVariantsElement extends HTMLElement {
                 <div class="load-more-container"></div>
             </div>
         `;
-        
-        console.log('DOM rendered');
     }
 
+    // Method to update button state
+    updateButton(productId, state) {
+        const button = this.querySelector(`.add-to-cart-button[data-product-id="${productId}"]`);
+        if (!button) return;
+
+        switch (state) {
+            case 'adding':
+                button.textContent = 'Adding...';
+                button.disabled = true;
+                break;
+            case 'success':
+                button.textContent = '✓ Added!';
+                button.disabled = false;
+                break;
+            case 'error':
+                button.textContent = 'Error';
+                button.disabled = false;
+                break;
+            case 'reset':
+                button.textContent = this.buttonStates[productId] || 'Add to Cart';
+                button.disabled = false;
+                break;
+        }
+    }
+
+    // ... all other methods remain the same (renderProducts, attachEventListeners, etc.) ...
+    
     renderProducts() {
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
@@ -190,7 +221,6 @@ class ProductGalleryVariantsElement extends HTMLElement {
         const displayPrice = currentVariant?.formattedPrice || product.price;
         const isInStock = currentVariant?.inStock !== false;
 
-        // Store original button text
         if (!this.buttonStates[productId]) {
             this.buttonStates[productId] = 'Add to Cart';
         }
@@ -367,7 +397,6 @@ class ProductGalleryVariantsElement extends HTMLElement {
             return;
         }
 
-        // Dispatch event to widget
         this.dispatchEvent(new CustomEvent('add-to-cart', {
             bubbles: true,
             composed: true,
@@ -376,29 +405,6 @@ class ProductGalleryVariantsElement extends HTMLElement {
                 variantId: variant?.id
             }
         }));
-    }
-
-    // Method to update button from widget
-    updateButton(productId, state) {
-        const button = this.querySelector(`.add-to-cart-button[data-product-id="${productId}"]`);
-        if (!button) return;
-
-        switch (state) {
-            case 'adding':
-                button.textContent = 'Adding...';
-                button.disabled = true;
-                break;
-            case 'success':
-                button.textContent = '✓ Added!';
-                break;
-            case 'error':
-                button.textContent = 'Error';
-                break;
-            case 'reset':
-                button.textContent = this.buttonStates[productId] || 'Add to Cart';
-                button.disabled = false;
-                break;
-        }
     }
 
     updateStyles() {
@@ -416,20 +422,5 @@ class ProductGalleryVariantsElement extends HTMLElement {
         });
     }
 }
-
-// Listen for update-button events from widget
-customElements.whenDefined('product-gallery-variants').then(() => {
-    const proto = customElements.get('product-gallery-variants').prototype;
-    const originalConnectedCallback = proto.connectedCallback;
-    
-    proto.connectedCallback = function() {
-        originalConnectedCallback.call(this);
-        
-        // Listen for button update events from widget
-        this.addEventListener('update-button', (e) => {
-            this.updateButton(e.detail.productId, e.detail.state);
-        });
-    };
-});
 
 customElements.define('product-gallery-variants', ProductGalleryVariantsElement);
