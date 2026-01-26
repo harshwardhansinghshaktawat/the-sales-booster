@@ -21,7 +21,6 @@ class ProductGalleryElement extends HTMLElement {
         this.render();
         this.isRendered = true;
         
-        // If we received products data before rendering, render them now
         if (this.pendingProductsData) {
             console.log('Rendering pending products data');
             this.products = this.pendingProductsData.products || [];
@@ -43,7 +42,6 @@ class ProductGalleryElement extends HTMLElement {
                     const data = JSON.parse(newValue);
                     console.log('Parsed products data:', data.products.length, 'products');
                     
-                    // If not rendered yet, store data for later
                     if (!this.isRendered) {
                         console.log('Element not rendered yet, storing data');
                         this.pendingProductsData = data;
@@ -55,7 +53,6 @@ class ProductGalleryElement extends HTMLElement {
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
-                    console.error('Raw data:', newValue.substring(0, 200));
                 }
             } else if (name === 'settings') {
                 try {
@@ -81,29 +78,31 @@ class ProductGalleryElement extends HTMLElement {
                 
                 .gallery-container {
                     padding: 20px;
+                    max-width: 1400px;
+                    margin: 0 auto;
                 }
                 
                 .products-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                    gap: 24px;
-                    margin-bottom: 32px;
-                    min-height: 100px;
+                    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                    gap: 30px;
+                    margin-bottom: 40px;
                 }
                 
                 .product-card {
                     background: var(--primary-bg);
                     overflow: hidden;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                     transition: transform 0.3s ease, box-shadow 0.3s ease;
                     position: relative;
                     display: flex;
                     flex-direction: column;
+                    height: 100%;
                 }
                 
                 .product-card:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+                    transform: translateY(-8px);
+                    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
                 }
                 
                 .product-image-container {
@@ -111,7 +110,7 @@ class ProductGalleryElement extends HTMLElement {
                     width: 100%;
                     padding-top: 100%;
                     overflow: hidden;
-                    background: #f5f5f5;
+                    background: #f8f8f8;
                 }
                 
                 .product-image {
@@ -121,30 +120,30 @@ class ProductGalleryElement extends HTMLElement {
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
-                    transition: transform 0.3s ease;
+                    transition: transform 0.4s ease;
                 }
                 
                 .product-card:hover .product-image {
-                    transform: scale(1.05);
+                    transform: scale(1.08);
                 }
                 
                 .product-ribbon {
                     position: absolute;
-                    top: 12px;
-                    left: 12px;
-                    background: #ff6b6b;
+                    top: 16px;
+                    left: 0;
+                    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
                     color: white;
-                    padding: 6px 12px;
+                    padding: 8px 16px;
                     font-weight: 700;
-                    font-size: 11px;
+                    font-size: 12px;
                     text-transform: uppercase;
-                    border-radius: 4px;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+                    letter-spacing: 0.5px;
+                    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
                     z-index: 10;
                 }
                 
                 .product-content {
-                    padding: 20px;
+                    padding: 24px;
                     flex: 1;
                     display: flex;
                     flex-direction: column;
@@ -153,106 +152,126 @@ class ProductGalleryElement extends HTMLElement {
                 .product-name {
                     font-size: 18px;
                     font-weight: 700;
-                    margin-bottom: 8px;
-                    line-height: 1.3;
+                    margin: 0 0 12px 0;
+                    line-height: 1.4;
                     color: var(--title-color);
-                    min-height: 48px;
-                }
-                
-                .product-description {
-                    font-size: 13px;
-                    line-height: 1.5;
-                    opacity: 0.7;
-                    margin-bottom: 12px;
+                    height: 50px;
+                    overflow: hidden;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
+                }
+                
+                .product-description {
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #666;
+                    margin: 0 0 16px 0;
+                    height: 44px;
                     overflow: hidden;
-                    flex: 1;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
                 }
                 
                 .product-price-section {
-                    margin-bottom: 16px;
+                    margin: auto 0 20px 0;
+                    padding-top: 12px;
+                    border-top: 1px solid #eee;
                 }
                 
                 .product-price {
-                    font-size: 22px;
+                    font-size: 24px;
                     font-weight: 800;
                     color: var(--secondary-bg);
+                    display: inline-block;
                 }
                 
                 .product-compare-price {
                     font-size: 16px;
                     color: #999;
                     text-decoration: line-through;
-                    margin-left: 8px;
+                    margin-left: 10px;
+                    display: inline-block;
                 }
                 
                 .view-product-button {
                     width: 100%;
-                    padding: 14px 20px;
+                    padding: 16px 24px;
                     border: none;
                     border-radius: 8px;
                     font-size: 14px;
                     font-weight: 700;
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
+                    letter-spacing: 1px;
                     cursor: pointer;
                     transition: all 0.3s ease;
                     background: var(--secondary-bg);
                     color: white;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                     text-decoration: none;
-                    display: inline-block;
+                    display: block;
                     text-align: center;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                 }
                 
                 .view-product-button:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+                    filter: brightness(1.1);
                 }
                 
                 .load-more-container {
                     text-align: center;
-                    padding: 20px;
+                    padding: 30px 0;
                 }
                 
                 .load-more-button {
-                    padding: 16px 48px;
-                    border: 2px solid var(--secondary-bg);
+                    padding: 18px 60px;
+                    border: 3px solid var(--secondary-bg);
                     background: white;
                     color: var(--secondary-bg);
-                    border-radius: 8px;
+                    border-radius: 50px;
                     font-size: 16px;
                     font-weight: 700;
                     cursor: pointer;
                     transition: all 0.3s ease;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
+                    letter-spacing: 1.5px;
                 }
                 
                 .load-more-button:hover {
                     background: var(--secondary-bg);
                     color: white;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
                 }
                 
                 .empty-state {
                     text-align: center;
-                    padding: 60px 20px;
+                    padding: 80px 20px;
                     color: #999;
-                    font-size: 16px;
+                    font-size: 18px;
+                }
+                
+                @media (max-width: 1200px) {
+                    .products-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                        gap: 24px;
+                    }
                 }
                 
                 @media (max-width: 768px) {
                     .products-grid {
-                        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                        gap: 16px;
+                        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+                        gap: 20px;
                     }
                     
                     .product-content {
-                        padding: 16px;
+                        padding: 20px;
+                    }
+                    
+                    .product-name {
+                        font-size: 16px;
                     }
                 }
             </style>
@@ -272,17 +291,10 @@ class ProductGalleryElement extends HTMLElement {
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
 
-        if (!grid) {
-            console.error('Products grid not found!');
+        if (!grid || !loadMoreContainer) {
+            console.error('Grid or container not found');
             return;
         }
-        
-        if (!loadMoreContainer) {
-            console.error('Load more container not found!');
-            return;
-        }
-
-        console.log('Grid and container found successfully');
 
         if (this.products.length === 0) {
             grid.innerHTML = '<div class="empty-state">No products found. Please select a category.</div>';
@@ -290,16 +302,9 @@ class ProductGalleryElement extends HTMLElement {
             return;
         }
 
-        // Render product cards
-        const cardsHTML = this.products.map((product, index) => {
-            console.log(`Rendering product ${index}:`, product.name);
-            return this.renderProductCard(product);
-        }).join('');
-        
-        console.log('Setting grid innerHTML with', this.products.length, 'cards');
+        const cardsHTML = this.products.map(product => this.renderProductCard(product)).join('');
         grid.innerHTML = cardsHTML;
 
-        // Render load more button
         if (this.hasMore) {
             loadMoreContainer.innerHTML = `
                 <button class="load-more-button" id="loadMoreBtn">
@@ -310,7 +315,6 @@ class ProductGalleryElement extends HTMLElement {
             const loadMoreBtn = this.querySelector('#loadMoreBtn');
             if (loadMoreBtn) {
                 loadMoreBtn.addEventListener('click', () => {
-                    console.log('Load more button clicked');
                     this.dispatchEvent(new CustomEvent('load-more', {
                         bubbles: true,
                         composed: true
@@ -341,7 +345,7 @@ class ProductGalleryElement extends HTMLElement {
                 
                 <div class="product-content">
                     <h3 class="product-name">${product.name}</h3>
-                    ${product.description ? `<p class="product-description">${product.description}</p>` : ''}
+                    <p class="product-description">${product.description || ''}</p>
                     
                     <div class="product-price-section">
                         <span class="product-price">${product.price}</span>
