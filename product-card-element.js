@@ -71,6 +71,10 @@ class ProductGalleryElement extends HTMLElement {
     render() {
         this.innerHTML = `
             <style>
+                * {
+                    box-sizing: border-box;
+                }
+                
                 :host {
                     display: block;
                     width: 100%;
@@ -108,18 +112,17 @@ class ProductGalleryElement extends HTMLElement {
                 .product-image-container {
                     position: relative;
                     width: 100%;
-                    padding-top: 100%;
+                    height: 300px;
                     overflow: hidden;
                     background: #f8f8f8;
+                    flex-shrink: 0;
                 }
                 
                 .product-image {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
                     width: 100%;
                     height: 100%;
                     object-fit: cover;
+                    object-position: center;
                     transition: transform 0.4s ease;
                 }
                 
@@ -196,8 +199,10 @@ class ProductGalleryElement extends HTMLElement {
                 }
                 
                 .view-product-button {
+                    display: block;
                     width: 100%;
-                    padding: 16px 24px;
+                    padding: 16px 20px;
+                    margin: 0;
                     border: none;
                     border-radius: 8px;
                     font-size: 14px;
@@ -209,9 +214,9 @@ class ProductGalleryElement extends HTMLElement {
                     background: var(--secondary-bg);
                     color: white;
                     text-decoration: none;
-                    display: block;
                     text-align: center;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    line-height: 1;
                 }
                 
                 .view-product-button:hover {
@@ -258,6 +263,10 @@ class ProductGalleryElement extends HTMLElement {
                         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
                         gap: 24px;
                     }
+                    
+                    .product-image-container {
+                        height: 280px;
+                    }
                 }
                 
                 @media (max-width: 768px) {
@@ -272,6 +281,10 @@ class ProductGalleryElement extends HTMLElement {
                     
                     .product-name {
                         font-size: 16px;
+                    }
+                    
+                    .product-image-container {
+                        height: 260px;
                     }
                 }
             </style>
@@ -352,9 +365,7 @@ class ProductGalleryElement extends HTMLElement {
                         ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : ''}
                     </div>
                     
-                    <a href="${product.productUrl}" class="view-product-button">
-                        View Product
-                    </a>
+                    <a href="${product.productUrl}" class="view-product-button">View Product</a>
                 </div>
             </div>
         `;
