@@ -4,6 +4,7 @@ class ProductCardElement extends HTMLElement {
         this.productData = null;
         this.selectedChoices = {};
         this.selectedVariant = null;
+        this.onAddToCart = null; // Callback function
         this.settings = {
             cardBg: '#ffffff',
             textColor: '#333333',
@@ -46,6 +47,11 @@ class ProductCardElement extends HTMLElement {
                 }
             }
         }
+    }
+
+    // Method to set add to cart callback
+    setAddToCartCallback(callback) {
+        this.onAddToCart = callback;
     }
 
     render() {
@@ -323,7 +329,6 @@ class ProductCardElement extends HTMLElement {
     initializeSelections() {
         if (!this.productData || !this.productData.productOptions) return;
 
-        // Initialize with first choice of each option
         this.productData.productOptions.forEach(option => {
             if (option.choices && option.choices.length > 0) {
                 this.selectedChoices[option.name] = option.choices[0].value;
@@ -336,7 +341,6 @@ class ProductCardElement extends HTMLElement {
     updateSelectedVariant() {
         if (!this.productData || !this.productData.variants) return;
 
-        // Find variant matching selected choices
         this.selectedVariant = this.productData.variants.find(variant => {
             return Object.keys(this.selectedChoices).every(optionName => {
                 return variant.choices[optionName] === this.selectedChoices[optionName];
@@ -451,26 +455,22 @@ class ProductCardElement extends HTMLElement {
             qtyValue.textContent = quantity;
         });
 
-        // Add to cart
+        // Add to cart - use callback instead of custom event
         this.querySelector('#addToCartBtn')?.addEventListener('click', async () => {
             const variantId = this.selectedVariant?.id || null;
-            const event = new CustomEvent('add-to-cart', {
-                detail: {
-                    productId: this.productData.id,
-                    variantId: variantId,
-                    quantity: quantity
-                },
-                bubbles: true,
-                composed: true
-            });
-            this.dispatchEvent(event);
-
-            // Show success message
-            const successMsg = this.querySelector('#successMessage');
-            successMsg.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
-            setTimeout(() => {
-                successMsg.innerHTML = '';
-            }, 3000);
+            
+            if (this.onAddToCart) {
+                await this.onAddToCart(this.productData.id, variantId, quantity);
+                
+                // Show success message
+                const successMsg = this.querySelector('#successMessage');
+                if (successMsg) {
+                    successMsg.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
+                    setTimeout(() => {
+                        successMsg.innerHTML = '';
+                    }, 3000);
+                }
+            }
         });
     }
 
