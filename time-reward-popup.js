@@ -1,10 +1,9 @@
-class TimeRewardPopupElement extends HTMLElement {
+class TimeRewardPopup extends HTMLElement {
     constructor() {
         super();
-        this.timerSeconds = 60;
-        this.currentTime = 0;
-        this.timerActive = false;
-        this.popupShown = false;
+        this.totalSeconds = 60;
+        this.timeLeft = 60;
+        this.timer = null;
         this.settings = {
             enabled: true,
             showClock: true,
@@ -13,196 +12,164 @@ class TimeRewardPopupElement extends HTMLElement {
             marginH: 20,
             primaryColor: '#6366f1',
             secondaryColor: '#a855f7',
-            textColor: '#ffffff',
-            headingText: "Loyalty Reward!",
-            messageText: "Thanks for staying! Here is a gift:",
-            couponCode: "STAY5",
-            offerMinutes: 1
+            headingColor: '#ffffff',
+            textColor: '#e0e0e0',
+            headingText: "Reward Unlocked!",
+            messageText: "Thanks for browsing our collection!",
+            couponCode: "SAVE20",
+            buttonText: "Copy Code",
+            clockMessage: "remaining to unlock reward"
         };
-        this.interval = null;
     }
 
     connectedCallback() {
         this.render();
     }
 
-    static get observedAttributes() {
-        return ['options'];
-    }
+    static get observedAttributes() { return ['options']; }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        if (name === 'options' && newValue) {
-            const newSettings = JSON.parse(newValue);
-            Object.assign(this.settings, newSettings);
-            this.timerSeconds = this.settings.offerMinutes * 60;
-            this.updateUI();
-            if (!this.timerActive && !this.popupShown) this.startTimer();
+    attributeChangedCallback(name, old, newVal) {
+        if (newVal && old !== newVal) {
+            this.settings = { ...this.settings, ...JSON.parse(newVal) };
+            this.totalSeconds = parseInt(this.settings.timerSeconds) || 60;
+            this.timeLeft = this.totalSeconds;
+            this.updateStyles();
+            this.startTimer();
         }
     }
 
     startTimer() {
-        this.timerActive = true;
-        this.currentTime = 0;
-        
-        if (this.interval) clearInterval(this.interval);
-        
-        this.interval = setInterval(() => {
-            this.currentTime++;
-            this.updateClockProgress();
-
-            if (this.currentTime >= this.timerSeconds) {
+        if (this.timer) clearInterval(this.timer);
+        this.timer = setInterval(() => {
+            if (this.timeLeft <= 0) {
+                clearInterval(this.timer);
                 this.showPopup();
-                clearInterval(this.interval);
+                return;
             }
+            this.timeLeft--;
+            this.updateClock();
         }, 1000);
+    }
+
+    formatTime(s) {
+        const mins = Math.floor(s / 60);
+        const secs = s % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     render() {
         this.innerHTML = `
-            <style>
-                :host { --p-color: ${this.settings.primaryColor}; --s-color: ${this.settings.secondaryColor}; }
-                
-                .clock-trigger {
-                    position: fixed;
-                    width: 70px;
-                    height: 70px;
-                    background: #111;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    z-index: 99999;
-                    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-                    border: 2px solid rgba(255,255,255,0.1);
-                    transition: transform 0.3s ease;
-                }
+        <style>
+            .time-offer-wrapper {
+                position: fixed;
+                z-index: 100000;
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            }
+            .clock-container {
+                display: flex; align-items: center; gap: 12px;
+                padding: 10px 20px; border-radius: 50px;
+                background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.1); color: white;
+                transition: all 0.5s ease;
+            }
+            .svg-clock { transform: rotate(-90deg); width: 40px; height: 40px; }
+            .svg-clock circle {
+                fill: none; stroke-width: 3; stroke-linecap: round;
+                stroke-dasharray: 100; stroke-dashoffset: 0;
+                transition: stroke-dashoffset 1s linear;
+            }
+            .timer-text-wrap { line-height: 1.2; }
+            .time-val { font-weight: 800; font-size: 16px; display: block; }
+            .time-label { font-size: 10px; opacity: 0.7; text-transform: uppercase; }
 
-                .progress-ring {
-                    position: absolute;
-                    top: -2px; left: -2px;
-                    transform: rotate(-90deg);
-                }
-
-                .progress-ring circle {
-                    stroke: var(--p-color);
-                    stroke-dasharray: 220;
-                    stroke-dashoffset: 220;
-                    transition: stroke-dashoffset 1s linear;
-                }
-
-                .time-text {
-                    color: white;
-                    font-family: sans-serif;
-                    font-size: 12px;
-                    font-weight: bold;
-                    text-align: center;
-                }
-
-                .reward-popup-overlay {
-                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
-                    display: none; align-items: center; justify-content: center; z-index: 100000;
-                }
-
-                .reward-card {
-                    background: #1a1a1a;
-                    width: 90%; max-width: 400px;
-                    border-radius: 30px;
-                    padding: 40px;
-                    text-align: center;
-                    position: relative;
-                    border: 1px solid rgba(255,255,255,0.1);
-                    color: white;
-                    transform: scale(0.8); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                }
-
-                .reward-popup-overlay.active { display: flex; }
-                .reward-popup-overlay.active .reward-card { transform: scale(1); }
-
-                .coupon-tag {
-                    background: linear-gradient(135deg, var(--p-color), var(--s-color));
-                    padding: 20px; border-radius: 15px; margin: 25px 0;
-                    font-size: 28px; font-weight: 900; letter-spacing: 4px;
-                    border: 2px dashed rgba(255,255,255,0.4);
-                }
-
-                .close-reward { position: absolute; top: 20px; right: 20px; cursor: pointer; opacity: 0.5; }
-            </style>
-
-            <div class="clock-trigger" id="floatingClock">
-                <svg class="progress-ring" width="74" height="74">
-                    <circle id="ring" stroke-width="4" fill="transparent" r="35" cx="37" cy="37"/>
-                </svg>
-                <div class="time-text" id="timeDisplay">0%</div>
-            </div>
-
-            <div class="reward-popup-overlay" id="rewardOverlay">
-                <div class="reward-card">
-                    <div class="close-reward" id="closeReward">✕</div>
-                    <div style="font-size: 50px;">🎁</div>
-                    <h2 id="popHeading" style="margin: 10px 0;"></h2>
-                    <p id="popMessage" style="opacity: 0.8;"></p>
-                    <div class="coupon-tag" id="popCoupon"></div>
-                    <button id="copyBtn" style="background: white; color: black; border: none; padding: 12px 25px; border-radius: 50px; font-weight: bold; cursor: pointer;">Copy & Close</button>
+            .offer-overlay {
+                position: fixed; top:0; left:0; width:100vw; height:100vh;
+                background: rgba(0,0,0,0.9); backdrop-filter: blur(12px);
+                display: none; align-items: center; justify-content: center; z-index: 100001;
+            }
+            .offer-card {
+                background: #111; border: 1px solid var(--p-color);
+                padding: 40px; border-radius: 30px; text-align: center;
+                max-width: 400px; width: 90%; color: white;
+                transform: scale(0.7); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            .offer-overlay.active { display: flex; }
+            .offer-overlay.active .offer-card { transform: scale(1); }
+            .coupon-box {
+                background: linear-gradient(135deg, var(--p-color), var(--s-color));
+                padding: 20px; border-radius: 15px; margin: 20px 0;
+                font-size: 28px; font-weight: 900; letter-spacing: 2px;
+                border: 2px dashed rgba(255,255,255,0.3);
+            }
+            .copy-btn {
+                background: white; color: black; border: none; padding: 12px 30px;
+                border-radius: 50px; font-weight: bold; cursor: pointer; width: 100%;
+            }
+        </style>
+        <div class="time-offer-wrapper" id="mainWrap">
+            <div class="clock-container" id="clockUI">
+                <svg class="svg-clock"><circle id="progress" cx="20" cy="20" r="16" stroke="white"/></svg>
+                <div class="timer-text-wrap">
+                    <span class="time-val" id="timeStr">0:00</span>
+                    <span class="time-label" id="labelStr"></span>
                 </div>
             </div>
+        </div>
+        <div class="offer-overlay" id="overlay">
+            <div class="offer-card">
+                <h2 id="popHead"></h2>
+                <p id="popMsg"></p>
+                <div class="coupon-box" id="popCoup"></div>
+                <button class="copy-btn" id="copyBtn"></button>
+            </div>
+        </div>
         `;
-
         this.setupListeners();
     }
 
     setupListeners() {
-        this.querySelector('#closeReward').onclick = () => this.closePopup();
         this.querySelector('#copyBtn').onclick = () => {
             navigator.clipboard.writeText(this.settings.couponCode);
-            this.closePopup();
+            this.querySelector('#overlay').classList.remove('active');
         };
     }
 
-    updateUI() {
-        const clock = this.querySelector('#floatingClock');
-        if (!clock) return;
+    updateStyles() {
+        const wrap = this.querySelector('#mainWrap');
+        const clockUI = this.querySelector('#clockUI');
+        if (!wrap) return;
 
-        // Position Logic
-        clock.style.top = 'auto'; clock.style.bottom = 'auto';
-        clock.style.left = 'auto'; clock.style.right = 'auto';
-
+        // Position
         const [v, h] = this.settings.position.split('-');
-        clock.style[v] = `${this.settings.marginV}px`;
-        clock.style[h] = `${this.settings.marginH}px`;
-        
-        clock.style.display = this.settings.showClock ? 'flex' : 'none';
-        
+        wrap.style.top = v === 'top' ? `${this.settings.marginV}px` : 'auto';
+        wrap.style.bottom = v === 'bottom' ? `${this.settings.marginV}px` : 'auto';
+        wrap.style.left = h === 'left' ? `${this.settings.marginH}px` : 'auto';
+        wrap.style.right = h === 'right' ? `${this.settings.marginH}px` : 'auto';
+
+        clockUI.style.display = this.settings.showClock ? 'flex' : 'none';
+        this.querySelector('#progress').style.stroke = this.settings.primaryColor;
         this.style.setProperty('--p-color', this.settings.primaryColor);
         this.style.setProperty('--s-color', this.settings.secondaryColor);
-
-        this.querySelector('#popHeading').textContent = this.settings.headingText;
-        this.querySelector('#popMessage').textContent = this.settings.messageText;
-        this.querySelector('#popCoupon').textContent = this.settings.couponCode;
+        
+        // Text
+        this.querySelector('#labelStr').textContent = this.settings.clockMessage;
+        this.querySelector('#popHead').textContent = this.settings.headingText;
+        this.querySelector('#popHead').style.color = this.settings.headingColor;
+        this.querySelector('#popMsg').textContent = this.settings.messageText;
+        this.querySelector('#popMsg').style.color = this.settings.textColor;
+        this.querySelector('#popCoup').textContent = this.settings.couponCode;
+        this.querySelector('#copyBtn').textContent = this.settings.buttonText;
     }
 
-    updateClockProgress() {
-        const percent = (this.currentTime / this.timerSeconds) * 100;
-        const ring = this.querySelector('#ring');
-        const display = this.querySelector('#timeDisplay');
-        
-        if (ring) {
-            const offset = 220 - (percent / 100 * 220);
-            ring.style.strokeDashoffset = offset;
-        }
-        if (display) display.textContent = Math.round(percent) + '%';
+    updateClock() {
+        const offset = (this.timeLeft / this.totalSeconds) * 100;
+        this.querySelector('#progress').style.strokeDashoffset = 100 - offset;
+        this.querySelector('#timeStr').textContent = this.formatTime(this.timeLeft);
     }
 
     showPopup() {
-        this.popupShown = true;
-        this.querySelector('#rewardOverlay').classList.add('active');
-        this.querySelector('#floatingClock').style.display = 'none';
-    }
-
-    closePopup() {
-        this.querySelector('#rewardOverlay').classList.remove('active');
+        this.querySelector('#overlay').classList.add('active');
+        this.querySelector('#clockUI').style.display = 'none';
     }
 }
-
-customElements.define('time-reward-popup', TimeRewardPopupElement);
+customElements.define('time-reward-popup', TimeRewardPopup);
