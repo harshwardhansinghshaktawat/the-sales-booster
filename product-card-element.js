@@ -15,6 +15,7 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     connectedCallback() {
+        console.log('Custom element connected');
         this.render();
     }
 
@@ -25,14 +26,16 @@ class ProductGalleryElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
             if (name === 'products-data') {
+                console.log('Products data attribute changed, length:', newValue.length);
                 try {
                     const data = JSON.parse(newValue);
+                    console.log('Parsed products data:', data.products.length, 'products');
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
-                    console.log('Products received:', this.products.length);
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
+                    console.error('Raw data:', newValue.substring(0, 200));
                 }
             } else if (name === 'settings') {
                 try {
@@ -105,14 +108,14 @@ class ProductGalleryElement extends HTMLElement {
                 .product-ribbon {
                     position: absolute;
                     top: 12px;
-                    right: -28px;
+                    left: 12px;
                     background: #ff6b6b;
                     color: white;
-                    padding: 6px 32px;
+                    padding: 6px 12px;
                     font-weight: 700;
                     font-size: 11px;
                     text-transform: uppercase;
-                    transform: rotate(45deg);
+                    border-radius: 4px;
                     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
                     z-index: 10;
                 }
@@ -130,6 +133,7 @@ class ProductGalleryElement extends HTMLElement {
                     margin-bottom: 8px;
                     line-height: 1.3;
                     color: var(--title-color);
+                    min-height: 48px;
                 }
                 
                 .product-description {
@@ -238,10 +242,15 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     renderProducts() {
+        console.log('Rendering products, count:', this.products.length);
+        
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
 
-        if (!grid || !loadMoreContainer) return;
+        if (!grid || !loadMoreContainer) {
+            console.error('Grid or load more container not found');
+            return;
+        }
 
         if (this.products.length === 0) {
             grid.innerHTML = '<div class="empty-state">No products found. Please select a category.</div>';
@@ -250,7 +259,10 @@ class ProductGalleryElement extends HTMLElement {
         }
 
         // Render product cards
-        grid.innerHTML = this.products.map(product => this.renderProductCard(product)).join('');
+        grid.innerHTML = this.products.map((product, index) => {
+            console.log(`Rendering product ${index}:`, product.name);
+            return this.renderProductCard(product);
+        }).join('');
 
         // Render load more button
         if (this.hasMore) {
@@ -263,6 +275,7 @@ class ProductGalleryElement extends HTMLElement {
             const loadMoreBtn = this.querySelector('#loadMoreBtn');
             if (loadMoreBtn) {
                 loadMoreBtn.addEventListener('click', () => {
+                    console.log('Load more button clicked');
                     this.dispatchEvent(new CustomEvent('load-more', {
                         bubbles: true,
                         composed: true
@@ -274,6 +287,7 @@ class ProductGalleryElement extends HTMLElement {
         }
 
         this.updateStyles();
+        console.log('Products rendered successfully');
     }
 
     renderProductCard(product) {
@@ -284,9 +298,10 @@ class ProductGalleryElement extends HTMLElement {
                 ${product.ribbon ? `<div class="product-ribbon">${product.ribbon}</div>` : ''}
                 
                 <div class="product-image-container">
-                    <img src="${product.imageUrl || 'https://via.placeholder.com/400'}" 
+                    <img src="${product.imageUrl}" 
                          alt="${product.name}" 
-                         class="product-image">
+                         class="product-image"
+                         onerror="this.src='https://via.placeholder.com/400'">
                 </div>
                 
                 <div class="product-content">
@@ -315,7 +330,6 @@ class ProductGalleryElement extends HTMLElement {
         container.style.setProperty('--border-color', this.settings.borderColor);
         container.style.setProperty('--title-color', this.settings.titleColor);
 
-        // Apply border and corner radius to all cards
         this.querySelectorAll('.product-card').forEach(card => {
             card.style.border = `${this.settings.borderWidth}px solid ${this.settings.borderColor}`;
             card.style.borderRadius = `${this.settings.cornerRadius}px`;
