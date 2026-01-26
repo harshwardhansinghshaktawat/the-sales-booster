@@ -4,7 +4,7 @@ class ProductCardElement extends HTMLElement {
         this.productData = null;
         this.selectedChoices = {};
         this.selectedVariant = null;
-        this.onAddToCart = null; // Callback function
+        this.currentQuantity = 1;
         this.settings = {
             cardBg: '#ffffff',
             textColor: '#333333',
@@ -23,7 +23,7 @@ class ProductCardElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['product-data', 'settings'];
+        return ['product-data', 'settings', 'cart-success', 'cart-error'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -45,13 +45,12 @@ class ProductCardElement extends HTMLElement {
                 } catch (e) {
                     // Silent
                 }
+            } else if (name === 'cart-success') {
+                this.showSuccessMessage();
+            } else if (name === 'cart-error') {
+                this.showErrorMessage(newValue);
             }
         }
-    }
-
-    // Method to set add to cart callback
-    setAddToCartCallback(callback) {
-        this.onAddToCart = callback;
     }
 
     render() {
@@ -294,6 +293,17 @@ class ProductCardElement extends HTMLElement {
                     animation: slideIn 0.3s ease;
                 }
                 
+                .error-message {
+                    background: #e74c3c;
+                    color: white;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    margin-top: 12px;
+                    text-align: center;
+                    font-weight: 600;
+                    animation: slideIn 0.3s ease;
+                }
+                
                 @keyframes slideIn {
                     from {
                         opacity: 0;
@@ -387,7 +397,7 @@ class ProductCardElement extends HTMLElement {
                         <span class="quantity-label">Quantity:</span>
                         <div class="quantity-controls">
                             <button class="quantity-btn" id="decreaseQty">-</button>
-                            <span class="quantity-value" id="qtyValue">1</span>
+                            <span class="quantity-value" id="qtyValue">${this.currentQuantity}</span>
                             <button class="quantity-btn" id="increaseQty">+</button>
                         </div>
                     </div>
@@ -396,7 +406,7 @@ class ProductCardElement extends HTMLElement {
                         ${isInStock ? 'Add to Cart' : 'Out of Stock'}
                     </button>
                     
-                    <div id="successMessage"></div>
+                    <div id="messageContainer"></div>
                 </div>
             </div>
         `;
@@ -441,37 +451,54 @@ class ProductCardElement extends HTMLElement {
 
         // Quantity controls
         const qtyValue = this.querySelector('#qtyValue');
-        let quantity = 1;
 
         this.querySelector('#decreaseQty')?.addEventListener('click', () => {
-            if (quantity > 1) {
-                quantity--;
-                qtyValue.textContent = quantity;
+            if (this.currentQuantity > 1) {
+                this.currentQuantity--;
+                qtyValue.textContent = this.currentQuantity;
             }
         });
 
         this.querySelector('#increaseQty')?.addEventListener('click', () => {
-            quantity++;
-            qtyValue.textContent = quantity;
+            this.currentQuantity++;
+            qtyValue.textContent = this.currentQuantity;
         });
 
-        // Add to cart - use callback instead of custom event
-        this.querySelector('#addToCartBtn')?.addEventListener('click', async () => {
+        // Add to cart - dispatch CustomEvent
+        this.querySelector('#addToCartBtn')?.addEventListener('click', () => {
             const variantId = this.selectedVariant?.id || null;
             
-            if (this.onAddToCart) {
-                await this.onAddToCart(this.productData.id, variantId, quantity);
-                
-                // Show success message
-                const successMsg = this.querySelector('#successMessage');
-                if (successMsg) {
-                    successMsg.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
-                    setTimeout(() => {
-                        successMsg.innerHTML = '';
-                    }, 3000);
-                }
-            }
+            // Dispatch custom event with cart data
+            this.dispatchEvent(new CustomEvent('add-to-cart', {
+                detail: {
+                    productId: this.productData.id,
+                    variantId: variantId,
+                    quantity: this.currentQuantity
+                },
+                bubbles: true,
+                composed: true
+            }));
         });
+    }
+
+    showSuccessMessage() {
+        const messageContainer = this.querySelector('#messageContainer');
+        if (messageContainer) {
+            messageContainer.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
+            setTimeout(() => {
+                messageContainer.innerHTML = '';
+            }, 3000);
+        }
+    }
+
+    showErrorMessage(error) {
+        const messageContainer = this.querySelector('#messageContainer');
+        if (messageContainer) {
+            messageContainer.innerHTML = `<div class="error-message">Error: ${error}</div>`;
+            setTimeout(() => {
+                messageContainer.innerHTML = '';
+            }, 5000);
+        }
     }
 
     updateStyles() {
