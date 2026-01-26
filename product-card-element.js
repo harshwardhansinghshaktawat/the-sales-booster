@@ -1,21 +1,18 @@
-class ProductCardElement extends HTMLElement {
+class ProductGalleryElement extends HTMLElement {
     constructor() {
         super();
-        this.productData = null;
-        this.selectedChoices = {};
-        this.selectedVariant = null;
-        this.currentQuantity = 1;
+        this.products = [];
+        this.hasMore = false;
         this.settings = {
-            cardBg: '#ffffff',
-            textColor: '#333333',
-            priceColor: '#e94560',
-            buttonColor: '#00d4ff',
-            buttonTextColor: '#ffffff',
+            primaryBg: '#ffffff',
+            secondaryBg: '#00d4ff',
             borderColor: '#e0e0e0',
-            accentColor: '#00d4ff',
-            ribbonColor: '#ff6b6b',
-            fontFamily: 'Arial, sans-serif'
+            titleColor: '#333333',
+            borderWidth: 1,
+            cornerRadius: 16,
+            buttonText: 'Load More Products'
         };
+        this.productStates = new Map(); // Track variant selections per product
     }
 
     connectedCallback() {
@@ -23,19 +20,20 @@ class ProductCardElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['product-data', 'settings', 'cart-success', 'cart-error'];
+        return ['products-data', 'settings', 'cart-success', 'cart-error'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
-            if (name === 'product-data') {
+            if (name === 'products-data') {
                 try {
-                    this.productData = JSON.parse(newValue);
-                    console.log('Product data loaded:', this.productData);
-                    this.initializeSelections();
-                    this.updateCard();
+                    const data = JSON.parse(newValue);
+                    this.products = data.products || [];
+                    this.hasMore = data.hasMore || false;
+                    console.log('Products received:', this.products.length);
+                    this.renderProducts();
                 } catch (e) {
-                    console.error('Error parsing product data:', e);
+                    console.error('Error parsing products data:', e);
                 }
             } else if (name === 'settings') {
                 try {
@@ -43,12 +41,22 @@ class ProductCardElement extends HTMLElement {
                     Object.assign(this.settings, newSettings);
                     this.updateStyles();
                 } catch (e) {
-                    // Silent
+                    console.error('Error parsing settings:', e);
                 }
             } else if (name === 'cart-success') {
-                this.showSuccessMessage();
+                try {
+                    const data = JSON.parse(newValue);
+                    this.showProductSuccess(data.productId);
+                } catch (e) {
+                    // Silent
+                }
             } else if (name === 'cart-error') {
-                this.showErrorMessage(newValue);
+                try {
+                    const data = JSON.parse(newValue);
+                    this.showProductError(data.productId, data.error);
+                } catch (e) {
+                    // Silent
+                }
             }
         }
     }
@@ -61,17 +69,28 @@ class ProductCardElement extends HTMLElement {
                     width: 100%;
                 }
                 
+                .gallery-container {
+                    padding: 20px;
+                }
+                
+                .products-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 24px;
+                    margin-bottom: 32px;
+                }
+                
                 .product-card {
-                    border-radius: 16px;
+                    background: var(--primary-bg);
                     overflow: hidden;
-                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
                     transition: transform 0.3s ease, box-shadow 0.3s ease;
                     position: relative;
                 }
                 
                 .product-card:hover {
                     transform: translateY(-4px);
-                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
                 }
                 
                 .product-image-container {
@@ -98,35 +117,36 @@ class ProductCardElement extends HTMLElement {
                 
                 .product-ribbon {
                     position: absolute;
-                    top: 16px;
-                    right: -32px;
-                    background: var(--ribbon-color);
+                    top: 12px;
+                    right: -28px;
+                    background: #ff6b6b;
                     color: white;
-                    padding: 8px 40px;
+                    padding: 6px 32px;
                     font-weight: 700;
-                    font-size: 12px;
+                    font-size: 11px;
                     text-transform: uppercase;
                     transform: rotate(45deg);
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
                     z-index: 10;
                 }
                 
                 .product-content {
-                    padding: 24px;
+                    padding: 20px;
                 }
                 
                 .product-name {
-                    font-size: 22px;
+                    font-size: 18px;
                     font-weight: 700;
                     margin-bottom: 8px;
                     line-height: 1.3;
+                    color: var(--title-color);
                 }
                 
                 .product-description {
-                    font-size: 14px;
-                    line-height: 1.6;
+                    font-size: 13px;
+                    line-height: 1.5;
                     opacity: 0.7;
-                    margin-bottom: 16px;
+                    margin-bottom: 12px;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
@@ -134,67 +154,64 @@ class ProductCardElement extends HTMLElement {
                 }
                 
                 .product-price {
-                    font-size: 28px;
+                    font-size: 22px;
                     font-weight: 800;
-                    margin-bottom: 20px;
-                }
-                
-                .variant-selector {
+                    color: var(--secondary-bg);
                     margin-bottom: 16px;
                 }
                 
+                .variant-selector {
+                    margin-bottom: 12px;
+                }
+                
                 .variant-label {
-                    font-size: 14px;
+                    font-size: 12px;
                     font-weight: 600;
-                    margin-bottom: 8px;
+                    margin-bottom: 6px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
+                    opacity: 0.8;
                 }
                 
                 .variant-options {
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 8px;
+                    gap: 6px;
                 }
                 
                 .variant-option {
-                    padding: 10px 16px;
+                    padding: 8px 12px;
                     border: 2px solid var(--border-color);
-                    border-radius: 8px;
+                    border-radius: 6px;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    font-size: 14px;
+                    font-size: 13px;
                     font-weight: 500;
                 }
                 
                 .variant-option:hover {
-                    border-color: var(--accent-color);
-                    background: var(--accent-color)10;
+                    border-color: var(--secondary-bg);
+                    background: var(--secondary-bg)10;
                 }
                 
                 .variant-option.selected {
-                    border-color: var(--accent-color);
-                    background: var(--accent-color);
+                    border-color: var(--secondary-bg);
+                    background: var(--secondary-bg);
                     color: white;
-                }
-                
-                .variant-option.disabled {
-                    opacity: 0.3;
-                    cursor: not-allowed;
                 }
                 
                 .stock-status {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    margin-bottom: 16px;
-                    font-size: 14px;
+                    gap: 6px;
+                    margin-bottom: 12px;
+                    font-size: 12px;
                     font-weight: 600;
                 }
                 
                 .stock-indicator {
-                    width: 10px;
-                    height: 10px;
+                    width: 8px;
+                    height: 8px;
                     border-radius: 50%;
                 }
                 
@@ -206,17 +223,64 @@ class ProductCardElement extends HTMLElement {
                     background: #e74c3c;
                 }
                 
-                .add-to-cart-button {
-                    width: 100%;
-                    padding: 16px 24px;
+                .quantity-selector {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 12px;
+                }
+                
+                .quantity-label {
+                    font-size: 13px;
+                    font-weight: 600;
+                }
+                
+                .quantity-controls {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border: 2px solid var(--border-color);
+                    border-radius: 6px;
+                    padding: 3px 6px;
+                }
+                
+                .quantity-btn {
+                    width: 28px;
+                    height: 28px;
                     border: none;
-                    border-radius: 12px;
+                    background: var(--secondary-bg);
+                    color: white;
+                    border-radius: 4px;
+                    cursor: pointer;
                     font-size: 16px;
                     font-weight: 700;
+                    transition: opacity 0.3s ease;
+                }
+                
+                .quantity-btn:hover {
+                    opacity: 0.8;
+                }
+                
+                .quantity-value {
+                    font-size: 14px;
+                    font-weight: 700;
+                    min-width: 24px;
+                    text-align: center;
+                }
+                
+                .add-to-cart-button {
+                    width: 100%;
+                    padding: 14px 20px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 700;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
                     cursor: pointer;
                     transition: all 0.3s ease;
+                    background: var(--secondary-bg);
+                    color: white;
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                 }
                 
@@ -230,77 +294,60 @@ class ProductCardElement extends HTMLElement {
                     cursor: not-allowed;
                 }
                 
-                .quantity-selector {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    margin-bottom: 16px;
+                .load-more-container {
+                    text-align: center;
+                    padding: 20px;
                 }
                 
-                .quantity-label {
-                    font-size: 14px;
-                    font-weight: 600;
-                }
-                
-                .quantity-controls {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    border: 2px solid var(--border-color);
+                .load-more-button {
+                    padding: 16px 48px;
+                    border: 2px solid var(--secondary-bg);
+                    background: white;
+                    color: var(--secondary-bg);
                     border-radius: 8px;
-                    padding: 4px 8px;
-                }
-                
-                .quantity-btn {
-                    width: 32px;
-                    height: 32px;
-                    border: none;
-                    background: var(--accent-color);
-                    color: white;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 18px;
-                    font-weight: 700;
-                    transition: all 0.3s ease;
-                }
-                
-                .quantity-btn:hover {
-                    opacity: 0.8;
-                }
-                
-                .quantity-value {
                     font-size: 16px;
                     font-weight: 700;
-                    min-width: 30px;
-                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
                 }
                 
-                .loading {
+                .load-more-button:hover {
+                    background: var(--secondary-bg);
+                    color: white;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+                
+                .empty-state {
                     text-align: center;
                     padding: 60px 20px;
+                    color: #999;
                     font-size: 16px;
-                    opacity: 0.6;
                 }
                 
                 .success-message {
                     background: #2ecc71;
                     color: white;
-                    padding: 12px 16px;
-                    border-radius: 8px;
-                    margin-top: 12px;
+                    padding: 10px 14px;
+                    border-radius: 6px;
+                    margin-top: 10px;
                     text-align: center;
                     font-weight: 600;
+                    font-size: 13px;
                     animation: slideIn 0.3s ease;
                 }
                 
                 .error-message {
                     background: #e74c3c;
                     color: white;
-                    padding: 12px 16px;
-                    border-radius: 8px;
-                    margin-top: 12px;
+                    padding: 10px 14px;
+                    border-radius: 6px;
+                    margin-top: 10px;
                     text-align: center;
                     font-weight: 600;
+                    font-size: 13px;
                     animation: slideIn 0.3s ease;
                 }
                 
@@ -315,78 +362,92 @@ class ProductCardElement extends HTMLElement {
                     }
                 }
                 
-                @media (max-width: 480px) {
+                @media (max-width: 768px) {
+                    .products-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                        gap: 16px;
+                    }
+                    
                     .product-content {
                         padding: 16px;
-                    }
-                    
-                    .product-name {
-                        font-size: 18px;
-                    }
-                    
-                    .product-price {
-                        font-size: 24px;
                     }
                 }
             </style>
             
-            <div class="product-card-container">
-                <div class="loading">Loading product...</div>
+            <div class="gallery-container">
+                <div class="products-grid"></div>
+                <div class="load-more-container"></div>
             </div>
         `;
     }
 
-    initializeSelections() {
-        if (!this.productData || !this.productData.productOptions) return;
+    renderProducts() {
+        const grid = this.querySelector('.products-grid');
+        const loadMoreContainer = this.querySelector('.load-more-container');
 
-        this.productData.productOptions.forEach(option => {
-            if (option.choices && option.choices.length > 0) {
-                this.selectedChoices[option.name] = option.choices[0].value;
+        if (!grid || !loadMoreContainer) return;
+
+        if (this.products.length === 0) {
+            grid.innerHTML = '<div class="empty-state">No products found. Please select a category.</div>';
+            loadMoreContainer.innerHTML = '';
+            return;
+        }
+
+        // Render product cards
+        grid.innerHTML = this.products.map((product, index) => this.renderProductCard(product, index)).join('');
+
+        // Render load more button
+        if (this.hasMore) {
+            loadMoreContainer.innerHTML = `
+                <button class="load-more-button" id="loadMoreBtn">
+                    ${this.settings.buttonText}
+                </button>
+            `;
+        } else {
+            loadMoreContainer.innerHTML = '';
+        }
+
+        this.setupEventListeners();
+        this.updateStyles();
+    }
+
+    renderProductCard(product, index) {
+        // Initialize product state if not exists
+        if (!this.productStates.has(product.id)) {
+            const initialChoices = {};
+            if (product.productOptions) {
+                product.productOptions.forEach(option => {
+                    if (option.choices && option.choices.length > 0) {
+                        initialChoices[option.name] = option.choices[0].value;
+                    }
+                });
             }
-        });
-
-        this.updateSelectedVariant();
-    }
-
-    updateSelectedVariant() {
-        if (!this.productData || !this.productData.variants) return;
-
-        this.selectedVariant = this.productData.variants.find(variant => {
-            return Object.keys(this.selectedChoices).every(optionName => {
-                return variant.choices[optionName] === this.selectedChoices[optionName];
+            this.productStates.set(product.id, {
+                selectedChoices: initialChoices,
+                quantity: 1,
+                selectedVariant: this.findVariant(product, initialChoices)
             });
-        });
+        }
 
-        console.log('Selected variant:', this.selectedVariant);
-    }
+        const state = this.productStates.get(product.id);
+        const currentPrice = state.selectedVariant?.price || product.basePrice;
+        const isInStock = state.selectedVariant?.inStock !== false && product.inStock !== false;
+        const mainImage = product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/400';
 
-    updateCard() {
-        if (!this.productData) return;
-
-        const container = this.querySelector('.product-card-container');
-        
-        const currentPrice = this.selectedVariant?.price || this.productData.basePrice;
-        const isInStock = this.selectedVariant?.inStock !== false && this.productData.inStock !== false;
-        const mainImage = this.productData.images && this.productData.images.length > 0 
-            ? this.productData.images[0] 
-            : 'https://via.placeholder.com/400';
-
-        container.innerHTML = `
-            <div class="product-card">
-                ${this.productData.ribbon ? `<div class="product-ribbon">${this.productData.ribbon}</div>` : ''}
+        return `
+            <div class="product-card" data-product-id="${product.id}">
+                ${product.ribbon ? `<div class="product-ribbon">${product.ribbon}</div>` : ''}
                 
                 <div class="product-image-container">
-                    <img src="${mainImage}" alt="${this.productData.name}" class="product-image">
+                    <img src="${mainImage}" alt="${product.name}" class="product-image">
                 </div>
                 
                 <div class="product-content">
-                    <h3 class="product-name">${this.productData.name}</h3>
-                    
-                    ${this.productData.description ? `<p class="product-description">${this.productData.description}</p>` : ''}
-                    
+                    <h3 class="product-name">${product.name}</h3>
+                    ${product.description ? `<p class="product-description">${product.description}</p>` : ''}
                     <div class="product-price">${currentPrice}</div>
                     
-                    ${this.renderVariantSelectors()}
+                    ${this.renderVariants(product, state)}
                     
                     <div class="stock-status">
                         <div class="stock-indicator ${isInStock ? 'in-stock' : 'out-of-stock'}"></div>
@@ -394,38 +455,36 @@ class ProductCardElement extends HTMLElement {
                     </div>
                     
                     <div class="quantity-selector">
-                        <span class="quantity-label">Quantity:</span>
+                        <span class="quantity-label">Qty:</span>
                         <div class="quantity-controls">
-                            <button class="quantity-btn" id="decreaseQty">-</button>
-                            <span class="quantity-value" id="qtyValue">${this.currentQuantity}</span>
-                            <button class="quantity-btn" id="increaseQty">+</button>
+                            <button class="quantity-btn qty-decrease" data-product-id="${product.id}">-</button>
+                            <span class="quantity-value">${state.quantity}</span>
+                            <button class="quantity-btn qty-increase" data-product-id="${product.id}">+</button>
                         </div>
                     </div>
                     
-                    <button class="add-to-cart-button" id="addToCartBtn" ${!isInStock ? 'disabled' : ''}>
+                    <button class="add-to-cart-button" data-product-id="${product.id}" ${!isInStock ? 'disabled' : ''}>
                         ${isInStock ? 'Add to Cart' : 'Out of Stock'}
                     </button>
                     
-                    <div id="messageContainer"></div>
+                    <div class="message-container" data-product-id="${product.id}"></div>
                 </div>
             </div>
         `;
-
-        this.setupEventListeners();
-        this.updateStyles();
     }
 
-    renderVariantSelectors() {
-        if (!this.productData.productOptions || this.productData.productOptions.length === 0) {
+    renderVariants(product, state) {
+        if (!product.productOptions || product.productOptions.length === 0) {
             return '';
         }
 
-        return this.productData.productOptions.map(option => `
+        return product.productOptions.map(option => `
             <div class="variant-selector">
                 <div class="variant-label">${option.name}:</div>
                 <div class="variant-options">
                     ${option.choices.map(choice => `
-                        <div class="variant-option ${this.selectedChoices[option.name] === choice.value ? 'selected' : ''}" 
+                        <div class="variant-option ${state.selectedChoices[option.name] === choice.value ? 'selected' : ''}" 
+                             data-product-id="${product.id}"
                              data-option="${option.name}" 
                              data-value="${choice.value}">
                             ${choice.value}
@@ -436,99 +495,125 @@ class ProductCardElement extends HTMLElement {
         `).join('');
     }
 
+    findVariant(product, choices) {
+        if (!product.variants) return null;
+        
+        return product.variants.find(variant => {
+            return Object.keys(choices).every(optionName => {
+                return variant.choices[optionName] === choices[optionName];
+            });
+        });
+    }
+
     setupEventListeners() {
         // Variant selection
-        this.querySelectorAll('.variant-option').forEach(option => {
-            option.addEventListener('click', (e) => {
+        this.querySelectorAll('.variant-option').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const productId = e.target.dataset.productId;
                 const optionName = e.target.dataset.option;
                 const value = e.target.dataset.value;
                 
-                this.selectedChoices[optionName] = value;
-                this.updateSelectedVariant();
-                this.updateCard();
+                const product = this.products.find(p => p.id === productId);
+                const state = this.productStates.get(productId);
+                
+                if (product && state) {
+                    state.selectedChoices[optionName] = value;
+                    state.selectedVariant = this.findVariant(product, state.selectedChoices);
+                    this.renderProducts();
+                }
             });
         });
 
         // Quantity controls
-        const qtyValue = this.querySelector('#qtyValue');
-
-        this.querySelector('#decreaseQty')?.addEventListener('click', () => {
-            if (this.currentQuantity > 1) {
-                this.currentQuantity--;
-                qtyValue.textContent = this.currentQuantity;
-            }
+        this.querySelectorAll('.qty-decrease').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const productId = e.target.dataset.productId;
+                const state = this.productStates.get(productId);
+                if (state && state.quantity > 1) {
+                    state.quantity--;
+                    this.renderProducts();
+                }
+            });
         });
 
-        this.querySelector('#increaseQty')?.addEventListener('click', () => {
-            this.currentQuantity++;
-            qtyValue.textContent = this.currentQuantity;
+        this.querySelectorAll('.qty-increase').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const productId = e.target.dataset.productId;
+                const state = this.productStates.get(productId);
+                if (state) {
+                    state.quantity++;
+                    this.renderProducts();
+                }
+            });
         });
 
-        // Add to cart - dispatch CustomEvent
-        this.querySelector('#addToCartBtn')?.addEventListener('click', () => {
-            const variantId = this.selectedVariant?.id || null;
-            
-            // Dispatch custom event with cart data
-            this.dispatchEvent(new CustomEvent('add-to-cart', {
-                detail: {
-                    productId: this.productData.id,
-                    variantId: variantId,
-                    quantity: this.currentQuantity
-                },
-                bubbles: true,
-                composed: true
-            }));
+        // Add to cart
+        this.querySelectorAll('.add-to-cart-button').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const productId = e.target.dataset.productId;
+                const state = this.productStates.get(productId);
+                
+                if (state) {
+                    this.dispatchEvent(new CustomEvent('add-to-cart', {
+                        detail: {
+                            productId: productId,
+                            variantId: state.selectedVariant?.id || null,
+                            quantity: state.quantity
+                        },
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
+            });
         });
+
+        // Load more
+        const loadMoreBtn = this.querySelector('#loadMoreBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                this.dispatchEvent(new CustomEvent('load-more', {
+                    bubbles: true,
+                    composed: true
+                }));
+            });
+        }
     }
 
-    showSuccessMessage() {
-        const messageContainer = this.querySelector('#messageContainer');
-        if (messageContainer) {
-            messageContainer.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
+    showProductSuccess(productId) {
+        const container = this.querySelector(`.message-container[data-product-id="${productId}"]`);
+        if (container) {
+            container.innerHTML = '<div class="success-message">✓ Added to cart!</div>';
             setTimeout(() => {
-                messageContainer.innerHTML = '';
+                container.innerHTML = '';
             }, 3000);
         }
     }
 
-    showErrorMessage(error) {
-        const messageContainer = this.querySelector('#messageContainer');
-        if (messageContainer) {
-            messageContainer.innerHTML = `<div class="error-message">Error: ${error}</div>`;
+    showProductError(productId, error) {
+        const container = this.querySelector(`.message-container[data-product-id="${productId}"]`);
+        if (container) {
+            container.innerHTML = `<div class="error-message">Error: ${error}</div>`;
             setTimeout(() => {
-                messageContainer.innerHTML = '';
+                container.innerHTML = '';
             }, 5000);
         }
     }
 
     updateStyles() {
-        const card = this.querySelector('.product-card');
-        if (!card) return;
+        const container = this.querySelector('.gallery-container');
+        if (!container) return;
 
-        card.style.setProperty('--card-bg', this.settings.cardBg);
-        card.style.setProperty('--text-color', this.settings.textColor);
-        card.style.setProperty('--price-color', this.settings.priceColor);
-        card.style.setProperty('--button-color', this.settings.buttonColor);
-        card.style.setProperty('--button-text-color', this.settings.buttonTextColor);
-        card.style.setProperty('--border-color', this.settings.borderColor);
-        card.style.setProperty('--accent-color', this.settings.accentColor);
-        card.style.setProperty('--ribbon-color', this.settings.ribbonColor);
+        container.style.setProperty('--primary-bg', this.settings.primaryBg);
+        container.style.setProperty('--secondary-bg', this.settings.secondaryBg);
+        container.style.setProperty('--border-color', this.settings.borderColor);
+        container.style.setProperty('--title-color', this.settings.titleColor);
 
-        card.style.backgroundColor = this.settings.cardBg;
-        card.style.color = this.settings.textColor;
-        card.style.fontFamily = this.settings.fontFamily;
-
-        const price = this.querySelector('.product-price');
-        if (price) {
-            price.style.color = this.settings.priceColor;
-        }
-
-        const button = this.querySelector('.add-to-cart-button');
-        if (button) {
-            button.style.backgroundColor = this.settings.buttonColor;
-            button.style.color = this.settings.buttonTextColor;
-        }
+        // Apply border and corner radius to all cards
+        this.querySelectorAll('.product-card').forEach(card => {
+            card.style.border = `${this.settings.borderWidth}px solid ${this.settings.borderColor}`;
+            card.style.borderRadius = `${this.settings.cornerRadius}px`;
+        });
     }
 }
 
-customElements.define('product-card', ProductCardElement);
+customElements.define('product-gallery', ProductGalleryElement);
