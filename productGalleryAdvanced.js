@@ -16,7 +16,6 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         };
         this.isRendered = false;
         this.pendingProductsData = null;
-        this.currentProduct = null;
         this.selectedVariants = {};
     }
 
@@ -202,8 +201,12 @@ class ProductGalleryAdvancedElement extends HTMLElement {
                     display: inline-block;
                 }
                 
-                .variant-selector {
+                .variant-container {
                     margin: 16px 0;
+                }
+                
+                .variant-selector {
+                    margin-bottom: 12px;
                 }
                 
                 .variant-label {
@@ -402,28 +405,17 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         const cardsHTML = this.products.map(product => this.renderProductCard(product)).join('');
         grid.innerHTML = cardsHTML;
 
-        // Attach event listeners to variant selectors and add to cart buttons
+        // Attach event listeners
         this.products.forEach(product => {
-            const card = this.querySelector(`[data-product-id="${product.id}"]`);
-            if (card) {
-                const variantSelects = card.querySelectorAll('.variant-select');
-                variantSelects.forEach(select => {
-                    select.addEventListener('change', (e) => {
-                        const optionKey = e.target.getAttribute('data-option-key');
-                        if (!this.selectedVariants[product.id]) {
-                            this.selectedVariants[product.id] = {};
-                        }
-                        this.selectedVariants[product.id][optionKey] = e.target.value;
-                        console.log('Variant selected:', product.id, this.selectedVariants[product.id]);
-                    });
-                });
+            if (product.hasVariants && product.variantOptions) {
+                this.renderVariantSelectors(product);
+            }
 
-                const addToCartBtn = card.querySelector('.add-to-cart-button');
-                if (addToCartBtn) {
-                    addToCartBtn.addEventListener('click', () => {
-                        this.handleAddToCart(product);
-                    });
-                }
+            const addToCartBtn = this.querySelector(`.add-to-cart-button[data-product-id="${product.id}"]`);
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', () => {
+                    this.handleAddToCart(product);
+                });
             }
         });
 
@@ -475,7 +467,7 @@ class ProductGalleryAdvancedElement extends HTMLElement {
                         ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : ''}
                     </div>
                     
-                    ${hasVariants ? '<div class="variant-container" data-product-id="' + product.id + '"></div>' : ''}
+                    <div class="variant-container" data-product-id="${product.id}"></div>
                     <div class="variant-error" data-product-id="${product.id}">Please select all options</div>
                     
                     <div class="button-group">
@@ -491,6 +483,55 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         `;
     }
 
+    renderVariantSelectors(product) {
+        const container = this.querySelector(`.variant-container[data-product-id="${product.id}"]`);
+        if (!container || !product.variantOptions) return;
+
+        let variantsHTML = '';
+        
+        Object.keys(product.variantOptions).forEach(optionKey => {
+            const optionValues = product.variantOptions[optionKey];
+            variantsHTML += `
+                <div class="variant-selector">
+                    <label class="variant-label">${optionKey}</label>
+                    <select class="variant-select" data-product-id="${product.id}" data-option-key="${optionKey}">
+                        <option value="">Select ${optionKey}</option>
+                        ${optionValues.map(value => `<option value="${value}">${value}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+        });
+
+        container.innerHTML = variantsHTML;
+
+        // Attach event listeners to variant selects
+        const selects = container.querySelectorAll('.variant-select');
+        selects.forEach(select => {
+            select.addEventListener('change', (e) => {
+                this.handleVariantChange(product.id, e.target.dataset.optionKey, e.target.value);
+            });
+        });
+    }
+
+    handleVariantChange(productId, optionKey, value) {
+        if (!this.selectedVariants[productId]) {
+            this.selectedVariants[productId] = {};
+        }
+        this.selectedVariants[productId][optionKey] = value;
+        
+        console.log('Variant changed:', productId, optionKey, value);
+        
+        // Dispatch event to widget with current selections
+        this.dispatchEvent(new CustomEvent('variant-selected', {
+            bubbles: true,
+            composed: true,
+            detail: {
+                productId: productId,
+                selections: this.selectedVariants[productId]
+            }
+        }));
+    }
+
     handleAddToCart(product) {
         console.log('Add to cart clicked for:', product.id);
         
@@ -501,7 +542,9 @@ class ProductGalleryAdvancedElement extends HTMLElement {
             const selectedOptions = Object.keys(selectedForProduct);
             
             // Check if all required options are selected
-            const allSelected = requiredOptions.every(option => selectedOptions.includes(option) && selectedForProduct[option]);
+            const allSelected = requiredOptions.every(option => 
+                selectedOptions.includes(option) && selectedForProduct[option]
+            );
             
             if (!allSelected) {
                 // Show error
@@ -512,76 +555,17 @@ class ProductGalleryAdvancedElement extends HTMLElement {
                 }
                 return;
             }
-            
-            // Find the matching variant ID
-            const variantId = this.findVariantId(product, selectedForProduct);
-            
-            if (!variantId) {
-                console.error('Could not find matching variant');
-                return;
-            }
-            
-            this.dispatchEvent(new CustomEvent('add-to-cart', {
-                bubbles: true,
-                composed: true,
-                detail: {
-                    productId: product.id,
-                    variantId: variantId,
-                    quantity: 1
-                }
-            }));
-        } else {
-            // No variants, add product directly
-            this.dispatchEvent(new CustomEvent('add-to-cart', {
-                bubbles: true,
-                composed: true,
-                detail: {
-                    productId: product.id,
-                    variantId: null,
-                    quantity: 1
-                }
-            }));
         }
-    }
-
-    findVariantId(product, selectedOptions) {
-        // This will be handled by the widget code which has access to the full variant data
-        return null;
-    }
-
-    setVariants(productId, variants, variantOptions) {
-        const container = this.querySelector(`.variant-container[data-product-id="${productId}"]`);
-        if (!container || !variants || variants.length === 0) return;
-
-        let variantsHTML = '';
         
-        Object.keys(variantOptions).forEach(optionKey => {
-            const optionValues = variantOptions[optionKey];
-            variantsHTML += `
-                <div class="variant-selector">
-                    <label class="variant-label">${optionKey}</label>
-                    <select class="variant-select" data-option-key="${optionKey}">
-                        <option value="">Select ${optionKey}</option>
-                        ${optionValues.map(value => `<option value="${value}">${value}</option>`).join('')}
-                    </select>
-                </div>
-            `;
-        });
-
-        container.innerHTML = variantsHTML;
-
-        // Re-attach event listeners
-        const selects = container.querySelectorAll('.variant-select');
-        selects.forEach(select => {
-            select.addEventListener('change', (e) => {
-                const optionKey = e.target.getAttribute('data-option-key');
-                if (!this.selectedVariants[productId]) {
-                    this.selectedVariants[productId] = {};
-                }
-                this.selectedVariants[productId][optionKey] = e.target.value;
-                console.log('Variant selected:', productId, this.selectedVariants[productId]);
-            });
-        });
+        // Dispatch add to cart event
+        this.dispatchEvent(new CustomEvent('add-to-cart', {
+            bubbles: true,
+            composed: true,
+            detail: {
+                productId: product.id,
+                quantity: 1
+            }
+        }));
     }
 
     updateStyles() {
