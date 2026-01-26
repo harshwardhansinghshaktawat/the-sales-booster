@@ -27,17 +27,15 @@ class CartAbandonmentPopupElement extends HTMLElement {
         };
         this.countdownInterval = null;
         this.timeLeft = 0;
-        this.isEditorMode = false;
     }
 
     connectedCallback() {
         this.render();
         this.setupExitIntent();
-        this.checkEditorMode();
     }
 
     static get observedAttributes() {
-        return ['cart-items', 'options', 'editor-mode'];
+        return ['cart-items', 'options'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -64,29 +62,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
                 } catch (e) {
                     // Silent
                 }
-            } else if (name === 'editor-mode') {
-                this.isEditorMode = newValue === 'true';
-                console.log('Editor mode:', this.isEditorMode);
-                
-                // Show popup in editor mode when enabled
-                if (this.isEditorMode && this.settings.enabled) {
-                    this.showPopupForEditor();
-                }
             }
-        }
-    }
-
-    checkEditorMode() {
-        // Check if we're in editor mode
-        try {
-            if (window.location.href.includes('editorx.com') || 
-                window.location.href.includes('wix.com/editor') ||
-                window.parent !== window) {
-                this.isEditorMode = true;
-            }
-        } catch (e) {
-            // Cross-origin error means we're in iframe (editor)
-            this.isEditorMode = true;
         }
     }
 
@@ -211,16 +187,22 @@ class CartAbandonmentPopupElement extends HTMLElement {
                     font-size: 18px;
                     line-height: 1.6;
                     opacity: 0.9;
+                    margin-bottom: 0;
                 }
                 
                 .popup-body {
                     padding: 0 40px 40px;
                 }
                 
+                .dynamic-content {
+                    margin: 0;
+                    padding: 0;
+                }
+                
                 .feature-box {
                     padding: 24px;
                     border-radius: 16px;
-                    margin-bottom: 24px;
+                    margin: 0 0 24px 0;
                     border: 2px solid var(--border-color);
                     text-align: center;
                     background: rgba(255, 255, 255, 0.03);
@@ -247,7 +229,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
                     border: 3px dashed var(--primary-accent);
                     padding: 24px;
                     border-radius: 16px;
-                    margin: 24px 0;
+                    margin: 0 0 24px 0;
                 }
                 
                 .coupon-code {
@@ -272,7 +254,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
                 
                 .benefits-list {
                     text-align: left;
-                    margin: 24px 0;
+                    margin: 0 0 24px 0;
                 }
                 
                 .benefit-item {
@@ -403,17 +385,12 @@ class CartAbandonmentPopupElement extends HTMLElement {
         const secondaryLink = this.querySelector('.secondary-link');
 
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                // In editor mode, don't actually close - just for preview
-                if (!this.isEditorMode) {
-                    this.closePopup();
-                }
-            });
+            closeBtn.addEventListener('click', () => this.closePopup());
         }
 
         if (overlay) {
             overlay.addEventListener('click', (e) => {
-                if (e.target === overlay && !this.isEditorMode) {
+                if (e.target === overlay) {
                     this.closePopup();
                 }
             });
@@ -421,24 +398,18 @@ class CartAbandonmentPopupElement extends HTMLElement {
 
         if (actionBtn) {
             actionBtn.addEventListener('click', () => {
-                if (!this.isEditorMode) {
-                    window.location.href = '/cart-page';
-                }
+                window.location.href = '/cart-page';
             });
         }
 
         if (secondaryLink) {
-            secondaryLink.addEventListener('click', () => {
-                if (!this.isEditorMode) {
-                    this.closePopup();
-                }
-            });
+            secondaryLink.addEventListener('click', () => this.closePopup());
         }
     }
 
     setupExitIntent() {
         const handleBeforeUnload = (e) => {
-            if (this.isEditorMode || !this.settings.enabled || !this.hasCartItems || this.popupShown) {
+            if (!this.settings.enabled || !this.hasCartItems || this.popupShown) {
                 return;
             }
 
@@ -451,7 +422,7 @@ class CartAbandonmentPopupElement extends HTMLElement {
         };
 
         const handleMouseLeave = (e) => {
-            if (this.isEditorMode || !this.settings.enabled || !this.hasCartItems || this.popupShown) {
+            if (!this.settings.enabled || !this.hasCartItems || this.popupShown) {
                 return;
             }
 
@@ -573,18 +544,6 @@ class CartAbandonmentPopupElement extends HTMLElement {
                 `).join('')}
             </div>
         `;
-    }
-
-    showPopupForEditor() {
-        // Show popup immediately in editor mode for design preview
-        const overlay = this.querySelector('.popup-overlay');
-        if (overlay) {
-            overlay.classList.add('active');
-            
-            if (this.settings.popupStyle === 'urgency') {
-                this.startCountdown();
-            }
-        }
     }
 
     showPopup() {
