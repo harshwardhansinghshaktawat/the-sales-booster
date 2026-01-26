@@ -20,12 +20,12 @@ class ProductGalleryAdvancedElement extends HTMLElement {
     }
 
     connectedCallback() {
-        console.log('Advanced custom element connected');
+        console.log('[CustomElement] Connected');
         this.render();
         this.isRendered = true;
         
         if (this.pendingProductsData) {
-            console.log('Rendering pending products data');
+            console.log('[CustomElement] Rendering pending products data');
             this.products = this.pendingProductsData.products || [];
             this.hasMore = this.pendingProductsData.hasMore || false;
             this.pendingProductsData = null;
@@ -40,22 +40,24 @@ class ProductGalleryAdvancedElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
             if (name === 'products-data') {
-                console.log('Products data attribute changed');
+                console.log('[CustomElement] Products data attribute changed');
                 try {
                     const data = JSON.parse(newValue);
-                    console.log('Parsed products data:', data.products.length, 'products');
+                    console.log('[CustomElement] Parsed products:', data.products.length);
                     
                     if (!this.isRendered) {
-                        console.log('Element not rendered yet, storing data');
+                        console.log('[CustomElement] Not rendered yet, storing data');
                         this.pendingProductsData = data;
                         return;
                     }
                     
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
+                    
+                    console.log('[CustomElement] About to render', this.products.length, 'products');
                     this.renderProducts();
                 } catch (e) {
-                    console.error('Error parsing products data:', e);
+                    console.error('[CustomElement] Error parsing products data:', e);
                 }
             } else if (name === 'settings') {
                 try {
@@ -65,7 +67,7 @@ class ProductGalleryAdvancedElement extends HTMLElement {
                         this.updateStyles();
                     }
                 } catch (e) {
-                    console.error('Error parsing settings:', e);
+                    console.error('[CustomElement] Error parsing settings:', e);
                 }
             }
         }
@@ -382,17 +384,17 @@ class ProductGalleryAdvancedElement extends HTMLElement {
             </div>
         `;
         
-        console.log('DOM rendered');
+        console.log('[CustomElement] DOM rendered');
     }
 
     renderProducts() {
-        console.log('Rendering products, count:', this.products.length);
+        console.log('[CustomElement] renderProducts called, count:', this.products.length);
         
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
 
         if (!grid || !loadMoreContainer) {
-            console.error('Grid or container not found');
+            console.error('[CustomElement] Grid or container not found');
             return;
         }
 
@@ -405,15 +407,24 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         const cardsHTML = this.products.map(product => this.renderProductCard(product)).join('');
         grid.innerHTML = cardsHTML;
 
-        // Attach event listeners
+        // Render variants and attach event listeners
         this.products.forEach(product => {
+            console.log(`[CustomElement] Processing product: ${product.name}`, {
+                hasVariants: product.hasVariants,
+                variantOptions: product.variantOptions
+            });
+            
             if (product.hasVariants && product.variantOptions) {
+                console.log('[CustomElement] Rendering variant selectors for:', product.name);
                 this.renderVariantSelectors(product);
+            } else {
+                console.log('[CustomElement] No variants to render for:', product.name);
             }
 
             const addToCartBtn = this.querySelector(`.add-to-cart-button[data-product-id="${product.id}"]`);
             if (addToCartBtn) {
                 addToCartBtn.addEventListener('click', () => {
+                    console.log('[CustomElement] Add to cart button clicked for:', product.id);
                     this.handleAddToCart(product);
                 });
             }
@@ -440,12 +451,11 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         }
 
         this.updateStyles();
-        console.log('Products rendered successfully');
+        console.log('[CustomElement] Products rendered successfully');
     }
 
     renderProductCard(product) {
         const hasComparePrice = product.compareAtPrice && product.compareAtPrice !== product.price;
-        const hasVariants = product.hasVariants;
         
         return `
             <div class="product-card" data-product-id="${product.id}">
@@ -484,13 +494,27 @@ class ProductGalleryAdvancedElement extends HTMLElement {
     }
 
     renderVariantSelectors(product) {
+        console.log('[CustomElement] renderVariantSelectors for:', product.id);
+        
         const container = this.querySelector(`.variant-container[data-product-id="${product.id}"]`);
-        if (!container || !product.variantOptions) return;
+        if (!container) {
+            console.error('[CustomElement] Variant container not found for:', product.id);
+            return;
+        }
+        
+        if (!product.variantOptions) {
+            console.log('[CustomElement] No variantOptions for:', product.id);
+            return;
+        }
 
         let variantsHTML = '';
+        const optionKeys = Object.keys(product.variantOptions);
+        console.log('[CustomElement] Variant option keys:', optionKeys);
         
-        Object.keys(product.variantOptions).forEach(optionKey => {
+        optionKeys.forEach(optionKey => {
             const optionValues = product.variantOptions[optionKey];
+            console.log(`[CustomElement] Rendering selector for ${optionKey}:`, optionValues);
+            
             variantsHTML += `
                 <div class="variant-selector">
                     <label class="variant-label">${optionKey}</label>
@@ -502,12 +526,16 @@ class ProductGalleryAdvancedElement extends HTMLElement {
             `;
         });
 
+        console.log('[CustomElement] Setting innerHTML for variant container');
         container.innerHTML = variantsHTML;
 
         // Attach event listeners to variant selects
         const selects = container.querySelectorAll('.variant-select');
+        console.log('[CustomElement] Found', selects.length, 'variant selects');
+        
         selects.forEach(select => {
             select.addEventListener('change', (e) => {
+                console.log('[CustomElement] Variant select changed:', e.target.dataset.optionKey, '=', e.target.value);
                 this.handleVariantChange(product.id, e.target.dataset.optionKey, e.target.value);
             });
         });
@@ -519,9 +547,14 @@ class ProductGalleryAdvancedElement extends HTMLElement {
         }
         this.selectedVariants[productId][optionKey] = value;
         
-        console.log('Variant changed:', productId, optionKey, value);
+        console.log('[CustomElement] Variant changed:', {
+            productId,
+            optionKey,
+            value,
+            allSelections: this.selectedVariants[productId]
+        });
         
-        // Dispatch event to widget with current selections
+        // Dispatch event to widget
         this.dispatchEvent(new CustomEvent('variant-selected', {
             bubbles: true,
             composed: true,
@@ -533,7 +566,7 @@ class ProductGalleryAdvancedElement extends HTMLElement {
     }
 
     handleAddToCart(product) {
-        console.log('Add to cart clicked for:', product.id);
+        console.log('[CustomElement] handleAddToCart for:', product.id, 'hasVariants:', product.hasVariants);
         
         // Check if product has variants and if all are selected
         if (product.hasVariants && product.variantOptions) {
@@ -541,12 +574,19 @@ class ProductGalleryAdvancedElement extends HTMLElement {
             const requiredOptions = Object.keys(product.variantOptions);
             const selectedOptions = Object.keys(selectedForProduct);
             
+            console.log('[CustomElement] Checking variant selection:', {
+                requiredOptions,
+                selectedOptions,
+                selectedForProduct
+            });
+            
             // Check if all required options are selected
             const allSelected = requiredOptions.every(option => 
                 selectedOptions.includes(option) && selectedForProduct[option]
             );
             
             if (!allSelected) {
+                console.log('[CustomElement] Not all options selected');
                 // Show error
                 const errorEl = this.querySelector(`.variant-error[data-product-id="${product.id}"]`);
                 if (errorEl) {
@@ -557,6 +597,7 @@ class ProductGalleryAdvancedElement extends HTMLElement {
             }
         }
         
+        console.log('[CustomElement] Dispatching add-to-cart event');
         // Dispatch add to cart event
         this.dispatchEvent(new CustomEvent('add-to-cart', {
             bubbles: true,
