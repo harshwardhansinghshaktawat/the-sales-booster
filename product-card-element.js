@@ -17,12 +17,10 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     connectedCallback() {
-        console.log('Custom element connected');
         this.render();
         this.isRendered = true;
         
         if (this.pendingProductsData) {
-            console.log('Rendering pending products data');
             this.products = this.pendingProductsData.products || [];
             this.hasMore = this.pendingProductsData.hasMore || false;
             this.pendingProductsData = null;
@@ -37,13 +35,10 @@ class ProductGalleryElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
             if (name === 'products-data') {
-                console.log('Products data attribute changed, length:', newValue.length);
                 try {
                     const data = JSON.parse(newValue);
-                    console.log('Parsed products data:', data.products.length, 'products');
                     
                     if (!this.isRendered) {
-                        console.log('Element not rendered yet, storing data');
                         this.pendingProductsData = data;
                         return;
                     }
@@ -52,7 +47,7 @@ class ProductGalleryElement extends HTMLElement {
                     this.hasMore = data.hasMore || false;
                     this.renderProducts();
                 } catch (e) {
-                    console.error('Error parsing products data:', e);
+                    // Silent fail
                 }
             } else if (name === 'settings') {
                 try {
@@ -62,7 +57,7 @@ class ProductGalleryElement extends HTMLElement {
                         this.updateStyles();
                     }
                 } catch (e) {
-                    console.error('Error parsing settings:', e);
+                    // Silent fail
                 }
             }
         }
@@ -71,14 +66,8 @@ class ProductGalleryElement extends HTMLElement {
     render() {
         this.innerHTML = `
             <style>
-                * {
-                    box-sizing: border-box;
-                }
-                
-                :host {
-                    display: block;
-                    width: 100%;
-                }
+                * { box-sizing: border-box; }
+                :host { display: block; width: 100%; }
                 
                 .gallery-container {
                     padding: 20px;
@@ -263,10 +252,7 @@ class ProductGalleryElement extends HTMLElement {
                         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
                         gap: 24px;
                     }
-                    
-                    .product-image-container {
-                        height: 280px;
-                    }
+                    .product-image-container { height: 280px; }
                 }
                 
                 @media (max-width: 768px) {
@@ -274,18 +260,9 @@ class ProductGalleryElement extends HTMLElement {
                         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
                         gap: 20px;
                     }
-                    
-                    .product-content {
-                        padding: 20px;
-                    }
-                    
-                    .product-name {
-                        font-size: 16px;
-                    }
-                    
-                    .product-image-container {
-                        height: 260px;
-                    }
+                    .product-content { padding: 20px; }
+                    .product-name { font-size: 16px; }
+                    .product-image-container { height: 260px; }
                 }
             </style>
             
@@ -294,20 +271,13 @@ class ProductGalleryElement extends HTMLElement {
                 <div class="load-more-container"></div>
             </div>
         `;
-        
-        console.log('DOM rendered');
     }
 
     renderProducts() {
-        console.log('Rendering products, count:', this.products.length);
-        
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
 
-        if (!grid || !loadMoreContainer) {
-            console.error('Grid or container not found');
-            return;
-        }
+        if (!grid || !loadMoreContainer) return;
 
         if (this.products.length === 0) {
             grid.innerHTML = '<div class="empty-state">No products found. Please select a category.</div>';
@@ -315,8 +285,7 @@ class ProductGalleryElement extends HTMLElement {
             return;
         }
 
-        const cardsHTML = this.products.map(product => this.renderProductCard(product)).join('');
-        grid.innerHTML = cardsHTML;
+        grid.innerHTML = this.products.map(product => this.renderProductCard(product)).join('');
 
         if (this.hasMore) {
             loadMoreContainer.innerHTML = `
@@ -339,7 +308,6 @@ class ProductGalleryElement extends HTMLElement {
         }
 
         this.updateStyles();
-        console.log('Products rendered successfully');
     }
 
     renderProductCard(product) {
