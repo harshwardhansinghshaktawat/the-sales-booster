@@ -38,7 +38,7 @@ class ProductGalleryCartElement extends HTMLElement {
     attributeChangedCallback(name, oldValue, newValue) {
         if (newValue && newValue !== oldValue) {
             if (name === 'products-data') {
-                console.log('Products data attribute changed, length:', newValue.length);
+                console.log('Products data attribute changed');
                 try {
                     const data = JSON.parse(newValue);
                     console.log('Parsed products data:', data.products.length, 'products');
@@ -286,7 +286,7 @@ class ProductGalleryCartElement extends HTMLElement {
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                 }
                 
-                .add-to-cart-button:hover {
+                .add-to-cart-button:hover:not(:disabled) {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
                     filter: brightness(1.1);
@@ -295,7 +295,6 @@ class ProductGalleryCartElement extends HTMLElement {
                 .add-to-cart-button:disabled {
                     opacity: 0.5;
                     cursor: not-allowed;
-                    transform: none;
                 }
                 
                 .view-product-link {
@@ -522,15 +521,9 @@ class ProductGalleryCartElement extends HTMLElement {
                     </div>
                     
                     <div class="product-buttons">
-                        ${hasOptions ? `
-                            <button class="add-to-cart-button" data-product-index="${index}">
-                                Add to Cart
-                            </button>
-                        ` : `
-                            <button class="add-to-cart-button" data-product-index="${index}">
-                                Add to Cart
-                            </button>
-                        `}
+                        <button class="add-to-cart-button" data-product-index="${index}">
+                            Add to Cart
+                        </button>
                         <a href="${product.productUrl}" class="view-product-link">View</a>
                     </div>
                 </div>
@@ -558,6 +551,7 @@ class ProductGalleryCartElement extends HTMLElement {
         const addToCartButtons = this.querySelectorAll('.add-to-cart-button');
         addToCartButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                e.preventDefault();
                 const productIndex = parseInt(e.target.dataset.productIndex);
                 this.handleAddToCart(productIndex);
             });
@@ -570,14 +564,28 @@ class ProductGalleryCartElement extends HTMLElement {
 
         const selected = this.selectedOptions[productIndex] || {};
         
-        const matchingVariant = product.variants.find(variant => {
-            return variant.optionChoiceIds.every(choice => {
-                return selected[choice.optionId] === choice.choiceId;
+        let matchingVariant = null;
+
+        if (product.catalogVersion === 'V3') {
+            matchingVariant = product.variants.find(variant => {
+                if (!variant.optionChoiceIds || variant.optionChoiceIds.length === 0) return false;
+                
+                return variant.optionChoiceIds.every(choice => {
+                    return selected[choice.optionId] === choice.choiceId;
+                });
             });
-        });
+        } else {
+            matchingVariant = product.variants.find(variant => {
+                if (!variant.choices) return false;
+                
+                return Object.keys(selected).every(optionId => {
+                    return variant.choices[optionId] === selected[optionId];
+                });
+            });
+        }
 
         const priceElement = this.querySelector(`.product-price[data-product-index="${productIndex}"]`);
-        if (priceElement && matchingVariant) {
+        if (priceElement && matchingVariant && matchingVariant.price) {
             priceElement.textContent = matchingVariant.price;
         }
     }
@@ -606,6 +614,7 @@ class ProductGalleryCartElement extends HTMLElement {
 
             if (product.catalogVersion === 'V3') {
                 const matchingVariant = product.variants.find(variant => {
+                    if (!variant.optionChoiceIds) return false;
                     return variant.optionChoiceIds.every(choice => {
                         return selected[choice.optionId] === choice.choiceId;
                     });
@@ -619,7 +628,19 @@ class ProductGalleryCartElement extends HTMLElement {
                 }
             } else {
                 if (product.manageVariants) {
-                    selectedOptions = selected;
+                    const matchingVariant = product.variants.find(variant => {
+                        if (!variant.choices) return false;
+                        return Object.keys(selected).every(optionId => {
+                            return variant.choices[optionId] === selected[optionId];
+                        });
+                    });
+
+                    if (matchingVariant) {
+                        variantId = matchingVariant.id;
+                    } else {
+                        this.showCartMessage(false, 'Selected variant not found');
+                        return;
+                    }
                 } else {
                     selectedOptions = selected;
                 }
