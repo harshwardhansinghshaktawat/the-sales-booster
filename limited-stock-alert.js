@@ -4,15 +4,16 @@ class LimitedStockAlertElement extends HTMLElement {
         this.products = [];
         this.currentIndex = 0;
         this.rotationInterval = null;
+        this.stockLevels = new Map();
         this.settings = {
-            color1: '#e74c3c',          // Alert red
-            color2: '#ffffff',          // White
-            color3: '#2c3e50',          // Dark text
-            color4: '#f39c12',          // Orange warning
-            color5: '#ecf0f1',          // Light gray
-            color6: '#c0392b',          // Dark red
-            color7: '#27ae60',          // Green
-            color8: '#e67e22',          // Burnt orange
+            color1: '#e74c3c',
+            color2: '#ffffff',
+            color3: '#2c3e50',
+            color4: '#f39c12',
+            color5: '#ecf0f1',
+            color6: '#c0392b',
+            color7: '#27ae60',
+            color8: '#e67e22',
             borderWidth: 2,
             cornerRadius: 12,
             alertText: '⚠️ LOW STOCK ALERT',
@@ -67,6 +68,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     
                     this.products = data || [];
                     this.currentIndex = 0;
+                    this.initializeStockLevels();
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
@@ -100,6 +102,15 @@ class LimitedStockAlertElement extends HTMLElement {
         }
     }
 
+    initializeStockLevels() {
+        this.products.forEach(product => {
+            if (!this.stockLevels.has(product.id)) {
+                const stockLevel = Math.floor(Math.random() * this.settings.stockThreshold) + 1;
+                this.stockLevels.set(product.id, stockLevel);
+            }
+        });
+    }
+
     calculateDiscount(price, comparePrice) {
         if (!comparePrice || comparePrice === price) return null;
         
@@ -113,11 +124,19 @@ class LimitedStockAlertElement extends HTMLElement {
     }
 
     getStockLevel(product) {
-        const random = Math.floor(Math.random() * this.settings.stockThreshold) + 1;
-        return random;
+        if (!product.inStock) return 0;
+        
+        if (this.stockLevels.has(product.id)) {
+            return this.stockLevels.get(product.id);
+        }
+        
+        const stockLevel = Math.floor(Math.random() * this.settings.stockThreshold) + 1;
+        this.stockLevels.set(product.id, stockLevel);
+        return stockLevel;
     }
 
     getStockPercentage(stockLevel) {
+        if (stockLevel === 0) return 0;
         return (stockLevel / this.settings.stockThreshold) * 100;
     }
 
@@ -285,6 +304,11 @@ class LimitedStockAlertElement extends HTMLElement {
                     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
                 }
                 
+                .out-of-stock-badge {
+                    background: var(--color3);
+                    animation: none;
+                }
+                
                 .product-image-container {
                     position: relative;
                     width: 100%;
@@ -360,6 +384,11 @@ class LimitedStockAlertElement extends HTMLElement {
                     border: 1px solid rgba(231, 76, 60, 0.2);
                 }
                 
+                .out-of-stock-section {
+                    background: rgba(44, 62, 80, 0.05);
+                    border: 1px solid rgba(44, 62, 80, 0.2);
+                }
+                
                 .stock-text {
                     font-family: var(--stock-font-family);
                     font-size: var(--stock-font-size);
@@ -368,6 +397,10 @@ class LimitedStockAlertElement extends HTMLElement {
                     text-align: center;
                     margin: 0 0 8px 0;
                     animation: shake 0.5s ease-in-out infinite;
+                }
+                
+                .out-of-stock-text {
+                    animation: none;
                 }
                 
                 .stock-progress-container {
@@ -440,6 +473,17 @@ class LimitedStockAlertElement extends HTMLElement {
                 .action-button:hover {
                     transform: translateY(-3px);
                     box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+                }
+                
+                .action-button.disabled {
+                    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+                    cursor: not-allowed;
+                    opacity: 0.7;
+                }
+                
+                .action-button.disabled:hover {
+                    transform: none;
+                    box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
                 }
                 
                 .navigation-controls {
@@ -633,10 +677,14 @@ class LimitedStockAlertElement extends HTMLElement {
         
         const titleTag = this.settings.titleTag || 'H3';
         
+        const isOutOfStock = stockLevel === 0;
+        
         return `
             <div class="stock-card">
                 <div class="product-image-container">
-                    <div class="stock-badge">Only ${stockLevel} Left!</div>
+                    <div class="stock-badge ${isOutOfStock ? 'out-of-stock-badge' : ''}">
+                        ${isOutOfStock ? 'Out of Stock' : `Only ${stockLevel} Left!`}
+                    </div>
                     ${discount ? `
                         <div class="discount-badge">
                             <div class="discount-value">${discount}%</div>
@@ -652,11 +700,11 @@ class LimitedStockAlertElement extends HTMLElement {
                 <div class="product-content">
                     <${titleTag} class="product-name">${product.name}</${titleTag}>
                     
-                    <div class="stock-info-section">
-                        <div class="stock-text" style="--stock-color: ${stockColor};">
-                            Hurry! Only ${stockLevel} in stock
+                    <div class="stock-info-section ${isOutOfStock ? 'out-of-stock-section' : ''}">
+                        <div class="stock-text ${isOutOfStock ? 'out-of-stock-text' : ''}" style="--stock-color: ${isOutOfStock ? this.settings.color3 : stockColor};">
+                            ${isOutOfStock ? 'Currently Out of Stock' : `Hurry! Only ${stockLevel} in stock`}
                         </div>
-                        ${this.settings.showProgressBar ? `
+                        ${this.settings.showProgressBar && !isOutOfStock ? `
                             <div class="stock-progress-container">
                                 <div class="stock-progress-bar" 
                                      style="--stock-color: ${stockColor}; --stock-width: ${stockPercentage}%; width: ${stockPercentage}%;"></div>
@@ -671,7 +719,7 @@ class LimitedStockAlertElement extends HTMLElement {
                         </div>
                     </div>
                     
-                    <a href="${product.productUrl}" class="action-button">${this.settings.buttonText}</a>
+                    <a href="${product.productUrl}" class="action-button ${isOutOfStock ? 'disabled' : ''}">${isOutOfStock ? 'Out of Stock' : this.settings.buttonText}</a>
                 </div>
             </div>
         `;
