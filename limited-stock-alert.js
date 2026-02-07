@@ -2,6 +2,8 @@ class LimitedStockAlertElement extends HTMLElement {
     constructor() {
         super();
         this.products = [];
+        this.currentIndex = 0;
+        this.rotationInterval = null;
         this.settings = {
             color1: '#e74c3c',          // Alert red
             color2: '#ffffff',          // White
@@ -17,6 +19,8 @@ class LimitedStockAlertElement extends HTMLElement {
             buttonText: 'Grab It Now',
             showProgressBar: true,
             stockThreshold: 10,
+            autoRotate: true,
+            rotationSpeed: 5,
             titleFontFamily: 'Poppins',
             titleFontSize: 18,
             priceFontFamily: 'Montserrat',
@@ -62,6 +66,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     }
                     
                     this.products = data || [];
+                    this.currentIndex = 0;
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
@@ -69,14 +74,29 @@ class LimitedStockAlertElement extends HTMLElement {
             } else if (name === 'settings') {
                 try {
                     const newSettings = JSON.parse(newValue);
+                    const oldAutoRotate = this.settings.autoRotate;
+                    const oldRotationSpeed = this.settings.rotationSpeed;
+                    
                     Object.assign(this.settings, newSettings);
+                    
                     if (this.isRendered) {
                         this.updateStyles();
+                        
+                        if (oldAutoRotate !== this.settings.autoRotate || 
+                            oldRotationSpeed !== this.settings.rotationSpeed) {
+                            this.setupRotation();
+                        }
                     }
                 } catch (e) {
                     console.error('Error parsing settings:', e);
                 }
             }
+        }
+    }
+
+    disconnectedCallback() {
+        if (this.rotationInterval) {
+            clearInterval(this.rotationInterval);
         }
     }
 
@@ -145,14 +165,36 @@ class LimitedStockAlertElement extends HTMLElement {
                     50% { opacity: 0.7; }
                 }
                 
-                @keyframes slideIn {
+                @keyframes slideInFromRight {
                     from {
                         opacity: 0;
-                        transform: translateY(20px);
+                        transform: translateX(100%) scale(0.9);
                     }
                     to {
                         opacity: 1;
-                        transform: translateY(0);
+                        transform: translateX(0) scale(1);
+                    }
+                }
+                
+                @keyframes slideOutToLeft {
+                    from {
+                        opacity: 1;
+                        transform: translateX(0) scale(1);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateX(-100%) scale(0.9);
+                    }
+                }
+                
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1);
                     }
                 }
                 
@@ -163,7 +205,7 @@ class LimitedStockAlertElement extends HTMLElement {
                 
                 .alert-container {
                     padding: 20px;
-                    max-width: 1400px;
+                    max-width: 600px;
                     margin: 0 auto;
                     background: linear-gradient(135deg, var(--color5) 0%, #fff 100%);
                 }
@@ -189,10 +231,10 @@ class LimitedStockAlertElement extends HTMLElement {
                     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
                 }
                 
-                .products-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                    gap: 25px;
+                .product-carousel {
+                    position: relative;
+                    overflow: hidden;
+                    min-height: 500px;
                 }
                 
                 .stock-card {
@@ -200,21 +242,28 @@ class LimitedStockAlertElement extends HTMLElement {
                     border-radius: var(--corner-radius);
                     overflow: hidden;
                     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-                    transition: all 0.3s ease;
-                    position: relative;
-                    animation: slideIn 0.5s ease-out;
-                    animation-fill-mode: both;
+                    position: absolute;
+                    width: 100%;
+                    top: 0;
+                    left: 0;
+                    opacity: 0;
+                    transform: translateX(100%) scale(0.9);
+                    transition: none;
                 }
                 
-                .stock-card:nth-child(1) { animation-delay: 0.1s; }
-                .stock-card:nth-child(2) { animation-delay: 0.2s; }
-                .stock-card:nth-child(3) { animation-delay: 0.3s; }
-                .stock-card:nth-child(4) { animation-delay: 0.4s; }
-                .stock-card:nth-child(5) { animation-delay: 0.5s; }
-                .stock-card:nth-child(6) { animation-delay: 0.6s; }
+                .stock-card.active {
+                    opacity: 1;
+                    transform: translateX(0) scale(1);
+                    animation: slideInFromRight 0.6s ease-out forwards;
+                    position: relative;
+                }
+                
+                .stock-card.exiting {
+                    animation: slideOutToLeft 0.6s ease-out forwards;
+                }
                 
                 .stock-card:hover {
-                    transform: translateY(-8px);
+                    transform: translateY(-8px) scale(1.02);
                     box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
                 }
                 
@@ -239,7 +288,7 @@ class LimitedStockAlertElement extends HTMLElement {
                 .product-image-container {
                     position: relative;
                     width: 100%;
-                    height: 250px;
+                    height: 300px;
                     overflow: hidden;
                     background: var(--color5);
                 }
@@ -393,6 +442,64 @@ class LimitedStockAlertElement extends HTMLElement {
                     box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
                 }
                 
+                .navigation-controls {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 20px;
+                    margin-top: 20px;
+                }
+                
+                .nav-arrow {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: var(--color2);
+                    border: 2px solid var(--color1);
+                    color: var(--color1);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 20px;
+                    font-weight: 700;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                }
+                
+                .nav-arrow:hover {
+                    background: var(--color1);
+                    color: var(--color2);
+                    transform: scale(1.1);
+                }
+                
+                .navigation-dots {
+                    display: flex;
+                    gap: 10px;
+                }
+                
+                .nav-dot {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    background: rgba(231, 76, 60, 0.3);
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    border: 2px solid transparent;
+                }
+                
+                .nav-dot:hover {
+                    background: rgba(231, 76, 60, 0.5);
+                    transform: scale(1.2);
+                }
+                
+                .nav-dot.active {
+                    background: var(--color1);
+                    border-color: var(--color2);
+                    transform: scale(1.3);
+                    box-shadow: 0 0 15px var(--color1);
+                }
+                
                 .empty-state {
                     text-align: center;
                     padding: 80px 20px;
@@ -408,29 +515,18 @@ class LimitedStockAlertElement extends HTMLElement {
                     margin-bottom: 20px;
                 }
                 
-                @media (max-width: 1024px) {
-                    .products-grid {
-                        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-                        gap: 20px;
-                    }
-                    
-                    .product-image-container {
-                        height: 220px;
-                    }
-                }
-                
                 @media (max-width: 768px) {
                     .alert-container {
                         padding: 15px;
+                        max-width: 100%;
                     }
                     
-                    .products-grid {
-                        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-                        gap: 18px;
+                    .product-carousel {
+                        min-height: 450px;
                     }
                     
                     .product-image-container {
-                        height: 200px;
+                        height: 250px;
                     }
                     
                     .product-content {
@@ -439,12 +535,18 @@ class LimitedStockAlertElement extends HTMLElement {
                 }
                 
                 @media (max-width: 480px) {
-                    .products-grid {
-                        grid-template-columns: 1fr;
+                    .product-carousel {
+                        min-height: 420px;
                     }
                     
                     .product-image-container {
-                        height: 240px;
+                        height: 220px;
+                    }
+                    
+                    .nav-arrow {
+                        width: 35px;
+                        height: 35px;
+                        font-size: 16px;
                     }
                 }
             </style>
@@ -453,7 +555,12 @@ class LimitedStockAlertElement extends HTMLElement {
                 <div class="alert-header">
                     <h1 class="alert-title"></h1>
                 </div>
-                <div class="products-grid"></div>
+                <div class="product-carousel"></div>
+                <div class="navigation-controls">
+                    <div class="nav-arrow nav-prev">‹</div>
+                    <div class="navigation-dots"></div>
+                    <div class="nav-arrow nav-next">›</div>
+                </div>
             </div>
         `;
     }
@@ -462,23 +569,57 @@ class LimitedStockAlertElement extends HTMLElement {
         console.log('Limited Stock: Rendering products, count:', this.products.length);
         
         const alertTitle = this.querySelector('.alert-title');
-        const grid = this.querySelector('.products-grid');
+        const carousel = this.querySelector('.product-carousel');
+        const dotsContainer = this.querySelector('.navigation-dots');
 
         if (alertTitle) {
             alertTitle.textContent = this.settings.alertText || '⚠️ LOW STOCK ALERT';
         }
 
-        if (!grid) return;
+        if (!carousel || !dotsContainer) return;
 
         if (this.products.length === 0) {
-            grid.innerHTML = '<div class="empty-state">No low stock products to display</div>';
+            carousel.innerHTML = '<div class="empty-state">No low stock products to display</div>';
+            dotsContainer.innerHTML = '';
+            this.querySelector('.nav-prev').style.display = 'none';
+            this.querySelector('.nav-next').style.display = 'none';
             return;
         }
 
-        const cardsHTML = this.products.map(product => this.renderProductCard(product)).join('');
-        grid.innerHTML = cardsHTML;
+        this.querySelector('.nav-prev').style.display = 'flex';
+        this.querySelector('.nav-next').style.display = 'flex';
 
+        this.renderCurrentProduct();
+        this.renderDots();
+        this.setupNavigation();
+        this.setupRotation();
         this.updateStyles();
+    }
+
+    renderCurrentProduct() {
+        const carousel = this.querySelector('.product-carousel');
+        if (!carousel || !this.products[this.currentIndex]) return;
+
+        const product = this.products[this.currentIndex];
+        const cardHTML = this.renderProductCard(product);
+        
+        const existingCard = carousel.querySelector('.stock-card.active');
+        if (existingCard) {
+            existingCard.classList.remove('active');
+            existingCard.classList.add('exiting');
+            setTimeout(() => {
+                existingCard.remove();
+            }, 600);
+        }
+
+        carousel.insertAdjacentHTML('beforeend', cardHTML);
+        
+        requestAnimationFrame(() => {
+            const newCard = carousel.querySelector('.stock-card:last-child');
+            if (newCard) {
+                newCard.classList.add('active');
+            }
+        });
     }
 
     renderProductCard(product) {
@@ -534,6 +675,82 @@ class LimitedStockAlertElement extends HTMLElement {
                 </div>
             </div>
         `;
+    }
+
+    renderDots() {
+        const dotsContainer = this.querySelector('.navigation-dots');
+        if (!dotsContainer || this.products.length <= 1) {
+            dotsContainer.innerHTML = '';
+            return;
+        }
+
+        const dotsHTML = this.products.map((_, index) => 
+            `<div class="nav-dot ${index === this.currentIndex ? 'active' : ''}" data-index="${index}"></div>`
+        ).join('');
+
+        dotsContainer.innerHTML = dotsHTML;
+
+        dotsContainer.querySelectorAll('.nav-dot').forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                const index = parseInt(e.target.dataset.index);
+                this.currentIndex = index;
+                this.renderCurrentProduct();
+                this.updateDots();
+                this.setupRotation();
+            });
+        });
+    }
+
+    updateDots() {
+        const dots = this.querySelectorAll('.nav-dot');
+        dots.forEach((dot, index) => {
+            if (index === this.currentIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    }
+
+    setupNavigation() {
+        const prevBtn = this.querySelector('.nav-prev');
+        const nextBtn = this.querySelector('.nav-next');
+
+        if (prevBtn) {
+            prevBtn.onclick = () => {
+                this.currentIndex = (this.currentIndex - 1 + this.products.length) % this.products.length;
+                this.renderCurrentProduct();
+                this.updateDots();
+                this.setupRotation();
+            };
+        }
+
+        if (nextBtn) {
+            nextBtn.onclick = () => {
+                this.currentIndex = (this.currentIndex + 1) % this.products.length;
+                this.renderCurrentProduct();
+                this.updateDots();
+                this.setupRotation();
+            };
+        }
+    }
+
+    setupRotation() {
+        if (this.rotationInterval) {
+            clearInterval(this.rotationInterval);
+        }
+
+        if (!this.settings.autoRotate || this.products.length <= 1) {
+            return;
+        }
+
+        const rotationSpeed = (this.settings.rotationSpeed || 5) * 1000;
+
+        this.rotationInterval = setInterval(() => {
+            this.currentIndex = (this.currentIndex + 1) % this.products.length;
+            this.renderCurrentProduct();
+            this.updateDots();
+        }, rotationSpeed);
     }
 
     updateStyles() {
