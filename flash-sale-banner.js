@@ -132,6 +132,7 @@ class FlashSaleBannerElement extends HTMLElement {
                 :host {
                     display: block;
                     width: 100%;
+                    max-width: 100%;
                     --color1: #ff0844;
                     --color2: #ffffff;
                     --color3: #1a1a2e;
@@ -166,15 +167,15 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 @keyframes pulse {
                     0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.08); }
+                    50% { transform: scale(1.05); }
                 }
                 
                 @keyframes glow {
                     0%, 100% { 
-                        box-shadow: 0 0 30px var(--color1), 0 0 60px var(--color1);
+                        box-shadow: 0 0 15px rgba(255, 8, 68, 0.3);
                     }
                     50% { 
-                        box-shadow: 0 0 50px var(--color1), 0 0 100px var(--color1);
+                        box-shadow: 0 0 25px rgba(255, 8, 68, 0.5);
                     }
                 }
                 
@@ -185,13 +186,7 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 @keyframes float {
                     0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-10px); }
-                }
-                
-                @keyframes rotateGradient {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
+                    50% { transform: translateY(-8px); }
                 }
                 
                 @keyframes shimmer {
@@ -201,6 +196,8 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 .banner-container {
                     width: 100%;
+                    max-width: 1200px;
+                    margin: 0 auto;
                     background: linear-gradient(135deg, var(--color3) 0%, var(--color6) 100%);
                     position: relative;
                     overflow: hidden;
@@ -216,7 +213,7 @@ class FlashSaleBannerElement extends HTMLElement {
                     height: 100%;
                     background: linear-gradient(90deg, 
                         transparent,
-                        rgba(255, 255, 255, 0.1),
+                        rgba(255, 255, 255, 0.08),
                         transparent
                     );
                     animation: shimmer 3s infinite;
@@ -224,12 +221,12 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 .banner-header {
                     background: linear-gradient(135deg, var(--color1) 0%, var(--color5) 100%);
-                    padding: 15px 30px;
+                    padding: 10px 20px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
                     flex-wrap: wrap;
-                    gap: 20px;
+                    gap: 12px;
                     position: relative;
                     overflow: hidden;
                 }
@@ -241,84 +238,84 @@ class FlashSaleBannerElement extends HTMLElement {
                     right: -50%;
                     width: 200%;
                     height: 200%;
-                    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+                    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
                     animation: float 4s ease-in-out infinite;
                 }
                 
                 .banner-title {
                     font-family: var(--banner-font-family);
-                    font-size: var(--banner-font-size);
+                    font-size: calc(var(--banner-font-size) * 0.75);
                     color: var(--color2);
                     margin: 0;
-                    letter-spacing: 3px;
+                    letter-spacing: 2px;
                     text-transform: uppercase;
-                    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+                    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
                     animation: pulse 2s ease-in-out infinite;
                     z-index: 1;
                 }
                 
                 .countdown-wrapper {
                     display: flex;
-                    gap: 10px;
+                    gap: 8px;
                     align-items: center;
                     z-index: 1;
                 }
                 
                 .countdown-label {
                     font-family: var(--desc-font-family);
-                    font-size: 14px;
+                    font-size: 11px;
                     color: var(--color2);
                     font-weight: 700;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.8px;
                 }
                 
                 .countdown-display {
                     display: flex;
-                    gap: 8px;
+                    gap: 5px;
                 }
                 
                 .time-block {
-                    background: rgba(0, 0, 0, 0.4);
-                    padding: 8px 12px;
-                    border-radius: 8px;
+                    background: rgba(0, 0, 0, 0.35);
+                    padding: 5px 8px;
+                    border-radius: 6px;
                     text-align: center;
-                    min-width: 55px;
-                    border: 2px solid var(--color4);
+                    min-width: 42px;
+                    border: 1.5px solid var(--color4);
                 }
                 
                 .time-number {
                     font-family: var(--timer-font-family);
-                    font-size: var(--timer-font-size);
+                    font-size: calc(var(--timer-font-size) * 0.65);
                     color: var(--color4);
                     font-weight: 900;
                     line-height: 1;
-                    text-shadow: 0 0 20px var(--color4);
+                    text-shadow: 0 0 12px var(--color4);
                 }
                 
                 .time-text {
                     font-family: var(--desc-font-family);
-                    font-size: 10px;
+                    font-size: 8px;
                     color: var(--color2);
                     text-transform: uppercase;
-                    margin-top: 4px;
-                    letter-spacing: 0.5px;
+                    margin-top: 2px;
+                    letter-spacing: 0.3px;
                 }
                 
                 .time-colon {
                     color: var(--color4);
                     font-family: var(--timer-font-family);
-                    font-size: var(--timer-font-size);
+                    font-size: calc(var(--timer-font-size) * 0.65);
                     font-weight: 900;
                     animation: blink 1s ease-in-out infinite;
                     align-self: center;
                 }
                 
                 .banner-content {
-                    padding: 50px 40px;
+                    padding: 25px 20px;
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 50px;
+                    grid-template-columns: 1fr 1.2fr;
+                    gap: 25px;
                     align-items: center;
                     position: relative;
                 }
@@ -329,24 +326,24 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 .product-image-large {
                     width: 100%;
-                    height: 500px;
+                    height: 280px;
                     object-fit: cover;
-                    border-radius: 20px;
-                    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
-                    border: 5px solid var(--color2);
+                    border-radius: 12px;
+                    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+                    border: 3px solid var(--color2);
                     transition: transform 0.4s ease;
                 }
                 
                 .product-image-large:hover {
-                    transform: scale(1.05) rotate(2deg);
+                    transform: scale(1.03) rotate(1deg);
                 }
                 
                 .discount-mega-badge {
                     position: absolute;
-                    top: -20px;
-                    right: -20px;
-                    width: 140px;
-                    height: 140px;
+                    top: -12px;
+                    right: -12px;
+                    width: 85px;
+                    height: 85px;
                     background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
                     border-radius: 50%;
                     display: flex;
@@ -354,91 +351,99 @@ class FlashSaleBannerElement extends HTMLElement {
                     align-items: center;
                     justify-content: center;
                     color: var(--color3);
-                    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
                     z-index: 10;
                     animation: pulse 2s ease-in-out infinite;
-                    border: 6px solid var(--color2);
-                    transform: rotate(15deg);
+                    border: 4px solid var(--color2);
+                    transform: rotate(12deg);
                 }
                 
                 .discount-mega-value {
                     font-family: var(--timer-font-family);
-                    font-size: 48px;
+                    font-size: 32px;
                     font-weight: 900;
                     line-height: 1;
                 }
                 
                 .discount-mega-label {
                     font-family: var(--banner-font-family);
-                    font-size: 18px;
+                    font-size: 12px;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
-                    margin-top: 5px;
+                    letter-spacing: 0.8px;
+                    margin-top: 3px;
                 }
                 
                 .product-details-section {
                     display: flex;
                     flex-direction: column;
-                    gap: 25px;
+                    gap: 15px;
                 }
                 
                 .product-name-large {
                     font-family: var(--title-font-family);
-                    font-size: var(--title-font-size);
+                    font-size: calc(var(--title-font-size) * 0.75);
                     font-weight: 900;
                     margin: 0;
                     line-height: 1.2;
                     color: var(--color2);
                     text-transform: uppercase;
-                    letter-spacing: 2px;
-                    text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                    letter-spacing: 1.5px;
+                    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
                 }
                 
                 .product-description-large {
                     font-family: var(--desc-font-family);
-                    font-size: var(--desc-font-size);
-                    line-height: 1.8;
+                    font-size: calc(var(--desc-font-size) * 0.9);
+                    line-height: 1.6;
                     color: var(--color8);
                     margin: 0;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
                 }
                 
                 .price-mega-section {
                     display: flex;
                     flex-direction: column;
-                    gap: 10px;
-                    padding: 30px;
+                    gap: 8px;
+                    padding: 18px;
                     background: rgba(255, 255, 255, 0.05);
-                    border-radius: 15px;
+                    border-radius: 10px;
                     border: 2px solid rgba(255, 255, 255, 0.1);
                 }
                 
                 .price-label {
                     font-family: var(--desc-font-family);
-                    font-size: 14px;
+                    font-size: 11px;
                     color: var(--color8);
                     text-transform: uppercase;
-                    letter-spacing: 2px;
+                    letter-spacing: 1.5px;
                     font-weight: 700;
                 }
                 
                 .price-display {
                     display: flex;
                     align-items: baseline;
-                    gap: 20px;
+                    gap: 12px;
                     flex-wrap: wrap;
                 }
                 
                 .product-price-large {
                     font-family: var(--price-font-family);
-                    font-size: var(--price-font-size);
+                    font-size: calc(var(--price-font-size) * 0.85);
                     font-weight: 900;
                     color: var(--color4);
-                    text-shadow: 0 0 30px var(--color4);
+                    text-shadow: 0 0 20px var(--color4);
                 }
                 
                 .product-compare-price-large {
                     font-family: var(--price-font-family);
-                    font-size: calc(var(--price-font-size) * 0.6);
+                    font-size: calc(var(--price-font-size) * 0.5);
                     color: var(--color8);
                     text-decoration: line-through;
                     opacity: 0.6;
@@ -446,7 +451,7 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 .savings-text {
                     font-family: var(--desc-font-family);
-                    font-size: 16px;
+                    font-size: 13px;
                     color: var(--color8);
                     font-weight: 700;
                     background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
@@ -457,21 +462,21 @@ class FlashSaleBannerElement extends HTMLElement {
                 
                 .cta-button {
                     display: inline-block;
-                    padding: 25px 60px;
+                    padding: 14px 35px;
                     background: linear-gradient(135deg, var(--color1) 0%, var(--color5) 100%);
                     color: var(--color2);
                     font-family: var(--cta-font-family);
-                    font-size: var(--cta-font-size);
+                    font-size: calc(var(--cta-font-size) * 0.9);
                     font-weight: 800;
                     text-transform: uppercase;
-                    letter-spacing: 3px;
-                    border-radius: 50px;
+                    letter-spacing: 2px;
+                    border-radius: 40px;
                     cursor: pointer;
                     transition: all 0.3s ease;
                     border: none;
                     text-decoration: none;
                     text-align: center;
-                    box-shadow: 0 15px 50px rgba(255, 8, 68, 0.5);
+                    box-shadow: 0 8px 25px rgba(255, 8, 68, 0.4);
                     position: relative;
                     overflow: hidden;
                 }
@@ -483,7 +488,7 @@ class FlashSaleBannerElement extends HTMLElement {
                     left: -100%;
                     width: 100%;
                     height: 100%;
-                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
                     transition: left 0.5s ease;
                 }
                 
@@ -492,20 +497,20 @@ class FlashSaleBannerElement extends HTMLElement {
                 }
                 
                 .cta-button:hover {
-                    transform: translateY(-5px) scale(1.05);
-                    box-shadow: 0 20px 70px rgba(255, 8, 68, 0.7);
+                    transform: translateY(-3px) scale(1.03);
+                    box-shadow: 0 12px 35px rgba(255, 8, 68, 0.6);
                 }
                 
                 .navigation-dots {
                     display: flex;
                     justify-content: center;
-                    gap: 15px;
-                    padding: 30px 0;
+                    gap: 10px;
+                    padding: 15px 0;
                 }
                 
                 .nav-dot {
-                    width: 15px;
-                    height: 15px;
+                    width: 10px;
+                    height: 10px;
                     border-radius: 50%;
                     background: rgba(255, 255, 255, 0.3);
                     cursor: pointer;
@@ -522,90 +527,180 @@ class FlashSaleBannerElement extends HTMLElement {
                     background: var(--color4);
                     border-color: var(--color2);
                     transform: scale(1.3);
-                    box-shadow: 0 0 20px var(--color4);
+                    box-shadow: 0 0 15px var(--color4);
                 }
                 
                 .empty-state {
                     text-align: center;
-                    padding: 100px 40px;
+                    padding: 60px 30px;
                     color: var(--color8);
                     font-family: var(--desc-font-family);
-                    font-size: 20px;
+                    font-size: 16px;
+                    grid-column: 1 / -1;
                 }
                 
                 .empty-state::before {
                     content: '⚡';
                     display: block;
-                    font-size: 100px;
-                    margin-bottom: 20px;
+                    font-size: 60px;
+                    margin-bottom: 15px;
                     animation: pulse 2s ease-in-out infinite;
                 }
                 
-                @media (max-width: 1200px) {
+                @media (max-width: 1024px) {
                     .banner-content {
-                        grid-template-columns: 1fr;
-                        gap: 40px;
-                        padding: 40px 30px;
+                        padding: 20px 18px;
+                        gap: 20px;
                     }
                     
                     .product-image-large {
-                        height: 450px;
+                        height: 240px;
+                    }
+                    
+                    .discount-mega-badge {
+                        width: 75px;
+                        height: 75px;
+                    }
+                    
+                    .discount-mega-value {
+                        font-size: 28px;
+                    }
+                    
+                    .discount-mega-label {
+                        font-size: 11px;
                     }
                 }
                 
                 @media (max-width: 768px) {
                     .banner-header {
-                        padding: 12px 20px;
+                        padding: 8px 15px;
                         justify-content: center;
                         text-align: center;
                     }
                     
+                    .banner-title {
+                        font-size: calc(var(--banner-font-size) * 0.6);
+                    }
+                    
                     .countdown-wrapper {
-                        flex-direction: column;
-                        gap: 8px;
+                        flex-direction: row;
+                        gap: 6px;
+                    }
+                    
+                    .countdown-label {
+                        font-size: 10px;
+                    }
+                    
+                    .time-block {
+                        min-width: 38px;
+                        padding: 4px 6px;
+                    }
+                    
+                    .time-number {
+                        font-size: calc(var(--timer-font-size) * 0.55);
+                    }
+                    
+                    .time-text {
+                        font-size: 7px;
                     }
                     
                     .banner-content {
-                        padding: 30px 20px;
+                        grid-template-columns: 1fr;
+                        gap: 18px;
+                        padding: 18px 15px;
                     }
                     
                     .product-image-large {
-                        height: 350px;
+                        height: 220px;
                     }
                     
                     .discount-mega-badge {
-                        width: 100px;
-                        height: 100px;
-                        top: -10px;
-                        right: -10px;
+                        width: 65px;
+                        height: 65px;
+                        top: -8px;
+                        right: -8px;
                     }
                     
                     .discount-mega-value {
-                        font-size: 36px;
+                        font-size: 24px;
                     }
                     
                     .discount-mega-label {
-                        font-size: 14px;
+                        font-size: 10px;
+                    }
+                    
+                    .product-name-large {
+                        font-size: calc(var(--title-font-size) * 0.65);
+                    }
+                    
+                    .product-description-large {
+                        font-size: calc(var(--desc-font-size) * 0.85);
                     }
                     
                     .price-mega-section {
-                        padding: 20px;
+                        padding: 15px;
+                    }
+                    
+                    .product-price-large {
+                        font-size: calc(var(--price-font-size) * 0.75);
                     }
                     
                     .cta-button {
-                        padding: 20px 40px;
+                        padding: 12px 30px;
                         width: 100%;
+                        font-size: calc(var(--cta-font-size) * 0.85);
+                    }
+                    
+                    .navigation-dots {
+                        padding: 12px 0;
                     }
                 }
                 
                 @media (max-width: 480px) {
+                    .banner-title {
+                        font-size: calc(var(--banner-font-size) * 0.5);
+                        letter-spacing: 1px;
+                    }
+                    
                     .time-block {
-                        min-width: 45px;
-                        padding: 6px 8px;
+                        min-width: 35px;
+                        padding: 3px 5px;
+                    }
+                    
+                    .countdown-display {
+                        gap: 4px;
                     }
                     
                     .product-image-large {
-                        height: 280px;
+                        height: 200px;
+                        border-radius: 10px;
+                    }
+                    
+                    .discount-mega-badge {
+                        width: 60px;
+                        height: 60px;
+                    }
+                    
+                    .discount-mega-value {
+                        font-size: 22px;
+                    }
+                    
+                    .product-name-large {
+                        font-size: calc(var(--title-font-size) * 0.55);
+                        letter-spacing: 1px;
+                    }
+                    
+                    .product-description-large {
+                        font-size: calc(var(--desc-font-size) * 0.8);
+                    }
+                    
+                    .product-price-large {
+                        font-size: calc(var(--price-font-size) * 0.65);
+                    }
+                    
+                    .cta-button {
+                        padding: 11px 25px;
+                        font-size: calc(var(--cta-font-size) * 0.8);
                     }
                 }
             </style>
