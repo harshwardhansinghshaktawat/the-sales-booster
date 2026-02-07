@@ -4,7 +4,6 @@ class LimitedStockAlertElement extends HTMLElement {
         this.products = [];
         this.currentIndex = 0;
         this.rotationInterval = null;
-        this.stockLevels = new Map();
         this.settings = {
             color1: '#e74c3c',
             color2: '#ffffff',
@@ -68,7 +67,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     
                     this.products = data || [];
                     this.currentIndex = 0;
-                    this.initializeStockLevels();
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
@@ -102,15 +100,6 @@ class LimitedStockAlertElement extends HTMLElement {
         }
     }
 
-    initializeStockLevels() {
-        this.products.forEach(product => {
-            if (!this.stockLevels.has(product.id)) {
-                const stockLevel = Math.floor(Math.random() * this.settings.stockThreshold) + 1;
-                this.stockLevels.set(product.id, stockLevel);
-            }
-        });
-    }
-
     calculateDiscount(price, comparePrice) {
         if (!comparePrice || comparePrice === price) return null;
         
@@ -123,21 +112,9 @@ class LimitedStockAlertElement extends HTMLElement {
         return discount > 0 ? discount : null;
     }
 
-    getStockLevel(product) {
-        if (!product.inStock) return 0;
-        
-        if (this.stockLevels.has(product.id)) {
-            return this.stockLevels.get(product.id);
-        }
-        
-        const stockLevel = Math.floor(Math.random() * this.settings.stockThreshold) + 1;
-        this.stockLevels.set(product.id, stockLevel);
-        return stockLevel;
-    }
-
     getStockPercentage(stockLevel) {
         if (stockLevel === 0) return 0;
-        return (stockLevel / this.settings.stockThreshold) * 100;
+        return Math.min((stockLevel / this.settings.stockThreshold) * 100, 100);
     }
 
     getStockColor(percentage) {
@@ -203,17 +180,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     to {
                         opacity: 0;
                         transform: translateX(-100%) scale(0.9);
-                    }
-                }
-                
-                @keyframes fadeIn {
-                    from {
-                        opacity: 0;
-                        transform: scale(0.95);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: scale(1);
                     }
                 }
                 
@@ -671,7 +637,7 @@ class LimitedStockAlertElement extends HTMLElement {
         const displayPrice = product.price || 'Price not available';
         const discount = hasComparePrice ? this.calculateDiscount(product.price, product.compareAtPrice) : null;
         
-        const stockLevel = this.getStockLevel(product);
+        const stockLevel = product.stockQuantity || 0;
         const stockPercentage = this.getStockPercentage(stockLevel);
         const stockColor = this.getStockColor(stockPercentage);
         
