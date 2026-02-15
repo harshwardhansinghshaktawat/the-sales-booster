@@ -5,19 +5,34 @@ class LimitedStockAlertElement extends HTMLElement {
         this.currentIndex = 0;
         this.rotationInterval = null;
         this.settings = {
-            color1: '#e74c3c', color2: '#ffffff', color3: '#2c3e50',
-            color4: '#f39c12', color5: '#ecf0f1', color6: '#c0392b',
-            color7: '#27ae60', color8: '#e67e22',
-            borderWidth: 2, cornerRadius: 12,
-            alertText: '⚠️ LOW STOCK ALERT', buttonText: 'Grab It Now',
-            showProgressBar: true, stockThreshold: 10,
-            autoRotate: true, rotationSpeed: 5,
-            titleFontFamily: 'Poppins', titleFontSize: 18,
-            priceFontFamily: 'Montserrat', priceFontSize: 24,
-            alertFontFamily: 'Roboto', alertFontSize: 14,
-            buttonFontFamily: 'Poppins', buttonFontSize: 14,
-            stockFontFamily: 'Roboto Mono', stockFontSize: 16,
-            titleTag: 'H3', cardWidth: 100
+            color1: '#e74c3c',
+            color2: '#ffffff',
+            color3: '#2c3e50',
+            color4: '#f39c12',
+            color5: '#ecf0f1',
+            color6: '#c0392b',
+            color7: '#27ae60',
+            color8: '#e67e22',
+            borderWidth: 2,
+            cornerRadius: 12,
+            alertText: '⚠️ LOW STOCK ALERT',
+            buttonText: 'Grab It Now',
+            showProgressBar: true,
+            stockThreshold: 10,
+            autoRotate: true,
+            rotationSpeed: 5,
+            titleFontFamily: 'Poppins',
+            titleFontSize: 18,
+            priceFontFamily: 'Montserrat',
+            priceFontSize: 24,
+            alertFontFamily: 'Roboto',
+            alertFontSize: 14,
+            buttonFontFamily: 'Poppins',
+            buttonFontSize: 14,
+            stockFontFamily: 'Roboto Mono',
+            stockFontSize: 16,
+            titleTag: 'H3',
+            cardWidth: 100      // NEW
         };
         this.isRendered = false;
         this.pendingProductsData = null;
@@ -42,11 +57,16 @@ class LimitedStockAlertElement extends HTMLElement {
             if (name === 'products-data') {
                 try {
                     const data = JSON.parse(newValue);
-                    if (!this.isRendered) { this.pendingProductsData = data; return; }
+                    if (!this.isRendered) {
+                        this.pendingProductsData = data;
+                        return;
+                    }
                     this.products = data || [];
                     this.currentIndex = 0;
                     this.renderProducts();
-                } catch (e) { console.error('Error parsing products data:', e); }
+                } catch (e) {
+                    console.error('Error parsing products data:', e);
+                }
             } else if (name === 'settings') {
                 try {
                     const newSettings = JSON.parse(newValue);
@@ -60,13 +80,17 @@ class LimitedStockAlertElement extends HTMLElement {
                             this.setupRotation();
                         }
                     }
-                } catch (e) { console.error('Error parsing settings:', e); }
+                } catch (e) {
+                    console.error('Error parsing settings:', e);
+                }
             }
         }
     }
 
     disconnectedCallback() {
-        if (this.rotationInterval) clearInterval(this.rotationInterval);
+        if (this.rotationInterval) {
+            clearInterval(this.rotationInterval);
+        }
     }
 
     calculateDiscount(price, comparePrice) {
@@ -93,8 +117,17 @@ class LimitedStockAlertElement extends HTMLElement {
         this.innerHTML = `
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500;600;700&family=Inter:wght@400;600;700&display=swap');
-                *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-                :host { display: block; width: 100%; }
+
+                *, *::before, *::after {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+
+                :host {
+                    display: block;
+                    width: 100%;
+                }
 
                 @keyframes urgentPulse {
                     0%, 100% { transform: scale(1); opacity: 1; }
@@ -111,14 +144,14 @@ class LimitedStockAlertElement extends HTMLElement {
                 }
                 @keyframes fadeIn {
                     from { opacity: 0; }
-                    to { opacity: 1; }
+                    to   { opacity: 1; }
                 }
                 @keyframes fillBar {
                     from { width: 0; }
-                    to { width: var(--stock-width); }
+                    to   { width: var(--stock-width); }
                 }
 
-                /* ── OUTER WRAPPER: centers card, respects cardWidth ── */
+                /* NEW: outer wrapper centers the card */
                 .alert-outer {
                     width: 100%;
                     display: flex;
@@ -129,8 +162,29 @@ class LimitedStockAlertElement extends HTMLElement {
                     padding: 20px;
                     width: var(--card-width, 100%);
                     max-width: 100%;
-                    background: linear-gradient(135deg, var(--color5) 0%, #fff 100%);
+                    background: linear-gradient(135deg, var(--color5, #ecf0f1) 0%, #fff 100%);
                     transition: width 0.3s ease;
+                    /* CSS vars with fallbacks so widget renders correctly before panel loads */
+                    --color1: #e74c3c;
+                    --color2: #ffffff;
+                    --color3: #2c3e50;
+                    --color4: #f39c12;
+                    --color5: #ecf0f1;
+                    --color6: #c0392b;
+                    --color7: #27ae60;
+                    --color8: #e67e22;
+                    --title-font-family: Poppins, sans-serif;
+                    --price-font-family: Montserrat, sans-serif;
+                    --alert-font-family: Roboto, sans-serif;
+                    --button-font-family: Poppins, sans-serif;
+                    --stock-font-family: 'Roboto Mono', monospace;
+                    --title-font-size: 18px;
+                    --price-font-size: 24px;
+                    --alert-font-size: 14px;
+                    --button-font-size: 14px;
+                    --stock-font-size: 16px;
+                    --corner-radius: 12px;
+                    --card-width: 100%;
                 }
 
                 .alert-header {
@@ -140,7 +194,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     border-radius: 10px;
                     text-align: center;
                     margin-bottom: 25px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
                     animation: urgentPulse 2s ease-in-out infinite;
                 }
 
@@ -150,10 +204,10 @@ class LimitedStockAlertElement extends HTMLElement {
                     font-weight: 700;
                     letter-spacing: 2px;
                     text-transform: uppercase;
-                    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
                 }
 
-                /* ── CSS GRID STACK: all cards same cell = stable width ── */
+                /* CSS Grid stack — all cards occupy the same cell = stable width always */
                 .product-carousel {
                     display: grid;
                     grid-template-columns: 1fr;
@@ -170,7 +224,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     background: var(--color2);
                     border-radius: var(--corner-radius);
                     overflow: hidden;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
                     visibility: hidden;
                     opacity: 0;
                     transition: opacity 0.4s ease, visibility 0.4s ease;
@@ -202,11 +256,14 @@ class LimitedStockAlertElement extends HTMLElement {
                     transition: transform 0.4s ease;
                 }
 
-                .stock-card.active:hover .product-image { transform: scale(1.08); }
+                .stock-card.active:hover .product-image {
+                    transform: scale(1.08);
+                }
 
                 .stock-badge {
                     position: absolute;
-                    top: 12px; left: 12px;
+                    top: 12px;
+                    left: 12px;
                     background: var(--color1);
                     color: var(--color2);
                     padding: 6px 14px;
@@ -218,30 +275,49 @@ class LimitedStockAlertElement extends HTMLElement {
                     letter-spacing: 0.5px;
                     z-index: 10;
                     animation: flash 1.5s ease-in-out infinite;
-                    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
                 }
 
-                .out-of-stock-badge { background: var(--color3); animation: none; }
+                .out-of-stock-badge {
+                    background: var(--color3);
+                    animation: none;
+                }
 
                 .discount-badge {
                     position: absolute;
-                    top: 12px; right: 12px;
+                    top: 12px;
+                    right: 12px;
                     background: linear-gradient(135deg, var(--color4) 0%, var(--color8) 100%);
                     color: var(--color2);
-                    width: 60px; height: 60px;
+                    width: 60px;
+                    height: 60px;
                     border-radius: 50%;
-                    display: flex; flex-direction: column;
-                    align-items: center; justify-content: center;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
                     font-weight: 800;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
                     z-index: 10;
                     border: 3px solid var(--color2);
                 }
 
-                .discount-value { font-size: 20px; line-height: 1; font-family: var(--stock-font-family); }
-                .discount-label { font-size: 9px; text-transform: uppercase; font-family: var(--alert-font-family); }
+                .discount-value {
+                    font-size: 20px;
+                    line-height: 1;
+                    font-family: var(--stock-font-family);
+                }
 
-                .product-content { padding: 20px; width: 100%; }
+                .discount-label {
+                    font-size: 9px;
+                    text-transform: uppercase;
+                    font-family: var(--alert-font-family);
+                }
+
+                .product-content {
+                    padding: 20px;
+                    width: 100%;
+                }
 
                 .product-name {
                     font-family: var(--title-font-family);
@@ -258,15 +334,18 @@ class LimitedStockAlertElement extends HTMLElement {
                 }
 
                 .stock-info-section {
-                    background: rgba(0,0,0,0.03);
+                    background: rgba(231, 76, 60, 0.05);
                     padding: 12px;
                     border-radius: 8px;
                     margin-bottom: 15px;
-                    border: 1px solid rgba(0,0,0,0.08);
+                    border: 1px solid rgba(231, 76, 60, 0.2);
                     width: 100%;
                 }
 
-                .out-of-stock-section { background: rgba(44,62,80,0.05); border: 1px solid rgba(44,62,80,0.2); }
+                .out-of-stock-section {
+                    background: rgba(44, 62, 80, 0.05);
+                    border: 1px solid rgba(44, 62, 80, 0.2);
+                }
 
                 .stock-text {
                     font-family: var(--stock-font-family);
@@ -281,13 +360,16 @@ class LimitedStockAlertElement extends HTMLElement {
                 .out-of-stock-text { animation: none; }
 
                 .stock-progress-container {
-                    width: 100%; height: 8px;
+                    width: 100%;
+                    height: 8px;
                     background: var(--color5);
-                    border-radius: 10px; overflow: hidden;
+                    border-radius: 10px;
+                    overflow: hidden;
                 }
 
                 .stock-progress-bar {
-                    height: 100%; border-radius: 10px;
+                    height: 100%;
+                    border-radius: 10px;
                     animation: fillBar 1.5s ease-out forwards;
                     box-shadow: 0 0 10px var(--stock-color);
                 }
@@ -301,82 +383,140 @@ class LimitedStockAlertElement extends HTMLElement {
                 }
 
                 .price-wrapper {
-                    display: flex; align-items: baseline;
-                    gap: 10px; justify-content: center; flex-wrap: wrap;
+                    display: flex;
+                    align-items: baseline;
+                    gap: 10px;
+                    justify-content: center;
+                    flex-wrap: wrap;
                 }
 
                 .product-price {
                     font-family: var(--price-font-family);
                     font-size: var(--price-font-size);
-                    font-weight: 800; color: var(--color1);
+                    font-weight: 800;
+                    color: var(--color1);
                 }
 
                 .product-compare-price {
                     font-family: var(--price-font-family);
                     font-size: calc(var(--price-font-size) * 0.6);
-                    color: #999; text-decoration: line-through; opacity: 0.7;
+                    color: #999;
+                    text-decoration: line-through;
+                    opacity: 0.7;
                 }
 
                 .action-button {
-                    display: block; width: 100%;
+                    display: block;
+                    width: 100%;
                     padding: 14px 20px;
                     background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%);
                     color: var(--color2);
                     font-family: var(--button-font-family);
                     font-size: var(--button-font-size);
-                    font-weight: 700; text-transform: uppercase;
-                    letter-spacing: 1.5px; border: none;
-                    border-radius: 25px; cursor: pointer;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    border: none;
+                    border-radius: 25px;
+                    cursor: pointer;
                     transition: all 0.3s ease;
-                    text-decoration: none; text-align: center;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+                    text-decoration: none;
+                    text-align: center;
+                    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
                 }
 
-                .action-button:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+                .action-button:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+                }
+
                 .action-button.disabled {
                     background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-                    cursor: not-allowed; opacity: 0.7;
+                    cursor: not-allowed;
+                    opacity: 0.7;
                 }
-                .action-button.disabled:hover { transform: none; }
+
+                .action-button.disabled:hover {
+                    transform: none;
+                    box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+                }
 
                 .navigation-controls {
-                    display: flex; justify-content: center;
-                    align-items: center; gap: 20px; margin-top: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 20px;
+                    margin-top: 20px;
                 }
 
                 .nav-arrow {
-                    width: 40px; height: 40px; border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
                     background: var(--color2);
                     border: 2px solid var(--color1);
                     color: var(--color1);
-                    display: flex; align-items: center; justify-content: center;
-                    cursor: pointer; transition: all 0.3s ease;
-                    font-size: 20px; font-weight: 700;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 20px;
+                    font-weight: 700;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    flex-shrink: 0;
                 }
 
-                .nav-arrow:hover { background: var(--color1); color: var(--color2); transform: scale(1.1); }
+                .nav-arrow:hover {
+                    background: var(--color1);
+                    color: var(--color2);
+                    transform: scale(1.1);
+                }
 
-                .navigation-dots { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+                .navigation-dots {
+                    display: flex;
+                    gap: 10px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                }
 
                 .nav-dot {
-                    width: 10px; height: 10px; border-radius: 50%;
-                    background: rgba(0,0,0,0.2); cursor: pointer;
-                    transition: all 0.3s ease; border: 2px solid transparent; flex-shrink: 0;
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
+                    background: rgba(231, 76, 60, 0.3);
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    border: 2px solid transparent;
+                    flex-shrink: 0;
                 }
 
-                .nav-dot:hover { background: rgba(0,0,0,0.35); transform: scale(1.2); }
+                .nav-dot:hover {
+                    background: rgba(231, 76, 60, 0.5);
+                    transform: scale(1.2);
+                }
+
                 .nav-dot.active {
-                    background: var(--color1); border-color: var(--color2);
-                    transform: scale(1.3); box-shadow: 0 0 15px var(--color1);
+                    background: var(--color1);
+                    border-color: var(--color2);
+                    transform: scale(1.3);
+                    box-shadow: 0 0 15px var(--color1);
                 }
 
                 .empty-state {
-                    text-align: center; padding: 80px 20px;
-                    color: #999; font-family: var(--alert-font-family); font-size: 18px;
+                    text-align: center;
+                    padding: 80px 20px;
+                    color: #999;
+                    font-family: var(--alert-font-family);
+                    font-size: 18px;
                 }
 
-                .empty-state::before { content: '📦'; display: block; font-size: 80px; margin-bottom: 20px; }
+                .empty-state::before {
+                    content: '📦';
+                    display: block;
+                    font-size: 80px;
+                    margin-bottom: 20px;
+                }
 
                 @media (max-width: 768px) {
                     .alert-container { padding: 15px; }
@@ -411,26 +551,27 @@ class LimitedStockAlertElement extends HTMLElement {
         const carousel = this.querySelector('.product-carousel');
         const dotsContainer = this.querySelector('.navigation-dots');
 
-        if (alertTitle) alertTitle.textContent = this.settings.alertText || '⚠️ LOW STOCK ALERT';
+        if (alertTitle) {
+            alertTitle.textContent = this.settings.alertText || '⚠️ LOW STOCK ALERT';
+        }
+
         if (!carousel || !dotsContainer) return;
 
         if (this.products.length === 0) {
             carousel.innerHTML = '<div class="empty-state">No low stock products to display</div>';
             dotsContainer.innerHTML = '';
-            const prev = this.querySelector('.nav-prev');
-            const next = this.querySelector('.nav-next');
-            if (prev) prev.style.display = 'none';
-            if (next) next.style.display = 'none';
+            this.querySelector('.nav-prev').style.display = 'none';
+            this.querySelector('.nav-next').style.display = 'none';
             return;
         }
 
-        const prev = this.querySelector('.nav-prev');
-        const next = this.querySelector('.nav-next');
-        if (prev) prev.style.display = 'flex';
-        if (next) next.style.display = 'flex';
+        this.querySelector('.nav-prev').style.display = 'flex';
+        this.querySelector('.nav-next').style.display = 'flex';
 
-        // Render ALL cards at once into the grid stack
-        carousel.innerHTML = this.products.map(p => this.renderProductCard(p)).join('');
+        // Render ALL cards into the grid at once
+        carousel.innerHTML = this.products
+            .map(p => this.renderProductCard(p))
+            .join('');
 
         this.showCard(this.currentIndex);
         this.renderDots();
@@ -466,7 +607,8 @@ class LimitedStockAlertElement extends HTMLElement {
                             <div class="discount-value">${discount}%</div>
                             <div class="discount-label">OFF</div>
                         </div>` : ''}
-                    <img src="${product.imageUrl}" alt="${product.name}"
+                    <img src="${product.imageUrl}"
+                         alt="${product.name}"
                          class="product-image"
                          onerror="this.src='https://via.placeholder.com/600x300'">
                 </div>
@@ -528,13 +670,15 @@ class LimitedStockAlertElement extends HTMLElement {
         if (prevBtn) {
             prevBtn.onclick = () => {
                 this.showCard((this.currentIndex - 1 + this.products.length) % this.products.length);
-                this.updateDots(); this.setupRotation();
+                this.updateDots();
+                this.setupRotation();
             };
         }
         if (nextBtn) {
             nextBtn.onclick = () => {
                 this.showCard((this.currentIndex + 1) % this.products.length);
-                this.updateDots(); this.setupRotation();
+                this.updateDots();
+                this.setupRotation();
             };
         }
     }
@@ -553,28 +697,30 @@ class LimitedStockAlertElement extends HTMLElement {
         const container = this.querySelector('.alert-container');
         if (!container) return;
 
-        const cardWidth = this.settings.cardWidth || 100;
-        container.style.setProperty('--card-width', `${cardWidth}%`);
+        // NEW: card width
+        container.style.setProperty('--card-width', `${this.settings.cardWidth || 100}%`);
 
-        const vars = {
-            '--color1': this.settings.color1, '--color2': this.settings.color2,
-            '--color3': this.settings.color3, '--color4': this.settings.color4,
-            '--color5': this.settings.color5, '--color6': this.settings.color6,
-            '--color7': this.settings.color7, '--color8': this.settings.color8,
-            '--title-font-family': this.settings.titleFontFamily,
-            '--price-font-family': this.settings.priceFontFamily,
-            '--alert-font-family': this.settings.alertFontFamily,
-            '--button-font-family': this.settings.buttonFontFamily,
-            '--stock-font-family': this.settings.stockFontFamily,
-            '--title-font-size': `${this.settings.titleFontSize}px`,
-            '--price-font-size': `${this.settings.priceFontSize}px`,
-            '--alert-font-size': `${this.settings.alertFontSize}px`,
-            '--button-font-size': `${this.settings.buttonFontSize}px`,
-            '--stock-font-size': `${this.settings.stockFontSize}px`,
-            '--corner-radius': `${this.settings.cornerRadius}px`
-        };
+        container.style.setProperty('--color1', this.settings.color1);
+        container.style.setProperty('--color2', this.settings.color2);
+        container.style.setProperty('--color3', this.settings.color3);
+        container.style.setProperty('--color4', this.settings.color4);
+        container.style.setProperty('--color5', this.settings.color5);
+        container.style.setProperty('--color6', this.settings.color6);
+        container.style.setProperty('--color7', this.settings.color7);
+        container.style.setProperty('--color8', this.settings.color8);
 
-        Object.entries(vars).forEach(([k, v]) => container.style.setProperty(k, v));
+        container.style.setProperty('--title-font-family', this.settings.titleFontFamily);
+        container.style.setProperty('--price-font-family', this.settings.priceFontFamily);
+        container.style.setProperty('--alert-font-family', this.settings.alertFontFamily);
+        container.style.setProperty('--button-font-family', this.settings.buttonFontFamily);
+        container.style.setProperty('--stock-font-family', this.settings.stockFontFamily);
+
+        container.style.setProperty('--title-font-size', `${this.settings.titleFontSize}px`);
+        container.style.setProperty('--price-font-size', `${this.settings.priceFontSize}px`);
+        container.style.setProperty('--alert-font-size', `${this.settings.alertFontSize}px`);
+        container.style.setProperty('--button-font-size', `${this.settings.buttonFontSize}px`);
+        container.style.setProperty('--stock-font-size', `${this.settings.stockFontSize}px`);
+        container.style.setProperty('--corner-radius', `${this.settings.cornerRadius}px`);
 
         this.querySelectorAll('.stock-card').forEach(card => {
             card.style.border = this.settings.borderWidth > 0
