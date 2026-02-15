@@ -1,615 +1,526 @@
 class UrgencyTimerElement extends HTMLElement {
     constructor() {
         super();
-        this.products       = [];
-        this.currentIndex   = 0;
+        this.products         = [];
+        this.currentIndex     = 0;
         this.rotationInterval = null;
-        this.timerIntervals = new Map();
+        this.timerIntervals   = new Map();
         this.settings = {
-            color1: '#ff4757',
-            color2: '#ffffff',
-            color3: '#2f3542',
-            color4: '#ffa502',
-            color5: '#ff6348',
-            color6: '#ff3838',
-            color7: '#1e90ff',
-            color8: '#000000',
-            borderWidth: 0,
-            cornerRadius: 16,
-            mainText: '🔥 HOT DEAL ENDING SOON',
-            urgencyText: 'Limited Time Offer!',
-            ctaText: 'Claim Deal',
-            // FIX: two countdown controls
-            countdownMode: 'hours',   // 'hours' | 'midnight'
-            timerDuration: 24,        // hours to count down from (when mode = 'hours')
-            showViewers: true,
-            // FIX: showSold removed entirely
-            autoRotate: true,
-            rotationSpeed: 8,
-            titleFontFamily: 'Archivo Black',
-            titleFontSize: 20,
+            color1: '#ff4757', color2: '#ffffff', color3: '#0a0a0a',
+            color4: '#ffa502', color5: '#ff6348', color6: '#ff3838',
+            color7: '#1e90ff', color8: '#1a1a1a',
+            borderWidth: 0, cornerRadius: 0,
+            mainText:    '🔥 HOT DEAL ENDING SOON',
+            urgencyText: 'Limited Time Offer',
+            ctaText:     'Claim This Deal',
+            timerDuration:     24,
+            autoRotate:        true,
+            rotationSpeed:     8,
+            titleFontFamily:   'Archivo Black',
+            titleFontSize:     20,
             urgencyFontFamily: 'Poppins',
-            urgencyFontSize: 13,
-            priceFontFamily: 'Montserrat',
-            priceFontSize: 28,
-            timerFontFamily: 'Orbitron',
-            timerFontSize: 24,
-            ctaFontFamily: 'Poppins',
-            ctaFontSize: 15,
-            titleTag: 'H2'
+            urgencyFontSize:   13,
+            priceFontFamily:   'Montserrat',
+            priceFontSize:     28,
+            timerFontFamily:   'Orbitron',
+            timerFontSize:     24,
+            ctaFontFamily:     'Poppins',
+            ctaFontSize:       15,
+            titleTag:          'H2'
         };
-        this.isRendered         = false;
+        this.isRendered          = false;
         this.pendingProductsData = null;
     }
 
     connectedCallback() {
         this.render();
         this.isRendered = true;
-
         if (this.pendingProductsData) {
-            this.products = this.pendingProductsData || [];
+            this.products            = this.pendingProductsData || [];
             this.pendingProductsData = null;
             this.renderProducts();
         }
     }
 
-    static get observedAttributes() {
-        return ['products-data', 'settings'];
-    }
+    static get observedAttributes() { return ['products-data', 'settings']; }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (newValue && newValue !== oldValue) {
-            if (name === 'products-data') {
-                try {
-                    const data = JSON.parse(newValue);
-                    if (!this.isRendered) {
-                        this.pendingProductsData = data;
-                        return;
-                    }
-                    this.products     = data || [];
-                    this.currentIndex = 0;
-                    this.renderProducts();
-                } catch (e) {
-                    console.error('Error parsing products data:', e);
+        if (!newValue || newValue === oldValue) return;
+        if (name === 'products-data') {
+            try {
+                const data = JSON.parse(newValue);
+                if (!this.isRendered) { this.pendingProductsData = data; return; }
+                this.products = data || []; this.currentIndex = 0;
+                this.renderProducts();
+            } catch(e) { console.error('products-data', e); }
+        } else if (name === 'settings') {
+            try {
+                const s = JSON.parse(newValue);
+                const oldAR = this.settings.autoRotate;
+                const oldRS = this.settings.rotationSpeed;
+                Object.assign(this.settings, s);
+                if (this.isRendered) {
+                    this.updateStyles();
+                    this.syncTexts();
+                    if (oldAR !== this.settings.autoRotate || oldRS !== this.settings.rotationSpeed)
+                        this.setupRotation();
                 }
-            } else if (name === 'settings') {
-                try {
-                    const newSettings = JSON.parse(newValue);
-                    const oldAutoRotate    = this.settings.autoRotate;
-                    const oldRotationSpeed = this.settings.rotationSpeed;
-                    Object.assign(this.settings, newSettings);
-                    if (this.isRendered) {
-                        this.updateStyles();
-                        if (oldAutoRotate !== this.settings.autoRotate ||
-                            oldRotationSpeed !== this.settings.rotationSpeed) {
-                            this.setupRotation();
-                        }
-                    }
-                } catch (e) {
-                    console.error('Error parsing settings:', e);
-                }
-            }
+            } catch(e) { console.error('settings', e); }
         }
     }
 
     disconnectedCallback() {
         if (this.rotationInterval) clearInterval(this.rotationInterval);
-        this.timerIntervals.forEach(interval => clearInterval(interval));
+        this.timerIntervals.forEach(iv => clearInterval(iv));
         this.timerIntervals.clear();
     }
 
-    calculateDiscount(price, comparePrice) {
-        if (!comparePrice || comparePrice === price) return null;
-        const priceNum   = parseFloat(price.replace(/[^0-9.]/g, ''));
-        const compareNum = parseFloat(comparePrice.replace(/[^0-9.]/g, ''));
-        if (isNaN(priceNum) || isNaN(compareNum) || compareNum <= priceNum) return null;
-        const discount = Math.round(((compareNum - priceNum) / compareNum) * 100);
-        return discount > 0 ? discount : null;
+    calcDiscount(price, compare) {
+        if (!compare || compare === price) return null;
+        const p = parseFloat(price.replace(/[^0-9.]/g,'')),
+              c = parseFloat(compare.replace(/[^0-9.]/g,''));
+        if (isNaN(p)||isNaN(c)||c<=p) return null;
+        const d = Math.round(((c-p)/c)*100);
+        return d > 0 ? d : null;
     }
 
-    getRandomViewers() {
-        return Math.floor(Math.random() * 150) + 50;
-    }
-
-    // ── FIX: compute countdown end-time based on countdownMode ───────────────
-    getCountdownEndTime() {
-        const now = new Date();
-        if (this.settings.countdownMode === 'midnight') {
-            // Count down to end of current day
-            const midnight = new Date(now);
-            midnight.setHours(23, 59, 59, 999);
-            return midnight;
-        }
-        // Default: count down from timerDuration hours
-        const endTime = new Date(now);
-        endTime.setHours(endTime.getHours() + (Number(this.settings.timerDuration) || 24));
-        return endTime;
-    }
-
+    // ── SHELL — rendered once ─────────────────────────────────────────────────
     render() {
-        // ── FIX: Card uses same fixed-width grid layout as the limited-stock widget
-        // so all products fill an identical container. Responsive breakpoints match.
         this.innerHTML = `
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@400;600;700;800&family=Montserrat:wght@700;800;900&family=Orbitron:wght@700;900&family=Bebas+Neue&family=Righteous&display=swap');
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Poppins:wght@400;600;700;800&family=Montserrat:wght@700;800;900&family=Orbitron:wght@600;700;900&family=Bebas+Neue&family=Righteous&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:host{display:block;width:100%;}
 
-                *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── KEYFRAMES ─────────────────────────────────────────────────────────── */
+@keyframes hdr-scroll {
+  0%  {background-position:0% 50%;}
+  100%{background-position:300% 50%;}
+}
+@keyframes digit-tick {
+  0%,100%{transform:translateY(0);    opacity:1;}
+  45%    {transform:translateY(-4px); opacity:.7;}
+  55%    {transform:translateY(4px);  opacity:.7;}
+}
+@keyframes colon-blink {
+  0%,49%  {opacity:1;}
+  50%,100%{opacity:0;}
+}
+@keyframes badge-spin {
+  0%,100%{transform:scale(1)   rotate(-8deg);}
+  50%    {transform:scale(1.1) rotate(-8deg);}
+}
+@keyframes cta-sheen {
+  0%  {background-position:-200% center;}
+  100%{background-position: 200% center;}
+}
+@keyframes card-in {
+  from{opacity:0;transform:translateY(16px);}
+  to  {opacity:1;transform:translateY(0);}
+}
 
-                :host {
-                    display: block;
-                    width: 100%;
-                    --color1: #ff4757;
-                    --color2: #ffffff;
-                    --color3: #2f3542;
-                    --color4: #ffa502;
-                    --color5: #ff6348;
-                    --color6: #ff3838;
-                    --color7: #1e90ff;
-                    --color8: #000000;
-                }
+/* ── ROOT WRAP ─────────────────────────────────────────────────────────── */
+.aut-root {
+    width:100%;
+    --c1:var(--color1,#ff4757);
+    --c2:var(--color2,#ffffff);
+    --c3:var(--color3,#0a0a0a);
+    --c4:var(--color4,#ffa502);
+    --c5:var(--color5,#ff6348);
+    --c6:var(--color6,#ff3838);
+    --c7:var(--color7,#1e90ff);
+    --c8:var(--color8,#1a1a1a);
+    font-family:'Poppins',sans-serif;
+}
 
-                @keyframes intense-pulse {
-                    0%, 100% { transform: scale(1); opacity: 1; }
-                    50%       { transform: scale(1.08); opacity: 0.9; }
-                }
-                @keyframes shake-urgent {
-                    0%, 100% { transform: translateX(0) rotate(0deg); }
-                    25%       { transform: translateX(-8px) rotate(-2deg); }
-                    75%       { transform: translateX(8px) rotate(2deg); }
-                }
-                @keyframes blink-fast {
-                    0%, 100% { opacity: 1; }
-                    50%       { opacity: 0.3; }
-                }
-                @keyframes glow-intense {
-                    0%, 100% { box-shadow: 0 0 30px rgba(255,71,87,0.6), 0 0 60px rgba(255,71,87,0.3); }
-                    50%       { box-shadow: 0 0 50px rgba(255,71,87,0.9), 0 0 100px rgba(255,71,87,0.5); }
-                }
-                @keyframes countdown-pulse {
-                    0%, 100% { transform: scale(1);   background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%); }
-                    50%       { transform: scale(1.1); background: linear-gradient(135deg, var(--color6) 0%, var(--color1) 100%); }
-                }
-                @keyframes shimmer {
-                    0%   { background-position: -200% 0; }
-                    100% { background-position:  200% 0; }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to   { opacity: 1; }
-                }
+/* ── GRID STACK (same layout pattern as limited-stock widget) ───────────── */
+.aut-carousel {
+    display:grid;
+    grid-template-columns:1fr;
+    grid-template-rows:1fr;
+    width:100%;
+    overflow:hidden;
+}
 
-                /* ── OUTER CONTAINER ── same 100% width pattern as limited-stock widget */
-                .timer-container {
-                    width: 100%;
-                    padding: 0;
-                    position: relative;
-                }
+/* ── CARD ──────────────────────────────────────────────────────────────── */
+.aut-card {
+    grid-column:1; grid-row:1;
+    width:100%; min-width:0;
+    background:var(--c3);
+    border-radius:var(--radius,0px);
+    overflow:hidden;
+    border:var(--card-border,none);
+    visibility:hidden; opacity:0;
+    transition:opacity .35s ease, visibility .35s ease;
+    pointer-events:none;
+    box-shadow:0 24px 80px rgba(0,0,0,.6);
+}
+.aut-card.active{
+    visibility:visible; opacity:1; pointer-events:auto;
+    animation:card-in .4s ease both;
+}
 
-                /* ── CARD GRID STACK (same pattern as limited-stock) ─────────────────
-                   All cards share the same grid cell → identical width, no layout shift  */
-                .product-carousel {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    grid-template-rows: 1fr;
-                    width: 100%;
-                    overflow: hidden;
-                }
+/* ── SCROLLING MARQUEE HEADER ──────────────────────────────────────────── */
+.aut-hdr {
+    background:linear-gradient(90deg,var(--c1),var(--c6),var(--c5),var(--c1));
+    background-size:300% 100%;
+    animation:hdr-scroll 3s linear infinite;
+    padding:11px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    position:relative;
+}
+.aut-hdr-text {
+    font-family:var(--uf,'Poppins');
+    font-size:var(--us,13px);
+    font-weight:800;
+    color:var(--c2);
+    text-transform:uppercase;
+    letter-spacing:3px;
+    text-shadow:0 1px 6px rgba(0,0,0,.3);
+    text-align:center;
+    position:relative;
+    z-index:1;
+}
 
-                .urgency-card {
-                    grid-column: 1;
-                    grid-row: 1;
-                    width: 100%;
-                    min-width: 0;
-                    background: linear-gradient(135deg, var(--color3) 0%, #1a1d24 100%);
-                    border-radius: var(--corner-radius, 16px);
-                    overflow: hidden;
-                    box-shadow: 0 15px 50px rgba(0,0,0,0.3);
-                    position: relative;
-                    animation: glow-intense 2s ease-in-out infinite;
-                    visibility: hidden;
-                    opacity: 0;
-                    transition: opacity 0.4s ease, visibility 0.4s ease;
-                    pointer-events: none;
-                }
+/* ── FULL-BLEED IMAGE + VEIL ────────────────────────────────────────────── */
+.aut-img-wrap {
+    position:relative;
+    width:100%;
+    height:320px;
+    overflow:hidden;
+    flex-shrink:0;
+}
+.aut-img {
+    display:block;
+    width:100%; height:100%;
+    object-fit:cover;
+    object-position:center;
+    transition:transform .6s ease;
+}
+.aut-card.active:hover .aut-img{transform:scale(1.05);}
 
-                .urgency-card.active {
-                    visibility: visible;
-                    opacity: 1;
-                    pointer-events: auto;
-                    animation: glow-intense 2s ease-in-out infinite, fadeIn 0.4s ease forwards;
-                }
+/* dark gradient veil bleeding from bottom into content */
+.aut-img-wrap::after {
+    content:'';
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:60%;
+    background:linear-gradient(to bottom,transparent 0%,var(--c3) 100%);
+    pointer-events:none;
+}
 
-                /* shimmer top line */
-                .urgency-card::before {
-                    content: '';
-                    position: absolute;
-                    top: 0; left: 0; right: 0;
-                    height: 4px;
-                    background: linear-gradient(90deg, var(--color1) 0%, var(--color4) 50%, var(--color1) 100%);
-                    background-size: 200% 100%;
-                    animation: shimmer 2s linear infinite;
-                    z-index: 2;
-                }
+/* discount badge: isolated circle in top-right */
+.aut-badge {
+    position:absolute;
+    top:16px; right:16px;
+    z-index:10;
+    width:72px; height:72px;
+    border-radius:50%;
+    background:linear-gradient(135deg,var(--c4) 0%,var(--c5) 100%);
+    border:3px solid rgba(255,255,255,.9);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:var(--c2);
+    box-shadow:0 8px 24px rgba(0,0,0,.5);
+    animation:badge-spin 2.5s ease-in-out infinite;
+}
+.aut-badge-pct{
+    font-family:var(--tf,'Orbitron');
+    font-size:21px; font-weight:900; line-height:1;
+}
+.aut-badge-off{
+    font-family:var(--uf,'Poppins');
+    font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+}
 
-                .urgency-header {
-                    background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%);
-                    padding: 12px 20px;
-                    text-align: center;
-                    position: relative;
-                    overflow: hidden;
-                }
-                .urgency-header::after {
-                    content: '🔥';
-                    position: absolute;
-                    font-size: 100px;
-                    opacity: 0.1;
-                    top: 50%; left: 50%;
-                    transform: translate(-50%, -50%);
-                    animation: intense-pulse 1.5s ease-in-out infinite;
-                }
+/* ── CONTENT SECTION ────────────────────────────────────────────────────── */
+.aut-body {
+    padding:20px 24px 0;
+    position:relative; z-index:2;
+}
 
-                .main-text {
-                    font-family: var(--urgency-font-family);
-                    font-size: var(--urgency-font-size);
-                    color: var(--color2);
-                    margin: 0;
-                    font-weight: 800;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                    z-index: 1;
-                    position: relative;
-                    animation: shake-urgent 3s ease-in-out infinite;
-                }
+/* urgency chip — sits above the title */
+.aut-chip {
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:4px 12px 4px 8px;
+    border-radius:100px;
+    border:1px solid var(--c1);
+    background:rgba(255,255,255,.04);
+    margin-bottom:10px;
+}
+.aut-chip-dot {
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--c1);
+    box-shadow:0 0 8px var(--c1);
+    animation:colon-blink 1.2s ease-in-out infinite;
+    flex-shrink:0;
+}
+.aut-chip-text {
+    font-family:var(--uf,'Poppins');
+    font-size:calc(var(--us,13px) - 1px);
+    font-weight:700;
+    color:var(--c1);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+}
 
-                /* ── PRODUCT IMAGE: fixed height, never shrinks ─────────────────────── */
-                .product-image-container {
-                    position: relative;
-                    width: 100%;
-                    height: 300px;
-                    overflow: hidden;
-                    flex-shrink: 0;
-                }
+/* product title */
+.aut-title {
+    font-family:var(--ttf,'Archivo Black');
+    font-size:var(--ts,20px);
+    font-weight:900;
+    color:var(--c2);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    line-height:1.15;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+    margin-bottom:14px;
+}
 
-                .product-image-timer {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    object-position: center;
-                    border-bottom: 3px solid var(--color1);
-                    transition: transform 0.4s ease;
-                }
+/* price row */
+.aut-prices {
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    flex-wrap:wrap;
+    padding:14px 0;
+    border-top:1px solid rgba(255,255,255,.08);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    margin-bottom:0;
+}
+.aut-price {
+    font-family:var(--pf,'Montserrat');
+    font-size:var(--ps,28px);
+    font-weight:900;
+    color:var(--c4);
+    /* warm glow effect */
+    text-shadow:0 0 20px color-mix(in srgb,var(--c4) 50%,transparent);
+}
+.aut-compare {
+    font-family:var(--pf,'Montserrat');
+    font-size:calc(var(--ps,28px) * .52);
+    color:rgba(255,255,255,.35);
+    text-decoration:line-through;
+}
 
-                .urgency-card.active:hover .product-image-timer {
-                    transform: scale(1.08);
-                }
+/* ── COUNTDOWN SECTION ──────────────────────────────────────────────────── */
+.aut-countdown {
+    padding:18px 24px 0;
+}
 
-                .discount-badge-timer {
-                    position: absolute;
-                    top: 12px; right: 12px;
-                    width: 70px; height: 70px;
-                    background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
-                    border-radius: 50%;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    color: var(--color2);
-                    font-weight: 900;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-                    border: 4px solid var(--color2);
-                    animation: intense-pulse 1.5s ease-in-out infinite;
-                    z-index: 10;
-                }
-                .discount-value-timer {
-                    font-size: 24px;
-                    line-height: 1;
-                    font-family: var(--timer-font-family);
-                }
-                .discount-label-timer {
-                    font-size: 10px;
-                    text-transform: uppercase;
-                    font-family: var(--urgency-font-family);
-                }
+/* "expires in" label */
+.aut-exp-label {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--uf,'Poppins');
+    font-size:10px;
+    font-weight:700;
+    color:rgba(255,255,255,.4);
+    text-transform:uppercase;
+    letter-spacing:2.5px;
+    margin-bottom:14px;
+}
+.aut-exp-label::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:linear-gradient(to right,rgba(255,255,255,.15),transparent);
+}
 
-                /* ── PRODUCT CONTENT AREA ─────────────────────────────────────────── */
-                .product-content {
-                    padding: 20px;
-                    width: 100%;
-                }
+/* digit row — three blocks */
+.aut-digits {
+    display:grid;
+    grid-template-columns:1fr 24px 1fr 24px 1fr;
+    align-items:center;
+    gap:0;
+    margin-bottom:20px;
+}
+.aut-dblock {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    /* each block: subtle panel */
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:8px;
+    padding:16px 8px 12px;
+    position:relative;
+    overflow:hidden;
+}
+/* accent bar top of each digit block in color1 */
+.aut-dblock::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;height:3px;
+    background:linear-gradient(to right,var(--c1),var(--c6));
+}
+.aut-dval {
+    font-family:var(--tf,'Orbitron');
+    font-size:var(--tfs,24px);
+    font-weight:900;
+    color:var(--c2);
+    line-height:1;
+    letter-spacing:2px;
+    animation:digit-tick 1s ease-in-out infinite;
+}
+.aut-dlbl {
+    font-family:var(--uf,'Poppins');
+    font-size:9px;
+    font-weight:600;
+    color:rgba(255,255,255,.4);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    margin-top:6px;
+}
+/* separator colons */
+.aut-colon {
+    font-family:var(--tf,'Orbitron');
+    font-size:calc(var(--tfs,24px) * .85);
+    font-weight:900;
+    color:var(--c4);
+    text-align:center;
+    animation:colon-blink 1s step-end infinite;
+    margin-bottom:14px; /* optical align */
+    user-select:none;
+}
 
-                .product-title-timer {
-                    font-family: var(--title-font-family);
-                    font-size: var(--title-font-size);
-                    color: var(--color2);
-                    margin: 0 0 12px 0;
-                    font-weight: 900;
-                    text-transform: uppercase;
-                    line-height: 1.2;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                    overflow: hidden;
-                    width: 100%;
-                }
+/* ── CTA ─────────────────────────────────────────────────────────────────── */
+.aut-cta {
+    display:block;
+    width:100%;
+    padding:18px 24px;
+    background:linear-gradient(110deg,var(--c1) 0%,var(--c6) 100%);
+    /* sheen overlay via pseudo */
+    background-image:
+        linear-gradient(110deg, transparent 40%, rgba(255,255,255,.15) 50%, transparent 60%),
+        linear-gradient(110deg, var(--c1) 0%, var(--c6) 100%);
+    background-size:300% 100%, 100% 100%;
+    background-position:-200% center, 0 0;
+    animation:cta-sheen 3s linear infinite;
+    color:var(--c2);
+    font-family:var(--cf,'Poppins');
+    font-size:var(--cfs,15px);
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:3px;
+    border:none;
+    cursor:pointer;
+    text-decoration:none;
+    text-align:center;
+    transition:filter .2s ease, transform .2s ease;
+    border-radius:0 0 var(--radius,0px) var(--radius,0px);
+    margin-top:0;
+}
+.aut-cta:hover{filter:brightness(1.18); transform:translateY(-2px);}
 
-                .urgency-badge {
-                    display: inline-block;
-                    background: linear-gradient(135deg, var(--color4) 0%, var(--color5) 100%);
-                    color: var(--color2);
-                    padding: 6px 16px;
-                    border-radius: 20px;
-                    font-family: var(--urgency-font-family);
-                    font-size: calc(var(--urgency-font-size) - 2px);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 1px;
-                    animation: intense-pulse 2s ease-in-out infinite;
-                    margin-bottom: 12px;
-                }
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+.aut-nav {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:16px;
+    padding:14px 0 2px;
+}
+.aut-arr {
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.05);
+    color:var(--c2);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    font-size:18px;font-weight:700;
+    transition:border-color .2s,background .2s,transform .2s;
+    flex-shrink:0; user-select:none;
+}
+.aut-arr:hover{border-color:var(--c1);background:var(--c1);transform:scale(1.1);}
+.aut-dots{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
+.aut-dot {
+    width:7px;height:7px;border-radius:50%;
+    background:rgba(255,255,255,.2);
+    cursor:pointer;
+    transition:background .25s,transform .25s;
+    flex-shrink:0;
+}
+.aut-dot:hover{background:rgba(255,255,255,.5);transform:scale(1.2);}
+.aut-dot.active{background:var(--c1);transform:scale(1.4);box-shadow:0 0 8px var(--c1);}
 
-                .price-timer-section {
-                    display: flex;
-                    align-items: baseline;
-                    gap: 12px;
-                    margin-bottom: 15px;
-                    padding: 12px 0;
-                    border-top: 1px solid rgba(255,255,255,0.1);
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                    flex-wrap: wrap;
-                }
-                .product-price-timer {
-                    font-family: var(--price-font-family);
-                    font-size: var(--price-font-size);
-                    font-weight: 900;
-                    color: var(--color4);
-                    text-shadow: 0 0 20px rgba(255,165,2,0.5);
-                }
-                .product-compare-price-timer {
-                    font-family: var(--price-font-family);
-                    font-size: calc(var(--price-font-size) * 0.6);
-                    color: #999;
-                    text-decoration: line-through;
-                }
+/* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
+.aut-empty{
+    text-align:center;padding:80px 24px;
+    color:rgba(255,255,255,.3);
+    font-family:'Poppins',sans-serif;font-size:16px;
+}
+.aut-empty::before{content:'⏰';display:block;font-size:60px;margin-bottom:16px;opacity:.5;}
 
-                /* FIX: showSold stat removed. Only viewers row remains. */
-                .stats-row {
-                    display: flex;
-                    gap: 12px;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    margin-bottom: 0;
-                }
-                .stat-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: rgba(255,255,255,0.1);
-                    padding: 7px 14px;
-                    border-radius: 20px;
-                    font-family: var(--urgency-font-family);
-                    font-size: 12px;
-                    color: var(--color2);
-                    font-weight: 600;
-                }
-                .stat-icon   { font-size: 16px; }
-                .stat-number { font-weight: 800; color: var(--color4); }
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media(max-width:768px){
+    .aut-img-wrap{height:260px;}
+    .aut-body{padding:16px 18px 0;}
+    .aut-countdown{padding:16px 18px 0;}
+    .aut-dval{letter-spacing:1px;}
+}
+@media(max-width:480px){
+    .aut-img-wrap{height:220px;}
+    .aut-body{padding:14px 14px 0;}
+    .aut-countdown{padding:14px 14px 0;}
+    .aut-dblock{padding:12px 6px 8px;}
+    .aut-arr{width:30px;height:30px;font-size:16px;}
+    .aut-badge{width:58px;height:58px;}
+    .aut-badge-pct{font-size:18px;}
+}
+</style>
 
-                /* ── COUNTDOWN SECTION ─────────────────────────────────────────────── */
-                .countdown-section {
-                    background: rgba(0,0,0,0.3);
-                    padding: 20px;
-                    text-align: center;
-                    border-top: 2px solid rgba(255,71,87,0.3);
-                }
-                .countdown-label {
-                    font-family: var(--urgency-font-family);
-                    font-size: 12px;
-                    color: var(--color4);
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                    margin-bottom: 12px;
-                    font-weight: 700;
-                }
-                .countdown-display {
-                    display: flex;
-                    justify-content: center;
-                    gap: 12px;
-                    margin-bottom: 20px;
-                    flex-wrap: wrap;
-                }
-                .time-box {
-                    background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%);
-                    padding: 12px 16px;
-                    border-radius: 10px;
-                    min-width: 70px;
-                    border: 2px solid rgba(255,255,255,0.2);
-                    animation: countdown-pulse 2s ease-in-out infinite;
-                }
-                .time-value {
-                    font-family: var(--timer-font-family);
-                    font-size: var(--timer-font-size);
-                    color: var(--color2);
-                    font-weight: 900;
-                    line-height: 1;
-                    text-shadow: 0 0 15px rgba(255,255,255,0.5);
-                }
-                .time-label {
-                    font-family: var(--urgency-font-family);
-                    font-size: 10px;
-                    color: rgba(255,255,255,0.8);
-                    text-transform: uppercase;
-                    margin-top: 6px;
-                    letter-spacing: 1px;
-                }
-                .time-separator {
-                    color: var(--color4);
-                    font-family: var(--timer-font-family);
-                    font-size: var(--timer-font-size);
-                    font-weight: 900;
-                    align-self: center;
-                    animation: blink-fast 1s ease-in-out infinite;
-                }
+<div class="aut-root">
+    <div class="aut-carousel"></div>
+    <div class="aut-nav" style="display:none;">
+        <div class="aut-arr aut-prev">&#8249;</div>
+        <div class="aut-dots"></div>
+        <div class="aut-arr aut-next">&#8250;</div>
+    </div>
+</div>`;
+    }
 
-                /* ── CTA BUTTON ───────────────────────────────────────────────────── */
-                .cta-button-timer {
-                    display: block;
-                    width: 100%;
-                    padding: 18px;
-                    background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%);
-                    color: var(--color2);
-                    font-family: var(--cta-font-family);
-                    font-size: var(--cta-font-size);
-                    font-weight: 800;
-                    text-transform: uppercase;
-                    letter-spacing: 2px;
-                    border: none;
-                    border-radius: 0;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    text-decoration: none;
-                    text-align: center;
-                    box-shadow: 0 -4px 20px rgba(255,71,87,0.3);
-                    position: relative;
-                    overflow: hidden;
-                }
-                .cta-button-timer::before {
-                    content: '⚡';
-                    position: absolute;
-                    left: -40px;
-                    font-size: 24px;
-                    transition: left 0.3s ease;
-                    top: 50%;
-                    transform: translateY(-50%);
-                }
-                .cta-button-timer:hover::before { left: 30px; }
-                .cta-button-timer:hover {
-                    background: linear-gradient(135deg, var(--color6) 0%, var(--color1) 100%);
-                    transform: translateY(-3px);
-                    box-shadow: 0 -8px 30px rgba(255,71,87,0.5);
-                    padding-left: 60px;
-                }
-
-                /* ── NAVIGATION ───────────────────────────────────────────────────── */
-                .navigation-controls {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 20px;
-                    padding: 20px;
-                    background: rgba(0,0,0,0.2);
-                }
-                .nav-arrow {
-                    width: 40px; height: 40px;
-                    border-radius: 50%;
-                    background: var(--color2);
-                    border: 2px solid var(--color1);
-                    color: var(--color1);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    font-size: 20px;
-                    font-weight: 700;
-                    flex-shrink: 0;
-                }
-                .nav-arrow:hover {
-                    background: var(--color1);
-                    color: var(--color2);
-                    transform: scale(1.1);
-                }
-                .navigation-dots {
-                    display: flex;
-                    gap: 8px;
-                    flex-wrap: wrap;
-                    justify-content: center;
-                }
-                .nav-dot {
-                    width: 10px; height: 10px;
-                    border-radius: 50%;
-                    background: rgba(255,71,87,0.3);
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    flex-shrink: 0;
-                }
-                .nav-dot:hover { background: rgba(255,71,87,0.6); transform: scale(1.2); }
-                .nav-dot.active {
-                    background: var(--color1);
-                    transform: scale(1.3);
-                    box-shadow: 0 0 10px var(--color1);
-                }
-
-                /* ── EMPTY STATE ──────────────────────────────────────────────────── */
-                .empty-state {
-                    text-align: center;
-                    padding: 80px 20px;
-                    color: #999;
-                    font-family: var(--urgency-font-family);
-                    font-size: 18px;
-                }
-                .empty-state::before {
-                    content: '⏰';
-                    display: block;
-                    font-size: 80px;
-                    margin-bottom: 20px;
-                }
-
-                /* ── RESPONSIVE ───────────────────────────────────────────────────── */
-                @media (max-width: 768px) {
-                    .product-image-container { height: 250px; }
-                    .product-content { padding: 16px; }
-                    .countdown-display { gap: 8px; }
-                    .time-box { min-width: 60px; padding: 10px 12px; }
-                }
-                @media (max-width: 480px) {
-                    .product-image-container { height: 220px; }
-                    .time-box { min-width: 50px; padding: 8px 10px; }
-                    .nav-arrow { width: 35px; height: 35px; font-size: 16px; }
-                    .discount-badge-timer { width: 60px; height: 60px; }
-                    .discount-value-timer { font-size: 20px; }
-                }
-            </style>
-
-            <div class="timer-container">
-                <div class="urgency-header">
-                    <div class="main-text"></div>
-                </div>
-                <div class="product-carousel"></div>
-                <div class="navigation-controls" style="display:none;">
-                    <div class="nav-arrow nav-prev">‹</div>
-                    <div class="navigation-dots"></div>
-                    <div class="nav-arrow nav-next">›</div>
-                </div>
-            </div>
-        `;
+    // ── sync texts on settings change (no re-render needed) ───────────────────
+    syncTexts() {
+        this.querySelectorAll('.aut-hdr-text').forEach(el => {
+            el.textContent = this.settings.mainText || '🔥 HOT DEAL ENDING SOON';
+        });
+        this.querySelectorAll('.aut-chip-text').forEach(el => {
+            el.textContent = this.settings.urgencyText || 'Limited Time Offer';
+        });
+        this.querySelectorAll('.aut-cta').forEach(el => {
+            el.textContent = this.settings.ctaText || 'Claim This Deal';
+        });
     }
 
     renderProducts() {
-        const mainText  = this.querySelector('.main-text');
-        const carousel  = this.querySelector('.product-carousel');
-        const navControls = this.querySelector('.navigation-controls');
-        const dotsContainer = this.querySelector('.navigation-dots');
-
-        if (mainText) {
-            mainText.textContent = this.settings.mainText || '🔥 HOT DEAL ENDING SOON';
-        }
-
+        const carousel = this.querySelector('.aut-carousel');
+        const nav      = this.querySelector('.aut-nav');
         if (!carousel) return;
 
         if (this.products.length === 0) {
-            carousel.innerHTML = '<div class="empty-state">No products selected</div>';
-            if (navControls) navControls.style.display = 'none';
+            carousel.innerHTML = '<div class="aut-empty">No products selected</div>';
+            if (nav) nav.style.display = 'none';
             return;
         }
 
-        // FIX: render ALL cards into the grid at once (same pattern as limited-stock)
-        carousel.innerHTML = this.products.map(p => this.renderProductCard(p)).join('');
+        // render ALL cards into the grid at once
+        carousel.innerHTML = this.products.map(p => this.buildCard(p)).join('');
 
-        if (navControls) {
-            navControls.style.display = this.products.length > 1 ? 'flex' : 'none';
-        }
+        if (nav) nav.style.display = this.products.length > 1 ? 'flex' : 'none';
 
         this.showCard(this.currentIndex);
         this.renderDots();
@@ -617,227 +528,174 @@ class UrgencyTimerElement extends HTMLElement {
         this.setupRotation();
         this.updateStyles();
 
-        // Start countdown for first product
         if (this.products[this.currentIndex]) {
             this.startCountdown(this.products[this.currentIndex].id);
         }
     }
 
-    // FIX: all cards rendered into grid; only active one visible (no layout shift)
     showCard(index) {
-        const cards = this.querySelectorAll('.urgency-card');
-        cards.forEach((card, i) => {
-            if (i === index) {
-                card.classList.add('active');
-            } else {
-                card.classList.remove('active');
-            }
-        });
+        this.querySelectorAll('.aut-card').forEach((c, i) =>
+            c.classList.toggle('active', i === index));
         this.currentIndex = index;
     }
 
-    renderProductCard(product) {
-        const hasComparePrice = product.compareAtPrice && product.compareAtPrice !== product.price;
-        const displayPrice    = product.price || 'Price not available';
-        const discount        = hasComparePrice ? this.calculateDiscount(product.price, product.compareAtPrice) : null;
-        const titleTag        = this.settings.titleTag || 'H2';
-        const viewers         = this.getRandomViewers();
+    buildCard(product) {
+        const hasCompare  = product.compareAtPrice && product.compareAtPrice !== product.price;
+        const price       = product.price || 'Price N/A';
+        const discount    = hasCompare ? this.calcDiscount(product.price, product.compareAtPrice) : null;
+        const tag         = this.settings.titleTag || 'H2';
+        const pid         = product.id;
 
         return `
-            <div class="urgency-card">
-                <div class="product-image-container">
-                    ${discount ? `
-                        <div class="discount-badge-timer">
-                            <div class="discount-value-timer">${discount}%</div>
-                            <div class="discount-label-timer">OFF</div>
-                        </div>` : ''}
-                    <img src="${product.imageUrl}"
-                         alt="${product.name}"
-                         class="product-image-timer"
-                         onerror="this.src='https://via.placeholder.com/600x300'">
-                </div>
+<div class="aut-card">
 
-                <div class="product-content">
-                    <${titleTag} class="product-title-timer">${product.name}</${titleTag}>
-                    <div class="urgency-badge">${this.settings.urgencyText}</div>
+  <div class="aut-hdr">
+    <span class="aut-hdr-text">${this.settings.mainText}</span>
+  </div>
 
-                    <div class="price-timer-section">
-                        <span class="product-price-timer">${displayPrice}</span>
-                        ${hasComparePrice ? `<span class="product-compare-price-timer">${product.compareAtPrice}</span>` : ''}
-                    </div>
+  <div class="aut-img-wrap">
+    ${discount ? `
+    <div class="aut-badge">
+      <div class="aut-badge-pct">${discount}%</div>
+      <div class="aut-badge-off">OFF</div>
+    </div>` : ''}
+    <img src="${product.imageUrl}"
+         alt="${product.name}"
+         class="aut-img"
+         onerror="this.src='https://via.placeholder.com/600x320'">
+  </div>
 
-                    ${this.settings.showViewers ? `
-                        <div class="stats-row">
-                            <div class="stat-item">
-                                <span class="stat-icon">👁️</span>
-                                <span class="stat-number">${viewers}</span>&nbsp;watching
-                            </div>
-                        </div>` : ''}
-                </div>
+  <div class="aut-body">
+    <div class="aut-chip">
+      <span class="aut-chip-dot"></span>
+      <span class="aut-chip-text">${this.settings.urgencyText}</span>
+    </div>
+    <${tag} class="aut-title">${product.name}</${tag}>
+    <div class="aut-prices">
+      <span class="aut-price">${price}</span>
+      ${hasCompare ? `<span class="aut-compare">${product.compareAtPrice}</span>` : ''}
+    </div>
+  </div>
 
-                <div class="countdown-section">
-                    <div class="countdown-label">⏰ Offer Expires In</div>
-                    <div class="countdown-display">
-                        <div class="time-box">
-                            <div class="time-value" data-unit="hours" data-product="${product.id}">00</div>
-                            <div class="time-label">Hours</div>
-                        </div>
-                        <div class="time-separator">:</div>
-                        <div class="time-box">
-                            <div class="time-value" data-unit="minutes" data-product="${product.id}">00</div>
-                            <div class="time-label">Minutes</div>
-                        </div>
-                        <div class="time-separator">:</div>
-                        <div class="time-box">
-                            <div class="time-value" data-unit="seconds" data-product="${product.id}">00</div>
-                            <div class="time-label">Seconds</div>
-                        </div>
-                    </div>
-                    <a href="${product.productUrl}" class="cta-button-timer">${this.settings.ctaText}</a>
-                </div>
-            </div>
-        `;
+  <div class="aut-countdown">
+    <div class="aut-exp-label">Offer expires in</div>
+    <div class="aut-digits">
+      <div class="aut-dblock">
+        <div class="aut-dval" data-unit="hours"   data-product="${pid}">00</div>
+        <div class="aut-dlbl">Hours</div>
+      </div>
+      <div class="aut-colon">:</div>
+      <div class="aut-dblock">
+        <div class="aut-dval" data-unit="minutes" data-product="${pid}">00</div>
+        <div class="aut-dlbl">Mins</div>
+      </div>
+      <div class="aut-colon">:</div>
+      <div class="aut-dblock">
+        <div class="aut-dval" data-unit="seconds" data-product="${pid}">00</div>
+        <div class="aut-dlbl">Secs</div>
+      </div>
+    </div>
+    <a href="${product.productUrl}" class="aut-cta">${this.settings.ctaText}</a>
+  </div>
+
+</div>`;
     }
 
     renderDots() {
-        const dotsContainer = this.querySelector('.navigation-dots');
-        if (!dotsContainer || this.products.length <= 1) {
-            if (dotsContainer) dotsContainer.innerHTML = '';
-            return;
-        }
-
-        dotsContainer.innerHTML = this.products.map((_, i) =>
-            `<div class="nav-dot ${i === this.currentIndex ? 'active' : ''}" data-index="${i}"></div>`
+        const dc = this.querySelector('.aut-dots');
+        if (!dc || this.products.length <= 1) { if (dc) dc.innerHTML=''; return; }
+        dc.innerHTML = this.products.map((_,i) =>
+            `<div class="aut-dot ${i===this.currentIndex?'active':''}" data-index="${i}"></div>`
         ).join('');
-
-        dotsContainer.querySelectorAll('.nav-dot').forEach(dot => {
-            dot.addEventListener('click', (e) => {
+        dc.querySelectorAll('.aut-dot').forEach(d => {
+            d.addEventListener('click', e => {
                 const idx = parseInt(e.target.dataset.index);
-                this.showCard(idx);
-                this.updateDots();
-                this.startCountdown(this.products[idx].id);
-                this.setupRotation();
+                this.showCard(idx); this.updateDots();
+                this.startCountdown(this.products[idx].id); this.setupRotation();
             });
         });
     }
 
     updateDots() {
-        this.querySelectorAll('.nav-dot').forEach((dot, i) => {
-            dot.classList.toggle('active', i === this.currentIndex);
-        });
+        this.querySelectorAll('.aut-dot').forEach((d,i) =>
+            d.classList.toggle('active', i===this.currentIndex));
     }
 
     setupNavigation() {
-        const prevBtn = this.querySelector('.nav-prev');
-        const nextBtn = this.querySelector('.nav-next');
-
-        if (prevBtn) {
-            prevBtn.onclick = () => {
-                const idx = (this.currentIndex - 1 + this.products.length) % this.products.length;
-                this.showCard(idx);
-                this.updateDots();
-                this.startCountdown(this.products[idx].id);
-                this.setupRotation();
-            };
-        }
-
-        if (nextBtn) {
-            nextBtn.onclick = () => {
-                const idx = (this.currentIndex + 1) % this.products.length;
-                this.showCard(idx);
-                this.updateDots();
-                this.startCountdown(this.products[idx].id);
-                this.setupRotation();
-            };
-        }
+        const prev = this.querySelector('.aut-prev');
+        const next = this.querySelector('.aut-next');
+        if (prev) prev.onclick = () => {
+            const idx = (this.currentIndex - 1 + this.products.length) % this.products.length;
+            this.showCard(idx); this.updateDots();
+            this.startCountdown(this.products[idx].id); this.setupRotation();
+        };
+        if (next) next.onclick = () => {
+            const idx = (this.currentIndex + 1) % this.products.length;
+            this.showCard(idx); this.updateDots();
+            this.startCountdown(this.products[idx].id); this.setupRotation();
+        };
     }
 
     setupRotation() {
         if (this.rotationInterval) clearInterval(this.rotationInterval);
         if (!this.settings.autoRotate || this.products.length <= 1) return;
-
         const speed = (this.settings.rotationSpeed || 8) * 1000;
         this.rotationInterval = setInterval(() => {
             const idx = (this.currentIndex + 1) % this.products.length;
-            this.showCard(idx);
-            this.updateDots();
+            this.showCard(idx); this.updateDots();
             this.startCountdown(this.products[idx].id);
         }, speed);
     }
 
-    // FIX: countdown uses per-product data attribute to update the right card's timer
     startCountdown(productId) {
-        if (this.timerIntervals.has(productId)) {
+        if (this.timerIntervals.has(productId))
             clearInterval(this.timerIntervals.get(productId));
-        }
 
-        const endTime = this.getCountdownEndTime();
+        const endTime = new Date();
+        endTime.setHours(endTime.getHours() + (Number(this.settings.timerDuration) || 24));
 
-        const updateTimer = () => {
-            const distance = endTime.getTime() - Date.now();
-
-            // Selectors scoped to this product's data attribute
-            const hoursEl   = this.querySelector(`[data-unit="hours"][data-product="${productId}"]`);
-            const minutesEl = this.querySelector(`[data-unit="minutes"][data-product="${productId}"]`);
-            const secondsEl = this.querySelector(`[data-unit="seconds"][data-product="${productId}"]`);
-
-            if (distance < 0) {
-                const iv = this.timerIntervals.get(productId);
-                if (iv) clearInterval(iv);
+        const tick = () => {
+            const dist = endTime.getTime() - Date.now();
+            const h = this.querySelector(`[data-unit="hours"][data-product="${productId}"]`);
+            const m = this.querySelector(`[data-unit="minutes"][data-product="${productId}"]`);
+            const s = this.querySelector(`[data-unit="seconds"][data-product="${productId}"]`);
+            if (dist < 0) {
+                clearInterval(this.timerIntervals.get(productId));
                 this.timerIntervals.delete(productId);
-                if (hoursEl)   hoursEl.textContent   = '00';
-                if (minutesEl) minutesEl.textContent = '00';
-                if (secondsEl) secondsEl.textContent = '00';
+                [h,m,s].forEach(el => { if(el) el.textContent='00'; });
                 return;
             }
-
-            const hours   = Math.floor(distance / 3600000);
-            const minutes = Math.floor((distance % 3600000) / 60000);
-            const seconds = Math.floor((distance % 60000) / 1000);
-
-            if (hoursEl)   hoursEl.textContent   = String(hours).padStart(2, '0');
-            if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
-            if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
+            if (h) h.textContent = String(Math.floor(dist/3600000)).padStart(2,'0');
+            if (m) m.textContent = String(Math.floor((dist%3600000)/60000)).padStart(2,'0');
+            if (s) s.textContent = String(Math.floor((dist%60000)/1000)).padStart(2,'0');
         };
-
-        updateTimer();
-        const interval = setInterval(updateTimer, 1000);
-        this.timerIntervals.set(productId, interval);
+        tick();
+        this.timerIntervals.set(productId, setInterval(tick, 1000));
     }
 
     updateStyles() {
-        const container = this.querySelector('.timer-container');
-        if (!container) return;
-
+        const root = this.querySelector('.aut-root');
+        if (!root) return;
         const vars = {
-            '--color1': this.settings.color1,
-            '--color2': this.settings.color2,
-            '--color3': this.settings.color3,
-            '--color4': this.settings.color4,
-            '--color5': this.settings.color5,
-            '--color6': this.settings.color6,
-            '--color7': this.settings.color7,
-            '--color8': this.settings.color8,
-            '--title-font-family':   this.settings.titleFontFamily,
-            '--urgency-font-family': this.settings.urgencyFontFamily,
-            '--price-font-family':   this.settings.priceFontFamily,
-            '--timer-font-family':   this.settings.timerFontFamily,
-            '--cta-font-family':     this.settings.ctaFontFamily,
-            '--title-font-size':     `${this.settings.titleFontSize}px`,
-            '--urgency-font-size':   `${this.settings.urgencyFontSize}px`,
-            '--price-font-size':     `${this.settings.priceFontSize}px`,
-            '--timer-font-size':     `${this.settings.timerFontSize}px`,
-            '--cta-font-size':       `${this.settings.ctaFontSize}px`,
-            '--corner-radius':       `${this.settings.cornerRadius}px`,
+            '--color1': this.settings.color1, '--color2': this.settings.color2,
+            '--color3': this.settings.color3, '--color4': this.settings.color4,
+            '--color5': this.settings.color5, '--color6': this.settings.color6,
+            '--color7': this.settings.color7, '--color8': this.settings.color8,
+            '--ttf': this.settings.titleFontFamily,
+            '--uf':  this.settings.urgencyFontFamily,
+            '--pf':  this.settings.priceFontFamily,
+            '--tf':  this.settings.timerFontFamily,
+            '--cf':  this.settings.ctaFontFamily,
+            '--ts':  `${this.settings.titleFontSize}px`,
+            '--us':  `${this.settings.urgencyFontSize}px`,
+            '--ps':  `${this.settings.priceFontSize}px`,
+            '--tfs': `${this.settings.timerFontSize}px`,
+            '--cfs': `${this.settings.ctaFontSize}px`,
+            '--radius': `${this.settings.cornerRadius}px`,
+            '--card-border': this.settings.borderWidth > 0
+                ? `${this.settings.borderWidth}px solid ${this.settings.color1}` : 'none',
         };
-
-        Object.entries(vars).forEach(([k, v]) => container.style.setProperty(k, v));
-
-        this.querySelectorAll('.urgency-card').forEach(card => {
-            card.style.border = this.settings.borderWidth > 0
-                ? `${this.settings.borderWidth}px solid ${this.settings.color1}`
-                : 'none';
-        });
+        Object.entries(vars).forEach(([k,v]) => root.style.setProperty(k,v));
     }
 }
 
