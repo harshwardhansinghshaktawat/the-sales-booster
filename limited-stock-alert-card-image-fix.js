@@ -32,7 +32,7 @@ class LimitedStockAlertElement extends HTMLElement {
             stockFontFamily: 'Roboto Mono',
             stockFontSize: 16,
             titleTag: 'H3',
-            cardWidth: 100      // NEW
+            cardWidth: 600
         };
         this.isRendered = false;
         this.pendingProductsData = null;
@@ -151,7 +151,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     to   { width: var(--stock-width); }
                 }
 
-                /* NEW: outer wrapper centers the card */
                 .alert-outer {
                     width: 100%;
                     display: flex;
@@ -160,11 +159,10 @@ class LimitedStockAlertElement extends HTMLElement {
 
                 .alert-container {
                     padding: 20px;
-                    width: var(--card-width, 100%);
+                    width: var(--card-width, 600px);
                     max-width: 100%;
                     background: linear-gradient(135deg, var(--color5, #ecf0f1) 0%, #fff 100%);
                     transition: width 0.3s ease;
-                    /* CSS vars with fallbacks so widget renders correctly before panel loads */
                     --color1: #e74c3c;
                     --color2: #ffffff;
                     --color3: #2c3e50;
@@ -184,7 +182,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     --button-font-size: 14px;
                     --stock-font-size: 16px;
                     --corner-radius: 12px;
-                    --card-width: 100%;
+                    --card-width: 600px;
                 }
 
                 .alert-header {
@@ -207,7 +205,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
                 }
 
-                /* CSS Grid stack — all cards occupy the same cell = stable width always */
                 .product-carousel {
                     display: grid;
                     grid-template-columns: 1fr;
@@ -244,6 +241,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     height: 300px;
                     overflow: hidden;
                     background: var(--color5);
+                    display: block;
                     flex-shrink: 0;
                 }
 
@@ -254,6 +252,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     object-fit: cover;
                     object-position: center;
                     transition: transform 0.4s ease;
+                    flex-shrink: 0;
                 }
 
                 .stock-card.active:hover .product-image {
@@ -317,6 +316,7 @@ class LimitedStockAlertElement extends HTMLElement {
                 .product-content {
                     padding: 20px;
                     width: 100%;
+                    display: block;
                 }
 
                 .product-name {
@@ -357,7 +357,9 @@ class LimitedStockAlertElement extends HTMLElement {
                     animation: shake 0.5s ease-in-out infinite;
                 }
 
-                .out-of-stock-text { animation: none; }
+                .out-of-stock-text {
+                    animation: none;
+                }
 
                 .stock-progress-container {
                     width: 100%;
@@ -365,6 +367,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     background: var(--color5);
                     border-radius: 10px;
                     overflow: hidden;
+                    position: relative;
                 }
 
                 .stock-progress-bar {
@@ -537,9 +540,9 @@ class LimitedStockAlertElement extends HTMLElement {
                     </div>
                     <div class="product-carousel"></div>
                     <div class="navigation-controls">
-                        <div class="nav-arrow nav-prev">‹</div>
+                        <div class="nav-arrow nav-prev">&#8249;</div>
                         <div class="navigation-dots"></div>
-                        <div class="nav-arrow nav-next">›</div>
+                        <div class="nav-arrow nav-next">&#8250;</div>
                     </div>
                 </div>
             </div>
@@ -560,15 +563,18 @@ class LimitedStockAlertElement extends HTMLElement {
         if (this.products.length === 0) {
             carousel.innerHTML = '<div class="empty-state">No low stock products to display</div>';
             dotsContainer.innerHTML = '';
-            this.querySelector('.nav-prev').style.display = 'none';
-            this.querySelector('.nav-next').style.display = 'none';
+            const prev = this.querySelector('.nav-prev');
+            const next = this.querySelector('.nav-next');
+            if (prev) prev.style.display = 'none';
+            if (next) next.style.display = 'none';
             return;
         }
 
-        this.querySelector('.nav-prev').style.display = 'flex';
-        this.querySelector('.nav-next').style.display = 'flex';
+        const prev = this.querySelector('.nav-prev');
+        const next = this.querySelector('.nav-next');
+        if (prev) prev.style.display = 'flex';
+        if (next) next.style.display = 'flex';
 
-        // Render ALL cards into the grid at once
         carousel.innerHTML = this.products
             .map(p => this.renderProductCard(p))
             .join('');
@@ -697,9 +703,7 @@ class LimitedStockAlertElement extends HTMLElement {
         const container = this.querySelector('.alert-container');
         if (!container) return;
 
-        // NEW: card width
-        container.style.setProperty('--card-width', `${this.settings.cardWidth || 100}%`);
-
+        container.style.setProperty('--card-width', `${this.settings.cardWidth || 600}px`);
         container.style.setProperty('--color1', this.settings.color1);
         container.style.setProperty('--color2', this.settings.color2);
         container.style.setProperty('--color3', this.settings.color3);
@@ -708,13 +712,11 @@ class LimitedStockAlertElement extends HTMLElement {
         container.style.setProperty('--color6', this.settings.color6);
         container.style.setProperty('--color7', this.settings.color7);
         container.style.setProperty('--color8', this.settings.color8);
-
         container.style.setProperty('--title-font-family', this.settings.titleFontFamily);
         container.style.setProperty('--price-font-family', this.settings.priceFontFamily);
         container.style.setProperty('--alert-font-family', this.settings.alertFontFamily);
         container.style.setProperty('--button-font-family', this.settings.buttonFontFamily);
         container.style.setProperty('--stock-font-family', this.settings.stockFontFamily);
-
         container.style.setProperty('--title-font-size', `${this.settings.titleFontSize}px`);
         container.style.setProperty('--price-font-size', `${this.settings.priceFontSize}px`);
         container.style.setProperty('--alert-font-size', `${this.settings.alertFontSize}px`);
