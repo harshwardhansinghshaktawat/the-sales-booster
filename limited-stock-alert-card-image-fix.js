@@ -15,7 +15,6 @@ class LimitedStockAlertElement extends HTMLElement {
             color8: '#e67e22',
             borderWidth: 2,
             cornerRadius: 12,
-            cardWidth: 280,
             alertText: '⚠️ LOW STOCK ALERT',
             buttonText: 'Grab It Now',
             showProgressBar: true,
@@ -36,17 +35,54 @@ class LimitedStockAlertElement extends HTMLElement {
         };
         this.isRendered = false;
         this.pendingProductsData = null;
+        // ResizeObserver to keep the element responsive
+        this.resizeObserver = null;
     }
 
     connectedCallback() {
-        console.log('Limited Stock Alert connected');
         this.render();
         this.isRendered = true;
+
+        // FIX: Make the host element fill 100% of its container width & height
+        this.style.display = 'block';
+        this.style.width = '100%';
+        this.style.height = '100%';
+        this.style.overflow = 'hidden';
+
+        // FIX: Use ResizeObserver so the inner carousel height tracks the host element
+        this.resizeObserver = new ResizeObserver(() => {
+            this._applyResponsiveSize();
+        });
+        this.resizeObserver.observe(this);
+        this._applyResponsiveSize();
 
         if (this.pendingProductsData) {
             this.products = this.pendingProductsData || [];
             this.pendingProductsData = null;
             this.renderProducts();
+        }
+    }
+
+    // FIX: Read actual rendered dimensions and apply them to inner elements
+    _applyResponsiveSize() {
+        const w = this.offsetWidth || 0;
+        const h = this.offsetHeight || 0;
+        const container = this.querySelector('.alert-container');
+        if (container) {
+            container.style.width = '100%';
+            container.style.maxWidth = '100%';
+            container.style.height = h > 0 ? `${h}px` : 'auto';
+            container.style.overflow = 'hidden';
+        }
+        // Keep image container proportional (approx 40% of total height, min 180px)
+        const imgHeight = h > 0 ? Math.max(Math.round(h * 0.40), 180) : 260;
+        this.querySelectorAll('.product-image-container').forEach(el => {
+            el.style.height = `${imgHeight}px`;
+        });
+        // Carousel wrapper should fill remaining space
+        const carousel = this.querySelector('.product-carousel');
+        if (carousel) {
+            carousel.style.width = '100%';
         }
     }
 
@@ -59,13 +95,10 @@ class LimitedStockAlertElement extends HTMLElement {
             if (name === 'products-data') {
                 try {
                     const data = JSON.parse(newValue);
-                    console.log('Limited Stock: Products received:', data.length);
-
                     if (!this.isRendered) {
                         this.pendingProductsData = data;
                         return;
                     }
-
                     this.products = data || [];
                     this.currentIndex = 0;
                     this.renderProducts();
@@ -77,12 +110,9 @@ class LimitedStockAlertElement extends HTMLElement {
                     const newSettings = JSON.parse(newValue);
                     const oldAutoRotate = this.settings.autoRotate;
                     const oldRotationSpeed = this.settings.rotationSpeed;
-
                     Object.assign(this.settings, newSettings);
-
                     if (this.isRendered) {
                         this.updateStyles();
-
                         if (oldAutoRotate !== this.settings.autoRotate ||
                             oldRotationSpeed !== this.settings.rotationSpeed) {
                             this.setupRotation();
@@ -96,9 +126,8 @@ class LimitedStockAlertElement extends HTMLElement {
     }
 
     disconnectedCallback() {
-        if (this.rotationInterval) {
-            clearInterval(this.rotationInterval);
-        }
+        if (this.rotationInterval) clearInterval(this.rotationInterval);
+        if (this.resizeObserver) this.resizeObserver.disconnect();
     }
 
     calculateDiscount(price, comparePrice) {
@@ -126,119 +155,55 @@ class LimitedStockAlertElement extends HTMLElement {
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Montserrat:wght@600;700;800;900&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500;600;700&family=Inter:wght@400;600;700&display=swap');
 
-                * {
-                    box-sizing: border-box;
-                    margin: 0;
-                    padding: 0;
-                }
-
-                /* Fill whatever size Wix assigns to the element */
-                limited-stock-alert {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    height: -moz-available;
-                    height: -webkit-fill-available;
-                }
-
-                :host {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    /* All CSS variable defaults live here so the widget
-                       renders correctly before any settings attribute arrives */
-                    --color1: #e74c3c;
-                    --color2: #ffffff;
-                    --color3: #2c3e50;
-                    --color4: #f39c12;
-                    --color5: #ecf0f1;
-                    --color6: #c0392b;
-                    --color7: #27ae60;
-                    --color8: #e67e22;
-                    --title-font-family: Poppins, sans-serif;
-                    --price-font-family: Montserrat, sans-serif;
-                    --alert-font-family: Roboto, sans-serif;
-                    --button-font-family: Poppins, sans-serif;
-                    --stock-font-family: 'Roboto Mono', monospace;
-                    --title-font-size: 18px;
-                    --price-font-size: 24px;
-                    --alert-font-size: 14px;
-                    --button-font-size: 14px;
-                    --stock-font-size: 16px;
-                    --corner-radius: 12px;
-                    --card-width: 280px;
-                }
+                * { box-sizing: border-box; }
 
                 @keyframes urgentPulse {
                     0%, 100% { transform: scale(1); opacity: 1; }
                     50% { transform: scale(1.05); opacity: 0.9; }
                 }
-
                 @keyframes shake {
                     0%, 100% { transform: translateX(0); }
                     25% { transform: translateX(-5px); }
                     75% { transform: translateX(5px); }
                 }
-
                 @keyframes flash {
                     0%, 100% { opacity: 1; }
                     50% { opacity: 0.7; }
                 }
-
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to   { opacity: 1; }
+                @keyframes slideInFromRight {
+                    from { opacity: 0; transform: translateX(100%) scale(0.9); }
+                    to   { opacity: 1; transform: translateX(0) scale(1); }
                 }
-
+                @keyframes slideOutToLeft {
+                    from { opacity: 1; transform: translateX(0) scale(1); }
+                    to   { opacity: 0; transform: translateX(-100%) scale(0.9); }
+                }
                 @keyframes fillBar {
                     from { width: 0; }
                     to   { width: var(--stock-width); }
                 }
 
-                /* Outer wrapper: full width, centers the card */
-                .alert-outer {
-                    width: 100%;
-                    display: flex;
-                    justify-content: center;
-                }
-
-                /* Card container: respects --card-width, never exceeds 100% */
+                /* FIX: container fills 100% of host, no fixed max-width */
                 .alert-container {
-                    width: var(--card-width, 280px);
+                    width: 100%;
                     max-width: 100%;
+                    height: 100%;
+                    margin: 0;
                     padding: 20px;
                     background: linear-gradient(135deg, var(--color5) 0%, #fff 100%);
-                    transition: width 0.3s ease;
-                    /* Fallback defaults so first paint looks correct */
-                    --card-width: 280px;
-                    --color1: #e74c3c;
-                    --color2: #ffffff;
-                    --color3: #2c3e50;
-                    --color4: #f39c12;
-                    --color5: #ecf0f1;
-                    --color6: #c0392b;
-                    --color7: #27ae60;
-                    --color8: #e67e22;
-                    --title-font-family: Poppins, sans-serif;
-                    --price-font-family: Montserrat, sans-serif;
-                    --alert-font-family: Roboto, sans-serif;
-                    --button-font-family: Poppins, sans-serif;
-                    --stock-font-family: 'Roboto Mono', monospace;
-                    --title-font-size: 18px;
-                    --price-font-size: 24px;
-                    --alert-font-size: 14px;
-                    --button-font-size: 14px;
-                    --stock-font-size: 16px;
-                    --corner-radius: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
                 }
 
                 .alert-header {
+                    flex-shrink: 0;
                     background: linear-gradient(135deg, var(--color1) 0%, var(--color6) 100%);
                     color: var(--color2);
                     padding: 15px 25px;
                     border-radius: 10px;
                     text-align: center;
-                    margin-bottom: 25px;
+                    margin-bottom: 20px;
                     box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
                     animation: urgentPulse 2s ease-in-out infinite;
                 }
@@ -253,67 +218,50 @@ class LimitedStockAlertElement extends HTMLElement {
                     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
                 }
 
-                /* CSS Grid stack — all cards occupy the same cell.
-                   This keeps the container width perfectly stable
-                   regardless of which card is visible. */
+                /* FIX: carousel is a flex column that fills remaining height */
                 .product-carousel {
-                    display: grid;
-                    grid-template-columns: 1fr;
-                    grid-template-rows: 1fr;
-                    width: 100%;
+                    flex: 1;
+                    position: relative;
                     overflow: hidden;
+                    width: 100%;
+                    /* FIX: fixed min-height removed — sizing controlled by host dimensions */
                 }
 
+                /* FIX: all cards are 100% width of the carousel — no size variation from images */
                 .stock-card {
-                    grid-column: 1;
-                    grid-row: 1;
                     width: 100%;
-                    min-width: 0;
                     background: var(--color2);
                     border-radius: var(--corner-radius);
                     overflow: hidden;
                     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-                    visibility: hidden;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;        /* FIX: explicit right:0 keeps width locked */
                     opacity: 0;
-                    transition: opacity 0.4s ease, visibility 0.4s ease;
-                    pointer-events: none;
+                    transform: translateX(100%) scale(0.9);
+                    transition: none;
+                    /* FIX: prevent the card from pushing its own width wider than the carousel */
+                    box-sizing: border-box;
                 }
 
                 .stock-card.active {
-                    visibility: visible;
                     opacity: 1;
-                    pointer-events: auto;
-                    animation: fadeIn 0.4s ease forwards;
-                }
-
-                .stock-card.active:hover {
-                    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-                }
-
-                /* Image container: full card width, fixed height — never stretches */
-                .product-image-container {
+                    transform: translateX(0) scale(1);
+                    animation: slideInFromRight 0.6s ease-out forwards;
                     position: relative;
-                    width: 100%;
-                    height: 300px;
-                    overflow: hidden;
-                    background: var(--color5);
-                    display: block;
-                    flex-shrink: 0;
                 }
 
-                /* Image fills container exactly — object-fit keeps aspect ratio */
-                .product-image {
-                    display: block;
+                .stock-card.exiting {
+                    animation: slideOutToLeft 0.6s ease-out forwards;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                    object-position: center;
-                    transition: transform 0.4s ease;
-                    flex-shrink: 0;
                 }
 
-                .stock-card.active:hover .product-image {
-                    transform: scale(1.08);
+                .stock-card:hover {
+                    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
                 }
 
                 .stock-badge {
@@ -337,6 +285,30 @@ class LimitedStockAlertElement extends HTMLElement {
                 .out-of-stock-badge {
                     background: var(--color3);
                     animation: none;
+                }
+
+                /* FIX: image container uses a fixed height set via JS (_applyResponsiveSize)
+                   and object-fit:cover ensures no layout shift regardless of image ratio */
+                .product-image-container {
+                    position: relative;
+                    width: 100%;
+                    height: 260px;   /* default; overridden by _applyResponsiveSize */
+                    overflow: hidden;
+                    background: var(--color5);
+                    flex-shrink: 0;
+                }
+
+                .product-image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;      /* FIX: fills box without stretching */
+                    object-position: center;
+                    display: block;
+                    transition: transform 0.4s ease;
+                }
+
+                .stock-card:hover .product-image {
+                    transform: scale(1.08);
                 }
 
                 .discount-badge {
@@ -372,8 +344,6 @@ class LimitedStockAlertElement extends HTMLElement {
 
                 .product-content {
                     padding: 20px;
-                    width: 100%;
-                    display: block;
                 }
 
                 .product-name {
@@ -387,7 +357,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
-                    width: 100%;
                 }
 
                 .stock-info-section {
@@ -396,7 +365,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     border-radius: 8px;
                     margin-bottom: 15px;
                     border: 1px solid rgba(231, 76, 60, 0.2);
-                    width: 100%;
                 }
 
                 .out-of-stock-section {
@@ -414,9 +382,7 @@ class LimitedStockAlertElement extends HTMLElement {
                     animation: shake 0.5s ease-in-out infinite;
                 }
 
-                .out-of-stock-text {
-                    animation: none;
-                }
+                .out-of-stock-text { animation: none; }
 
                 .stock-progress-container {
                     width: 100%;
@@ -429,8 +395,10 @@ class LimitedStockAlertElement extends HTMLElement {
 
                 .stock-progress-bar {
                     height: 100%;
+                    background: var(--stock-color);
                     border-radius: 10px;
-                    animation: fillBar 1.5s ease-out forwards;
+                    transition: width 1s ease-out;
+                    animation: fillBar 1.5s ease-out;
                     box-shadow: 0 0 10px var(--stock-color);
                 }
 
@@ -439,7 +407,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     padding: 12px 0;
                     border-top: 1px solid var(--color5);
                     border-bottom: 1px solid var(--color5);
-                    width: 100%;
                 }
 
                 .price-wrapper {
@@ -447,7 +414,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     align-items: baseline;
                     gap: 10px;
                     justify-content: center;
-                    flex-wrap: wrap;
                 }
 
                 .product-price {
@@ -502,11 +468,12 @@ class LimitedStockAlertElement extends HTMLElement {
                 }
 
                 .navigation-controls {
+                    flex-shrink: 0;
                     display: flex;
                     justify-content: center;
                     align-items: center;
                     gap: 20px;
-                    margin-top: 20px;
+                    margin-top: 16px;
                 }
 
                 .nav-arrow {
@@ -524,7 +491,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     font-size: 20px;
                     font-weight: 700;
                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    flex-shrink: 0;
                 }
 
                 .nav-arrow:hover {
@@ -536,8 +502,6 @@ class LimitedStockAlertElement extends HTMLElement {
                 .navigation-dots {
                     display: flex;
                     gap: 10px;
-                    flex-wrap: wrap;
-                    justify-content: center;
                 }
 
                 .nav-dot {
@@ -548,7 +512,6 @@ class LimitedStockAlertElement extends HTMLElement {
                     cursor: pointer;
                     transition: all 0.3s ease;
                     border: 2px solid transparent;
-                    flex-shrink: 0;
                 }
 
                 .nav-dot:hover {
@@ -578,37 +541,29 @@ class LimitedStockAlertElement extends HTMLElement {
                     margin-bottom: 20px;
                 }
 
+                /* Responsive tweaks — still relative, not fixed px */
                 @media (max-width: 768px) {
                     .alert-container { padding: 15px; }
-                    .product-image-container { height: 250px; }
                     .product-content { padding: 16px; }
-                }
-
-                @media (max-width: 480px) {
-                    .product-image-container { height: 220px; }
                     .nav-arrow { width: 35px; height: 35px; font-size: 16px; }
                 }
             </style>
 
-            <div class="alert-outer">
-                <div class="alert-container">
-                    <div class="alert-header">
-                        <h1 class="alert-title"></h1>
-                    </div>
-                    <div class="product-carousel"></div>
-                    <div class="navigation-controls">
-                        <div class="nav-arrow nav-prev">&#8249;</div>
-                        <div class="navigation-dots"></div>
-                        <div class="nav-arrow nav-next">&#8250;</div>
-                    </div>
+            <div class="alert-container">
+                <div class="alert-header">
+                    <h1 class="alert-title"></h1>
+                </div>
+                <div class="product-carousel"></div>
+                <div class="navigation-controls">
+                    <div class="nav-arrow nav-prev">‹</div>
+                    <div class="navigation-dots"></div>
+                    <div class="nav-arrow nav-next">›</div>
                 </div>
             </div>
         `;
     }
 
     renderProducts() {
-        console.log('Limited Stock: Rendering products, count:', this.products.length);
-
         const alertTitle = this.querySelector('.alert-title');
         const carousel = this.querySelector('.product-carousel');
         const dotsContainer = this.querySelector('.navigation-dots');
@@ -634,22 +589,43 @@ class LimitedStockAlertElement extends HTMLElement {
         if (prev) prev.style.display = 'flex';
         if (next) next.style.display = 'flex';
 
-        // Render ALL cards into grid stack at once — stable width guaranteed
-        carousel.innerHTML = this.products
-            .map(p => this.renderProductCard(p))
-            .join('');
-
-        this.showCard(this.currentIndex);
+        this.renderCurrentProduct();
         this.renderDots();
         this.setupNavigation();
         this.setupRotation();
         this.updateStyles();
+        // Re-apply responsive sizing after new cards are rendered
+        this._applyResponsiveSize();
     }
 
-    showCard(index) {
-        const cards = this.querySelectorAll('.stock-card');
-        cards.forEach((card, i) => card.classList.toggle('active', i === index));
-        this.currentIndex = index;
+    renderCurrentProduct() {
+        const carousel = this.querySelector('.product-carousel');
+        if (!carousel || !this.products[this.currentIndex]) return;
+
+        const product = this.products[this.currentIndex];
+        const cardHTML = this.renderProductCard(product);
+
+        const existingCard = carousel.querySelector('.stock-card.active');
+        if (existingCard) {
+            existingCard.classList.remove('active');
+            existingCard.classList.add('exiting');
+            setTimeout(() => existingCard.remove(), 600);
+        }
+
+        carousel.insertAdjacentHTML('beforeend', cardHTML);
+
+        requestAnimationFrame(() => {
+            const newCard = carousel.querySelector('.stock-card:last-child');
+            if (newCard) {
+                newCard.classList.add('active');
+                // Apply border from settings to the new card
+                if (this.settings.borderWidth > 0) {
+                    newCard.style.border = `${this.settings.borderWidth}px solid ${this.settings.color5}`;
+                }
+                // Re-apply responsive image height to new card
+                this._applyResponsiveSize();
+            }
+        });
     }
 
     renderProductCard(product) {
@@ -677,12 +653,10 @@ class LimitedStockAlertElement extends HTMLElement {
                     <img src="${product.imageUrl}"
                          alt="${product.name}"
                          class="product-image"
-                         onerror="this.src='https://via.placeholder.com/400'">
+                         onerror="this.src='https://via.placeholder.com/400x260'">
                 </div>
-
                 <div class="product-content">
                     <${titleTag} class="product-name">${product.name}</${titleTag}>
-
                     <div class="stock-info-section ${isOutOfStock ? 'out-of-stock-section' : ''}">
                         <div class="stock-text ${isOutOfStock ? 'out-of-stock-text' : ''}"
                              style="--stock-color: ${isOutOfStock ? this.settings.color3 : stockColor};">
@@ -691,18 +665,16 @@ class LimitedStockAlertElement extends HTMLElement {
                         ${this.settings.showProgressBar && !isOutOfStock ? `
                             <div class="stock-progress-container">
                                 <div class="stock-progress-bar"
-                                     style="background: ${stockColor}; --stock-color: ${stockColor}; --stock-width: ${stockPercentage}%; width: ${stockPercentage}%;"></div>
+                                     style="--stock-color: ${stockColor}; --stock-width: ${stockPercentage}%; width: ${stockPercentage}%;"></div>
                             </div>
                         ` : ''}
                     </div>
-
                     <div class="price-section">
                         <div class="price-wrapper">
                             <span class="product-price">${displayPrice}</span>
                             ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : ''}
                         </div>
                     </div>
-
                     <a href="${product.productUrl}"
                        class="action-button ${isOutOfStock ? 'disabled' : ''}">
                         ${isOutOfStock ? 'Out of Stock' : this.settings.buttonText}
@@ -726,7 +698,8 @@ class LimitedStockAlertElement extends HTMLElement {
         dotsContainer.querySelectorAll('.nav-dot').forEach(dot => {
             dot.addEventListener('click', (e) => {
                 const index = parseInt(e.target.dataset.index);
-                this.showCard(index);
+                this.currentIndex = index;
+                this.renderCurrentProduct();
                 this.updateDots();
                 this.setupRotation();
             });
@@ -745,7 +718,8 @@ class LimitedStockAlertElement extends HTMLElement {
 
         if (prevBtn) {
             prevBtn.onclick = () => {
-                this.showCard((this.currentIndex - 1 + this.products.length) % this.products.length);
+                this.currentIndex = (this.currentIndex - 1 + this.products.length) % this.products.length;
+                this.renderCurrentProduct();
                 this.updateDots();
                 this.setupRotation();
             };
@@ -753,7 +727,8 @@ class LimitedStockAlertElement extends HTMLElement {
 
         if (nextBtn) {
             nextBtn.onclick = () => {
-                this.showCard((this.currentIndex + 1) % this.products.length);
+                this.currentIndex = (this.currentIndex + 1) % this.products.length;
+                this.renderCurrentProduct();
                 this.updateDots();
                 this.setupRotation();
             };
@@ -761,15 +736,13 @@ class LimitedStockAlertElement extends HTMLElement {
     }
 
     setupRotation() {
-        if (this.rotationInterval) {
-            clearInterval(this.rotationInterval);
-        }
-        if (!this.settings.autoRotate || this.products.length <= 1) {
-            return;
-        }
+        if (this.rotationInterval) clearInterval(this.rotationInterval);
+        if (!this.settings.autoRotate || this.products.length <= 1) return;
+
         const rotationSpeed = (this.settings.rotationSpeed || 5) * 1000;
         this.rotationInterval = setInterval(() => {
-            this.showCard((this.currentIndex + 1) % this.products.length);
+            this.currentIndex = (this.currentIndex + 1) % this.products.length;
+            this.renderCurrentProduct();
             this.updateDots();
         }, rotationSpeed);
     }
@@ -778,9 +751,7 @@ class LimitedStockAlertElement extends HTMLElement {
         const container = this.querySelector('.alert-container');
         if (!container) return;
 
-        // Card width in px — min 280, default 280
-        container.style.setProperty('--card-width', `${this.settings.cardWidth || 280}px`);
-
+        // All 8 color CSS variables
         container.style.setProperty('--color1', this.settings.color1);
         container.style.setProperty('--color2', this.settings.color2);
         container.style.setProperty('--color3', this.settings.color3);
@@ -790,19 +761,24 @@ class LimitedStockAlertElement extends HTMLElement {
         container.style.setProperty('--color7', this.settings.color7);
         container.style.setProperty('--color8', this.settings.color8);
 
+        // Font family variables
         container.style.setProperty('--title-font-family', this.settings.titleFontFamily);
         container.style.setProperty('--price-font-family', this.settings.priceFontFamily);
         container.style.setProperty('--alert-font-family', this.settings.alertFontFamily);
         container.style.setProperty('--button-font-family', this.settings.buttonFontFamily);
         container.style.setProperty('--stock-font-family', this.settings.stockFontFamily);
 
-        container.style.setProperty('--title-font-size',  `${this.settings.titleFontSize}px`);
-        container.style.setProperty('--price-font-size',  `${this.settings.priceFontSize}px`);
-        container.style.setProperty('--alert-font-size',  `${this.settings.alertFontSize}px`);
+        // Font size variables
+        container.style.setProperty('--title-font-size', `${this.settings.titleFontSize}px`);
+        container.style.setProperty('--price-font-size', `${this.settings.priceFontSize}px`);
+        container.style.setProperty('--alert-font-size', `${this.settings.alertFontSize}px`);
         container.style.setProperty('--button-font-size', `${this.settings.buttonFontSize}px`);
-        container.style.setProperty('--stock-font-size',  `${this.settings.stockFontSize}px`);
-        container.style.setProperty('--corner-radius',    `${this.settings.cornerRadius}px`);
+        container.style.setProperty('--stock-font-size', `${this.settings.stockFontSize}px`);
 
+        // Border radius
+        container.style.setProperty('--corner-radius', `${this.settings.cornerRadius}px`);
+
+        // Apply border to all current cards
         this.querySelectorAll('.stock-card').forEach(card => {
             card.style.border = this.settings.borderWidth > 0
                 ? `${this.settings.borderWidth}px solid ${this.settings.color5}`
