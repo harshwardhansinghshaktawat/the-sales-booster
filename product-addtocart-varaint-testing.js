@@ -25,10 +25,11 @@ class ProductGalleryElement extends HTMLElement {
         this.pendingProductsData = null;
         this.variantCache = {};
         this.selectedChoices = {};
-        this.activeModalProductId = null;
+        console.log("CE: constructor called");
     }
 
     connectedCallback() {
+        console.log("CE: connectedCallback");
         this.render();
         this.isRendered = true;
         if (this.pendingProductsData) {
@@ -44,11 +45,31 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (!newValue || newValue === oldValue) return;
+        console.log("CE: attributeChangedCallback name=" + name + " hasNewValue=" + !!newValue + " changed=" + (oldValue !== newValue));
+
+        if (!newValue) {
+            console.log("CE: newValue is empty/null for " + name);
+            return;
+        }
+        if (newValue === oldValue) {
+            console.log("CE: newValue === oldValue for " + name + ", skipping");
+            return;
+        }
+
+        console.log("CE: " + name + " value length:", newValue.length);
+        console.log("CE: " + name + " first 300 chars:", newValue.substring(0, 300));
+
         try {
             var data = JSON.parse(newValue);
+            console.log("CE: " + name + " parsed successfully");
+
             if (name === 'products-data') {
-                if (!this.isRendered) { this.pendingProductsData = data; return; }
+                console.log("CE: products-data - products count:", (data.products || []).length);
+                if (!this.isRendered) {
+                    console.log("CE: Not rendered yet, storing as pending");
+                    this.pendingProductsData = data;
+                    return;
+                }
                 this.products = data.products || [];
                 this.hasMore = data.hasMore || false;
                 this.renderProducts();
@@ -57,44 +78,65 @@ class ProductGalleryElement extends HTMLElement {
                 for (var i = 0; i < keys.length; i++) this.settings[keys[i]] = data[keys[i]];
                 if (this.isRendered) this.updateStyles();
             } else if (name === 'variant-data') {
+                console.log("CE: >>>>>> variant-data received! <<<<<<");
+                console.log("CE: variant-data productId:", data.productId);
+                console.log("CE: variant-data hasOptions:", data.hasOptions);
+                console.log("CE: variant-data options:", JSON.stringify(data.options));
+                console.log("CE: variant-data options count:", data.options ? data.options.length : 0);
+                console.log("CE: variant-data variants count:", data.variants ? data.variants.length : 0);
+                console.log("CE: variant-data manageVariants:", data.manageVariants);
+                console.log("CE: variant-data error:", data.error);
                 this.onVariantDataReceived(data);
             } else if (name === 'cart-status') {
+                console.log("CE: cart-status:", data.status, "for", data.productId);
                 this.onCartStatus(data);
             }
         } catch (e) {
-            console.error('Parse error for ' + name + ':', e);
+            console.error("CE: JSON parse ERROR for " + name + ":", e.message);
+            console.error("CE: Raw value:", newValue.substring(0, 200));
         }
     }
 
-    // ======================================================
-    // VARIANT DATA RECEIVED
-    // ======================================================
     onVariantDataReceived(data) {
         var pid = data.productId;
-        if (!pid) return;
+        console.log("CE: onVariantDataReceived for pid:", pid);
 
-        console.log('Variant data received for ' + pid + ':', JSON.stringify(data));
+        if (!pid) {
+            console.log("CE: ERROR - no productId in variant data!");
+            return;
+        }
 
         this.variantCache[pid] = data;
         this.selectedChoices[pid] = {};
 
         var btn = this.querySelector('[data-cart-btn="' + pid + '"]');
+        console.log("CE: Found cart button for pid:", !!btn);
         if (btn) { btn.textContent = 'Add to Cart'; btn.disabled = false; }
 
-        if (!data.hasOptions || !data.options || data.options.length === 0) {
-            // No options — add directly
+        if (!data.hasOptions) {
+            console.log("CE: hasOptions is false - adding directly to cart");
             var defaultVarId = (data.variants && data.variants.length > 0) ? data.variants[0].id : null;
+            console.log("CE: defaultVarId:", defaultVarId);
             this.fireAddToCart(pid, defaultVarId, 1, null, data.manageVariants);
             return;
         }
 
-        // Show variant selector modal
+        if (!data.options || data.options.length === 0) {
+            console.log("CE: hasOptions is true but options array is empty! Adding directly.");
+            var defaultVarId2 = (data.variants && data.variants.length > 0) ? data.variants[0].id : null;
+            this.fireAddToCart(pid, defaultVarId2, 1, null, data.manageVariants);
+            return;
+        }
+
+        console.log("CE: Product HAS options - showing variant modal");
+        console.log("CE: Options to display:", data.options.length);
+        for (var i = 0; i < data.options.length; i++) {
+            console.log("CE: Option [" + i + "]:", data.options[i].name, "type:", data.options[i].type, "choices:", data.options[i].choices.length);
+        }
+
         this.showVariantModal(pid);
     }
 
-    // ======================================================
-    // CART STATUS
-    // ======================================================
     onCartStatus(data) {
         var pid = data.productId;
         var cardBtn = this.querySelector('[data-cart-btn="' + pid + '"]');
@@ -115,14 +157,15 @@ class ProductGalleryElement extends HTMLElement {
             if (cardBtn) { cardBtn.textContent = 'Add to Cart'; cardBtn.disabled = false; }
             if (modalBtn) { modalBtn.textContent = 'Add to Cart'; modalBtn.disabled = false; }
             var errEl = self.querySelector('.modal-error');
-            if (errEl) errEl.textContent = data.message || 'Error adding to cart';
+            if (errEl) errEl.textContent = data.message || 'Error';
         }
     }
 
-    // ======================================================
-    // FIRE ADD-TO-CART EVENT
-    // ======================================================
     fireAddToCart(productId, variantId, quantity, selectedChoices, manageVariants) {
+        console.log("CE: fireAddToCart - pid:", productId, "variantId:", variantId, "qty:", quantity);
+        console.log("CE: fireAddToCart - selectedChoices:", JSON.stringify(selectedChoices));
+        console.log("CE: fireAddToCart - manageVariants:", manageVariants);
+
         this.dispatchEvent(new CustomEvent('add-to-cart', {
             bubbles: true, composed: true,
             detail: {
@@ -133,36 +176,34 @@ class ProductGalleryElement extends HTMLElement {
                 manageVariants: manageVariants || false
             }
         }));
+        console.log("CE: add-to-cart event dispatched");
     }
 
-    // ======================================================
-    // VARIANT MODAL
-    // ======================================================
     showVariantModal(pid) {
+        console.log("CE: showVariantModal called for pid:", pid);
         this.closeVariantModal();
-        this.activeModalProductId = pid;
 
         var data = this.variantCache[pid];
-        if (!data) return;
+        if (!data) {
+            console.log("CE: ERROR - no variant data in cache for pid:", pid);
+            return;
+        }
 
         var product = null;
         for (var p = 0; p < this.products.length; p++) {
             if (this.products[p].id === pid) { product = this.products[p]; break; }
         }
+        console.log("CE: Found product for modal:", product ? product.name : "NOT FOUND");
 
-        // Build options HTML
-        // Each option has: id, name, type ('color'|'text'), choices: [{id, value, description, color}]
-        // For color type: value is something like "#FF0000", description is "Red"
-        // For text type: value is "Small", description is "Small"
         var optionsHtml = '';
         for (var oi = 0; oi < data.options.length; oi++) {
             var opt = data.options[oi];
             var choicesHtml = '';
+            console.log("CE: Building UI for option:", opt.name, "type:", opt.type, "choices:", opt.choices.length);
 
             if (opt.type === 'color') {
                 for (var ci = 0; ci < opt.choices.length; ci++) {
                     var ch = opt.choices[ci];
-                    // color = the actual color hex/name, value = what gets stored in variant choices
                     var bgColor = ch.color || ch.value || '#ccc';
                     var label = ch.description || ch.value;
                     choicesHtml += '<div class="color-swatch" data-opt-name="' + this.esc(opt.name) + '" data-choice-value="' + this.esc(ch.value) + '" title="' + this.esc(label) + '" style="background-color:' + bgColor + ';"></div>';
@@ -176,6 +217,8 @@ class ProductGalleryElement extends HTMLElement {
                 optionsHtml += '<div class="option-group"><label class="option-label">' + this.esc(opt.name) + '</label><div class="choice-buttons">' + choicesHtml + '</div></div>';
             }
         }
+
+        console.log("CE: Options HTML built, length:", optionsHtml.length);
 
         var overlay = document.createElement('div');
         overlay.className = 'variant-overlay';
@@ -200,7 +243,12 @@ class ProductGalleryElement extends HTMLElement {
             '</div></div>';
 
         this.appendChild(overlay);
+        console.log("CE: Modal overlay appended to DOM");
+        console.log("CE: Modal visible check - overlay in DOM:", !!this.querySelector('.variant-overlay'));
+        console.log("CE: Modal visible check - modal in DOM:", !!this.querySelector('.variant-modal'));
+
         this.setupModalEvents(overlay, pid, data);
+        console.log("CE: Modal events set up");
     }
 
     setupModalEvents(overlay, pid, data) {
@@ -210,11 +258,17 @@ class ProductGalleryElement extends HTMLElement {
         var addBtn = overlay.querySelector('.modal-add-btn');
         var errorEl = overlay.querySelector('.modal-error');
 
-        // Close
-        overlay.querySelector('.modal-close-btn').addEventListener('click', function () { self.closeVariantModal(); });
-        overlay.addEventListener('click', function (e) { if (e.target === overlay) self.closeVariantModal(); });
+        overlay.querySelector('.modal-close-btn').addEventListener('click', function () {
+            console.log("CE: Modal close clicked");
+            self.closeVariantModal();
+        });
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) {
+                console.log("CE: Overlay background clicked - closing");
+                self.closeVariantModal();
+            }
+        });
 
-        // Quantity
         overlay.querySelector('.qty-minus').addEventListener('click', function () {
             if (quantity > 1) { quantity--; qtyDisplay.textContent = quantity; }
         });
@@ -222,79 +276,66 @@ class ProductGalleryElement extends HTMLElement {
             if (quantity < 99) { quantity++; qtyDisplay.textContent = quantity; }
         });
 
-        // Option selection
         var clickables = overlay.querySelectorAll('.color-swatch, .choice-btn');
+        console.log("CE: Found clickable options:", clickables.length);
+
         for (var i = 0; i < clickables.length; i++) {
             clickables[i].addEventListener('click', function () {
                 var optName = this.getAttribute('data-opt-name');
                 var choiceValue = this.getAttribute('data-choice-value');
+                console.log("CE: Option clicked - optName:", optName, "choiceValue:", choiceValue);
 
-                // Store: { "Color": "#FF0000", "Size": "Small" }
                 if (!self.selectedChoices[pid]) self.selectedChoices[pid] = {};
                 self.selectedChoices[pid][optName] = choiceValue;
+                console.log("CE: Current selections:", JSON.stringify(self.selectedChoices[pid]));
 
-                // Highlight
                 var siblings = this.parentElement.querySelectorAll('.color-swatch, .choice-btn');
                 for (var j = 0; j < siblings.length; j++) siblings[j].classList.remove('selected');
                 this.classList.add('selected');
 
-                // Update label for color swatches (show which color is selected)
                 var label = overlay.querySelector('[data-label-for="' + optName + '"]');
-                if (label) {
-                    label.textContent = '— ' + (this.getAttribute('title') || choiceValue);
-                }
+                if (label) label.textContent = '— ' + (this.getAttribute('title') || choiceValue);
 
-                // Check all options selected
                 var allDone = true;
                 for (var k = 0; k < data.options.length; k++) {
                     if (!self.selectedChoices[pid] || !self.selectedChoices[pid][data.options[k].name]) {
                         allDone = false; break;
                     }
                 }
+                console.log("CE: All options selected:", allDone);
 
                 if (allDone) {
-                    addBtn.disabled = false;
-                    addBtn.textContent = 'Add to Cart';
-                    // Find matching variant
                     var matched = self.findMatchingVariant(pid, data);
-                    console.log('Matched variant:', matched ? matched.id : 'none');
-                    if (!matched && data.variants.length > 0) {
-                        errorEl.textContent = 'This combination is not available';
+                    console.log("CE: Matched variant:", matched ? matched.id : "NONE");
+                    if (matched) {
+                        addBtn.disabled = false;
+                        addBtn.textContent = 'Add to Cart';
+                    } else {
                         addBtn.disabled = true;
                         addBtn.textContent = 'Unavailable';
+                        if (errorEl) errorEl.textContent = 'This combination is not available';
                     }
                 }
-
-                errorEl.textContent = '';
+                if (errorEl && allDone) errorEl.textContent = '';
             });
         }
 
-        // Add to Cart
         addBtn.addEventListener('click', function () {
             if (addBtn.disabled) return;
             var selected = self.selectedChoices[pid] || {};
             var matched = self.findMatchingVariant(pid, data);
+            console.log("CE: Add to cart clicked - selected:", JSON.stringify(selected), "matched:", matched ? matched.id : "none");
 
-            console.log('Adding to cart - selected:', JSON.stringify(selected), 'matched variant:', matched ? matched.id : 'none');
-
-            // selectedChoices format for cart: { "OptionName": "ChoiceValue" }
-            self.fireAddToCart(
-                pid,
-                matched ? matched.id : null,
-                quantity,
-                selected,
-                data.manageVariants
-            );
+            self.fireAddToCart(pid, matched ? matched.id : null, quantity, selected, data.manageVariants);
         });
     }
 
-    // Find variant matching ALL selected choices
-    // selectedChoices[pid] = { "Color": "#FF0000", "Size": "Small" }
-    // variant.choices = { "Color": "#FF0000", "Size": "Small" }
     findMatchingVariant(pid, data) {
         var selected = this.selectedChoices[pid] || {};
         var selKeys = Object.keys(selected);
-        if (selKeys.length === 0) return null;
+        console.log("CE: findMatchingVariant - selected keys:", JSON.stringify(selKeys));
+        console.log("CE: findMatchingVariant - selected values:", JSON.stringify(selected));
+        console.log("CE: findMatchingVariant - total variants to check:", data.variants.length);
 
         for (var i = 0; i < data.variants.length; i++) {
             var v = data.variants[i];
@@ -308,13 +349,22 @@ class ProductGalleryElement extends HTMLElement {
                     break;
                 }
             }
-            if (match) return v;
+
+            if (match) {
+                console.log("CE: MATCHED variant:", v.id, "choices:", JSON.stringify(vc));
+                return v;
+            }
+        }
+
+        console.log("CE: NO variant matched! Logging all variants for comparison:");
+        for (var j = 0; j < data.variants.length && j < 5; j++) {
+            console.log("CE: Variant[" + j + "] id:", data.variants[j].id, "choices:", JSON.stringify(data.variants[j].choices));
         }
         return null;
     }
 
     closeVariantModal() {
-        this.activeModalProductId = null;
+        console.log("CE: closeVariantModal");
         var overlay = this.querySelector('.variant-overlay');
         if (overlay) overlay.remove();
     }
@@ -324,19 +374,12 @@ class ProductGalleryElement extends HTMLElement {
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // ======================================================
-    // CSS HELPERS
-    // ======================================================
     getShadowCSS() {
         var m = { none: 'none', small: '0 1px 3px rgba(0,0,0,0.08)', medium: '0 4px 12px rgba(0,0,0,0.12)', large: '0 8px 24px rgba(0,0,0,0.16)' };
         return m[this.settings.cardShadow] || m.medium;
     }
     getHoverCSS() {
-        var m = {
-            lift: 'transform:translateY(-8px);box-shadow:0 12px 28px rgba(0,0,0,0.18);',
-            glow: 'box-shadow:0 0 20px ' + this.settings.primaryAccent + '66;',
-            zoom: 'transform:scale(1.02);', none: ''
-        };
+        var m = { lift: 'transform:translateY(-8px);box-shadow:0 12px 28px rgba(0,0,0,0.18);', glow: 'box-shadow:0 0 20px ' + this.settings.primaryAccent + '66;', zoom: 'transform:scale(1.02);', none: '' };
         return m[this.settings.hoverEffect] || m.lift;
     }
     getButtonSizeCSS() {
@@ -344,10 +387,8 @@ class ProductGalleryElement extends HTMLElement {
         return m[this.settings.buttonSize] || m.medium;
     }
 
-    // ======================================================
-    // INITIAL SHELL
-    // ======================================================
     render() {
+        console.log("CE: render() called");
         this.innerHTML =
             '<style>' +
             '*{box-sizing:border-box}' +
@@ -376,11 +417,9 @@ class ProductGalleryElement extends HTMLElement {
             '.load-more-btn{padding:16px 48px;border:3px solid var(--lm-border);background:var(--lm-bg);color:var(--lm-text);border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;transition:all .3s;text-transform:uppercase;letter-spacing:1.2px;font-family:var(--ff)}' +
             '.load-more-btn:hover{background:var(--lm-text);color:var(--lm-bg);transform:translateY(-3px)}' +
             '.empty{text-align:center;padding:80px 20px;color:var(--tc);font-size:18px}' +
-            // Modal
             '.variant-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px}' +
             '.variant-modal{background:#fff;border-radius:16px;padding:28px;max-width:440px;width:100%;max-height:85vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:var(--ff)}' +
-            '.modal-close-btn{position:absolute;top:12px;right:16px;background:none;border:none;font-size:28px;cursor:pointer;color:#999;line-height:1;padding:0}' +
-            '.modal-close-btn:hover{color:#333}' +
+            '.modal-close-btn{position:absolute;top:12px;right:16px;background:none;border:none;font-size:28px;cursor:pointer;color:#999;line-height:1;padding:0}.modal-close-btn:hover{color:#333}' +
             '.modal-header{display:flex;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #eee}' +
             '.modal-thumb{width:70px;height:70px;object-fit:cover;border-radius:8px;flex-shrink:0}' +
             '.modal-header-text{min-width:0}' +
@@ -390,35 +429,27 @@ class ProductGalleryElement extends HTMLElement {
             '.option-label{display:block;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:#555;margin-bottom:8px}' +
             '.selected-label{font-weight:400;font-size:12px;text-transform:none;letter-spacing:0;color:#888}' +
             '.color-swatches{display:flex;flex-wrap:wrap;gap:8px}' +
-            '.color-swatch{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .2s;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}' +
-            '.color-swatch:hover{transform:scale(1.15)}' +
-            '.color-swatch.selected{border-color:var(--accent,#3498db);box-shadow:0 0 0 2px var(--accent,#3498db)}' +
+            '.color-swatch{width:36px;height:36px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all .2s;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}.color-swatch:hover{transform:scale(1.15)}.color-swatch.selected{border-color:var(--accent,#3498db);box-shadow:0 0 0 2px var(--accent,#3498db)}' +
             '.choice-buttons{display:flex;flex-wrap:wrap;gap:8px}' +
-            '.choice-btn{padding:8px 18px;border:2px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#444;transition:all .2s;background:#fff}' +
-            '.choice-btn:hover{border-color:#999}' +
-            '.choice-btn.selected{border-color:var(--accent,#3498db);background:var(--accent,#3498db);color:#fff}' +
+            '.choice-btn{padding:8px 18px;border:2px solid #ddd;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#444;transition:all .2s;background:#fff}.choice-btn:hover{border-color:#999}.choice-btn.selected{border-color:var(--accent,#3498db);background:var(--accent,#3498db);color:#fff}' +
             '.modal-error{color:#e74c3c;font-size:13px;min-height:20px;margin-bottom:8px}' +
             '.modal-footer{display:flex;gap:12px;align-items:center;margin-top:10px}' +
             '.quantity-selector{display:flex;align-items:center;border:2px solid #ddd;border-radius:8px;overflow:hidden}' +
-            '.qty-btn{width:36px;height:36px;border:none;background:#f5f5f5;cursor:pointer;font-size:18px;font-weight:700;color:#333;transition:background .2s}' +
-            '.qty-btn:hover{background:#e0e0e0}' +
+            '.qty-btn{width:36px;height:36px;border:none;background:#f5f5f5;cursor:pointer;font-size:18px;font-weight:700;color:#333;transition:background .2s}.qty-btn:hover{background:#e0e0e0}' +
             '.qty-display{width:40px;text-align:center;font-weight:700;font-size:15px}' +
-            '.modal-add-btn{flex:1;padding:12px 20px;border:none;border-radius:8px;background:var(--accent,#3498db);color:#fff;font-weight:700;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;transition:all .2s}' +
-            '.modal-add-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}' +
-            '.modal-add-btn:disabled{background:#ccc;cursor:not-allowed}' +
+            '.modal-add-btn{flex:1;padding:12px 20px;border:none;border-radius:8px;background:var(--accent,#3498db);color:#fff;font-weight:700;font-size:14px;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;transition:all .2s}.modal-add-btn:hover:not(:disabled){opacity:.9;transform:translateY(-1px)}.modal-add-btn:disabled{background:#ccc;cursor:not-allowed}' +
             '@media(max-width:1024px){.products-grid{grid-template-columns:repeat(var(--cols-t),1fr)}}' +
             '@media(max-width:768px){.products-grid{grid-template-columns:repeat(var(--cols-m),1fr)}.btns{flex-direction:column}}' +
             '</style>' +
             '<div class="gallery-wrap"><div class="products-grid"></div><div class="load-more-wrap"></div></div>';
+        console.log("CE: render() complete");
     }
 
-    // ======================================================
-    // RENDER PRODUCTS
-    // ======================================================
     renderProducts() {
+        console.log("CE: renderProducts called, count:", this.products.length);
         var grid = this.querySelector('.products-grid');
         var lmWrap = this.querySelector('.load-more-wrap');
-        if (!grid || !lmWrap) return;
+        if (!grid || !lmWrap) { console.log("CE: ERROR - grid or lmWrap not found!"); return; }
 
         if (this.products.length === 0) {
             grid.innerHTML = '<div class="empty">No products found. Please select a category.</div>';
@@ -430,20 +461,25 @@ class ProductGalleryElement extends HTMLElement {
         for (var i = 0; i < this.products.length; i++) html += this.renderCard(this.products[i]);
         grid.innerHTML = html;
 
-        // Attach cart button handlers
         var self = this;
         var cartBtns = grid.querySelectorAll('.btn-cart');
+        console.log("CE: Found cart buttons:", cartBtns.length);
+
         for (var b = 0; b < cartBtns.length; b++) {
             cartBtns[b].addEventListener('click', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 var pid = this.getAttribute('data-product-id');
+                console.log("CE: Cart button clicked for pid:", pid);
                 this.textContent = 'Loading...';
                 this.disabled = true;
+
+                console.log("CE: Dispatching request-variants event for pid:", pid);
                 self.dispatchEvent(new CustomEvent('request-variants', {
                     bubbles: true, composed: true,
                     detail: { productId: pid }
                 }));
+                console.log("CE: request-variants event dispatched");
             });
         }
 
@@ -462,13 +498,11 @@ class ProductGalleryElement extends HTMLElement {
         var hasCP = product.compareAtPrice && product.compareAtPrice !== product.price;
         return '<div class="product-card">' +
             (product.ribbon ? '<div class="ribbon">' + this.esc(product.ribbon) + '</div>' : '') +
-            '<div class="img-wrap">' +
-            '<img src="' + (product.imageUrl || 'https://via.placeholder.com/400') + '" alt="' + this.esc(product.name) + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400\'">' +
-            '</div><div class="card-body">' +
+            '<div class="img-wrap"><img src="' + (product.imageUrl || 'https://via.placeholder.com/400') + '" alt="' + this.esc(product.name) + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/400\'"></div>' +
+            '<div class="card-body">' +
             '<h3>' + this.esc(product.name) + '</h3>' +
             '<p>' + (product.description || '') + '</p>' +
-            '<div class="price-row">' +
-            '<span class="price">' + (product.price || '') + '</span>' +
+            '<div class="price-row"><span class="price">' + (product.price || '') + '</span>' +
             (hasCP ? '<span class="compare-price">' + product.compareAtPrice + '</span>' : '') +
             '</div><div class="btns">' +
             '<a href="' + (product.productUrl || '#') + '" class="btn-view">' + this.settings.buttonText + '</a>' +
