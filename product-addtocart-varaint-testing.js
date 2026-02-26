@@ -81,9 +81,20 @@ class ProductGalleryElement extends HTMLElement {
                     
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
+                    
+                    // DEBUG: Log products to see what we're getting
+                    console.log('=== PRODUCTS DATA DEBUG ===');
+                    console.log('Number of products:', this.products.length);
+                    if (this.products.length > 0) {
+                        console.log('First product structure:', this.products[0]);
+                        console.log('First product has options?', this.products[0].options);
+                        console.log('First product has variants?', this.products[0].variants);
+                    }
+                    console.log('=========================');
+                    
                     this.renderProducts();
                 } catch (e) {
-                    // Silent fail
+                    console.error('Error parsing products-data:', e);
                 }
             } else if (name === 'settings') {
                 try {
@@ -93,7 +104,7 @@ class ProductGalleryElement extends HTMLElement {
                         this.updateStyles();
                     }
                 } catch (e) {
-                    // Silent fail
+                    console.error('Error parsing settings:', e);
                 }
             }
         }
@@ -522,6 +533,12 @@ class ProductGalleryElement extends HTMLElement {
         const hasComparePrice = product.compareAtPrice && product.compareAtPrice !== product.price;
         const hasVariants = product.options && product.options.length > 0;
         
+        // DEBUG logging for each product card
+        console.log(`Product: ${product.name}`);
+        console.log('- hasVariants:', hasVariants);
+        console.log('- options:', product.options);
+        console.log('- variants:', product.variants);
+        
         // Initialize selected variant for this product
         if (!this.selectedVariants[product.id]) {
             this.selectedVariants[product.id] = {};
@@ -548,7 +565,7 @@ class ProductGalleryElement extends HTMLElement {
                         ${hasComparePrice ? `<span class="product-compare-price" data-compare-price-display="${product.id}">${product.compareAtPrice}</span>` : ''}
                     </div>
                     
-                    ${hasVariants ? this.renderProductOptions(product) : ''}
+                    ${hasVariants ? this.renderProductOptions(product) : '<!-- NO OPTIONS: hasVariants is false -->'}
                     
                     <div class="button-group">
                         <a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>
@@ -558,7 +575,7 @@ class ProductGalleryElement extends HTMLElement {
                                     ${!product.inStock ? 'disabled' : ''}>
                                 ${!product.inStock ? 'Out of Stock' : this.settings.addToCartText}
                             </button>
-                        ` : ''}
+                        ` : '<!-- ADD TO CART HIDDEN -->'}
                     </div>
                 </div>
             </div>
