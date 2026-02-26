@@ -3,7 +3,7 @@ class ProductGalleryElement extends HTMLElement {
         super();
         this.products = [];
         this.hasMore = false;
-        this.productSelections = {}; // { productId: { Color: 'Red', Size: 'M' } }
+        this.productSelections = {}; // { productId: { Color: 'Red',Size: 'M' } }
         this.settings = {
             cardBgColor: '#ffffff',
             cardHoverBgColor: '#f8f9fa',
