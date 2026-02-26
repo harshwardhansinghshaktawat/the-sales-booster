@@ -59,7 +59,7 @@ class ProductVariantSelectorElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['product-data', 'settings'];
+        return ['product-data', 'settings', 'variant-details', 'cart-result'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -82,6 +82,20 @@ class ProductVariantSelectorElement extends HTMLElement {
                     }
                 } catch (e) {
                     console.error('Failed to parse settings:', e);
+                }
+            } else if (name === 'variant-details') {
+                try {
+                    const variantDetails = JSON.parse(newValue);
+                    this.updateVariantInfo(variantDetails);
+                } catch (e) {
+                    console.error('Failed to parse variant details:', e);
+                }
+            } else if (name === 'cart-result') {
+                try {
+                    const result = JSON.parse(newValue);
+                    this.showAddToCartResult(result.success, result.error || 'Product added to cart!');
+                } catch (e) {
+                    console.error('Failed to parse cart result:', e);
                 }
             }
         }
