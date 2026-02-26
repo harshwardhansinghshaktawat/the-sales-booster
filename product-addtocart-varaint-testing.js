@@ -3,6 +3,7 @@ class ProductGalleryElement extends HTMLElement {
         super();
         this.products = [];
         this.hasMore = false;
+        this.productSelections = {}; // { productId: { Color: 'Red', Size: 'M' } }
         this.settings = {
             cardBgColor: '#ffffff',
             cardHoverBgColor: '#f8f9fa',
@@ -29,6 +30,10 @@ class ProductGalleryElement extends HTMLElement {
             buttonHoverBgColor: '#2980b9',
             buttonStyle: 'filled',
             buttonSize: 'medium',
+            cartButtonText: 'Add to Cart',
+            cartButtonBgColor: '#2ecc71',
+            cartButtonTextColor: '#ffffff',
+            cartButtonHoverBgColor: '#27ae60',
             imageHeight: 280,
             imageZoom: true,
             imageBorderRadius: 8,
@@ -40,22 +45,20 @@ class ProductGalleryElement extends HTMLElement {
             loadMoreText: 'Load More Products',
             loadMoreBgColor: '#ffffff',
             loadMoreTextColor: '#3498db',
-            loadMoreBorderColor: '#3498db',
-            showAddToCart: true,
-            addToCartText: 'Add to Cart',
-            addToCartBgColor: '#2ecc71',
-            addToCartTextColor: '#ffffff',
-            addToCartHoverBgColor: '#27ae60'
+            loadMoreBorderColor: '#3498db'
         };
         this.isRendered = false;
         this.pendingProductsData = null;
-        this.selectedVariants = {};
     }
 
     connectedCallback() {
         this.render();
         this.isRendered = true;
-        
+
+        // Event delegation for clicks and dropdown changes
+        this.addEventListener('click', this.handleClick.bind(this));
+        this.addEventListener('change', this.handleChange.bind(this));
+
         if (this.pendingProductsData) {
             this.products = this.pendingProductsData.products || [];
             this.hasMore = this.pendingProductsData.hasMore || false;
@@ -65,7 +68,7 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['products-data', 'settings'];
+        return ['products-data', 'settings', 'cart-status'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -73,29 +76,14 @@ class ProductGalleryElement extends HTMLElement {
             if (name === 'products-data') {
                 try {
                     const data = JSON.parse(newValue);
-                    
                     if (!this.isRendered) {
                         this.pendingProductsData = data;
                         return;
                     }
-                    
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
-                    
-                    // DEBUG: Log products to see what we're getting
-                    console.log('=== PRODUCTS DATA DEBUG ===');
-                    console.log('Number of products:', this.products.length);
-                    if (this.products.length > 0) {
-                        console.log('First product structure:', this.products[0]);
-                        console.log('First product has options?', this.products[0].options);
-                        console.log('First product has variants?', this.products[0].variants);
-                    }
-                    console.log('=========================');
-                    
                     this.renderProducts();
-                } catch (e) {
-                    console.error('Error parsing products-data:', e);
-                }
+                } catch (e) { /* Silent fail */ }
             } else if (name === 'settings') {
                 try {
                     const newSettings = JSON.parse(newValue);
@@ -103,12 +91,282 @@ class ProductGalleryElement extends HTMLElement {
                     if (this.isRendered) {
                         this.updateStyles();
                     }
-                } catch (e) {
-                    console.error('Error parsing settings:', e);
+                } catch (e) { /* Silent fail */ }
+            } else if (name === 'cart-status') {
+                try {
+                    const status = JSON.parse(newValue);
+                    this.handleCartStatus(status);
+                } catch (e) { /* Silent fail */ }
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // EVENT HANDLING
+    // ─────────────────────────────────────────
+
+    handleClick(e) {
+        // Color swatch click
+        const swatch = e.target.closest('.option-swatch');
+        if (swatch) {
+            this.handleSwatchClick(swatch);
+            return;
+        }
+
+        // Add to Cart button click
+        const cartBtn = e.target.closest('.add-to-cart-button');
+        if (cartBtn) {
+            this.handleAddToCartClick(cartBtn);
+            return;
+        }
+
+        // Load More button click
+        const loadMoreBtn = e.target.closest('.load-more-button');
+        if (loadMoreBtn) {
+            this.dispatchEvent(new CustomEvent('load-more', {
+                bubbles: true,
+                composed: true
+            }));
+            return;
+        }
+    }
+
+    handleChange(e) {
+        const dropdown = e.target.closest('.option-dropdown');
+        if (dropdown) {
+            this.handleDropdownChange(dropdown);
+        }
+    }
+
+    handleSwatchClick(swatch) {
+        const productId = swatch.dataset.productId;
+        const optionName = swatch.dataset.optionName;
+        const optionValue = swatch.dataset.optionValue;
+
+        if (!this.productSelections[productId]) {
+            this.productSelections[productId] = {};
+        }
+
+        // Toggle: deselect if already selected, else select
+        if (this.productSelections[productId][optionName] === optionValue) {
+            delete this.productSelections[productId][optionName];
+        } else {
+            this.productSelections[productId][optionName] = optionValue;
+        }
+
+        this.updateProductCard(productId);
+    }
+
+    handleDropdownChange(dropdown) {
+        const productId = dropdown.dataset.productId;
+        const optionName = dropdown.dataset.optionName;
+        const optionValue = dropdown.value;
+
+        if (!this.productSelections[productId]) {
+            this.productSelections[productId] = {};
+        }
+
+        if (optionValue === '') {
+            delete this.productSelections[productId][optionName];
+        } else {
+            this.productSelections[productId][optionName] = optionValue;
+        }
+
+        this.updateProductCard(productId);
+    }
+
+    handleAddToCartClick(button) {
+        const productId = button.dataset.productId;
+        if (button.classList.contains('disabled') || button.classList.contains('loading')) return;
+
+        const product = this.products.find(p => p.id === productId);
+        if (!product) return;
+
+        let variantId = null;
+
+        if (product.hasOptions && product.variants && product.variants.length > 0) {
+            const matchedVariant = this.findMatchingVariant(product);
+            if (!matchedVariant) return;
+            variantId = matchedVariant.id;
+        }
+
+        this.dispatchEvent(new CustomEvent('add-to-cart', {
+            bubbles: true,
+            composed: true,
+            detail: {
+                productId: productId,
+                variantId: variantId,
+                quantity: 1
+            }
+        }));
+    }
+
+    handleCartStatus(status) {
+        const { productId, status: cartStatus, message } = status;
+        const card = this.querySelector(`[data-product-card="${productId}"]`);
+        if (!card) return;
+
+        const cartBtn = card.querySelector('.add-to-cart-button');
+        if (!cartBtn) return;
+
+        cartBtn.classList.remove('loading', 'success', 'error');
+
+        if (cartStatus === 'loading') {
+            cartBtn.classList.add('loading');
+            cartBtn.textContent = 'Adding...';
+        } else if (cartStatus === 'success') {
+            cartBtn.classList.add('success');
+            cartBtn.textContent = 'Added ✓';
+        } else if (cartStatus === 'error') {
+            cartBtn.classList.add('error');
+            cartBtn.textContent = message || 'Error';
+        } else {
+            // idle - restore original text
+            this.restoreCartButton(cartBtn, productId);
+        }
+    }
+
+    restoreCartButton(cartBtn, productId) {
+        const product = this.products.find(p => p.id === productId);
+        if (!product) return;
+
+        cartBtn.classList.remove('loading', 'success', 'error', 'disabled');
+
+        if (product.hasOptions && product.variants && product.variants.length > 0) {
+            const matchedVariant = this.findMatchingVariant(product);
+            if (!matchedVariant) {
+                cartBtn.classList.add('disabled');
+                cartBtn.textContent = this.allOptionsSelected(product) ? 'Out of Stock' : 'Select Options';
+            } else if (!matchedVariant.inStock) {
+                cartBtn.classList.add('disabled');
+                cartBtn.textContent = 'Out of Stock';
+            } else {
+                cartBtn.textContent = this.settings.cartButtonText;
+            }
+        } else {
+            cartBtn.textContent = this.settings.cartButtonText;
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // VARIANT MATCHING
+    // ─────────────────────────────────────────
+
+    findMatchingVariant(product) {
+        if (!product.variants || product.variants.length === 0) return null;
+
+        const selections = this.productSelections[product.id] || {};
+        const optionNames = (product.options || []).map(o => o.name);
+
+        // Check if all options are selected
+        const allSelected = optionNames.every(name => selections[name] !== undefined);
+        if (!allSelected) return null;
+
+        // Find variant matching all selections
+        return product.variants.find(variant => {
+            return optionNames.every(name => variant.choices[name] === selections[name]);
+        }) || null;
+    }
+
+    allOptionsSelected(product) {
+        const selections = this.productSelections[product.id] || {};
+        const optionNames = (product.options || []).map(o => o.name);
+        return optionNames.every(name => selections[name] !== undefined);
+    }
+
+    // ─────────────────────────────────────────
+    // UPDATE SINGLE PRODUCT CARD (after option selection)
+    // ─────────────────────────────────────────
+
+    updateProductCard(productId) {
+        const product = this.products.find(p => p.id === productId);
+        if (!product) return;
+
+        const card = this.querySelector(`[data-product-card="${productId}"]`);
+        if (!card) return;
+
+        const selections = this.productSelections[productId] || {};
+
+        // Update swatch active states
+        card.querySelectorAll('.option-swatch').forEach(swatch => {
+            const oName = swatch.dataset.optionName;
+            const oVal = swatch.dataset.optionValue;
+            if (selections[oName] === oVal) {
+                swatch.classList.add('active');
+            } else {
+                swatch.classList.remove('active');
+            }
+        });
+
+        // Update dropdown selected values
+        card.querySelectorAll('.option-dropdown').forEach(dd => {
+            const oName = dd.dataset.optionName;
+            if (selections[oName]) {
+                dd.value = selections[oName];
+            }
+        });
+
+        // Find matching variant and update price/button/image
+        const matchedVariant = this.findMatchingVariant(product);
+        const priceEl = card.querySelector('.product-price');
+        const comparePriceEl = card.querySelector('.product-compare-price');
+        const cartBtn = card.querySelector('.add-to-cart-button');
+        const imgEl = card.querySelector('.product-image');
+
+        if (matchedVariant) {
+            // Update price
+            if (priceEl && matchedVariant.price) {
+                priceEl.textContent = matchedVariant.price;
+            }
+            if (comparePriceEl) {
+                if (matchedVariant.compareAtPrice) {
+                    comparePriceEl.textContent = matchedVariant.compareAtPrice;
+                    comparePriceEl.style.display = 'inline-block';
+                } else {
+                    comparePriceEl.style.display = 'none';
+                }
+            }
+
+            // Update image if variant has one
+            if (imgEl && matchedVariant.image) {
+                imgEl.src = matchedVariant.image;
+            }
+
+            // Update cart button
+            if (cartBtn) {
+                cartBtn.classList.remove('disabled', 'loading', 'success', 'error');
+                if (matchedVariant.inStock) {
+                    cartBtn.textContent = this.settings.cartButtonText;
+                } else {
+                    cartBtn.classList.add('disabled');
+                    cartBtn.textContent = 'Out of Stock';
+                }
+            }
+        } else {
+            // No matching variant - check if all options selected
+            if (cartBtn) {
+                cartBtn.classList.remove('loading', 'success', 'error');
+                cartBtn.classList.add('disabled');
+                cartBtn.textContent = this.allOptionsSelected(product) ? 'Unavailable' : 'Select Options';
+            }
+            // Reset price to product base price
+            if (priceEl) {
+                priceEl.textContent = product.price;
+            }
+            if (comparePriceEl) {
+                if (product.compareAtPrice) {
+                    comparePriceEl.textContent = product.compareAtPrice;
+                    comparePriceEl.style.display = 'inline-block';
+                } else {
+                    comparePriceEl.style.display = 'none';
                 }
             }
         }
     }
+
+    // ─────────────────────────────────────────
+    // CSS HELPERS
+    // ─────────────────────────────────────────
 
     getShadowCSS() {
         const shadows = {
@@ -136,27 +394,17 @@ class ProductGalleryElement extends HTMLElement {
             medium: 'padding: 14px 28px; font-size: 14px;',
             large: 'padding: 18px 36px; font-size: 16px;'
         };
-        
         const styles = {
-            filled: `
-                background: var(--button-bg);
-                color: var(--button-text);
-                border: none;
-            `,
-            outlined: `
-                background: transparent;
-                color: var(--button-bg);
-                border: 2px solid var(--button-bg);
-            `,
-            text: `
-                background: transparent;
-                color: var(--button-bg);
-                border: none;
-            `
+            filled: `background: var(--button-bg); color: var(--button-text); border: none;`,
+            outlined: `background: transparent; color: var(--button-bg); border: 2px solid var(--button-bg);`,
+            text: `background: transparent; color: var(--button-bg); border: none;`
         };
-        
         return sizes[this.settings.buttonSize] + styles[this.settings.buttonStyle];
     }
+
+    // ─────────────────────────────────────────
+    // MAIN RENDER
+    // ─────────────────────────────────────────
 
     render() {
         this.innerHTML = `
@@ -267,12 +515,13 @@ class ProductGalleryElement extends HTMLElement {
                 }
                 
                 .product-price-section {
-                    margin: auto 0 16px 0;
+                    margin: auto 0 0 0;
                     padding-top: 16px;
                     border-top: 1px solid var(--border-color);
                     display: flex;
                     align-items: center;
                     gap: 10px;
+                    margin-bottom: 16px;
                 }
                 
                 .product-price {
@@ -280,6 +529,7 @@ class ProductGalleryElement extends HTMLElement {
                     font-weight: 800;
                     color: var(--price-color);
                     display: inline-block;
+                    transition: all 0.2s ease;
                 }
                 
                 .product-compare-price {
@@ -288,88 +538,123 @@ class ProductGalleryElement extends HTMLElement {
                     text-decoration: line-through;
                     display: inline-block;
                 }
-                
+
+                /* ─── PRODUCT OPTIONS ─── */
+
                 .product-options {
                     margin-bottom: 16px;
                 }
-                
+
                 .option-group {
                     margin-bottom: 12px;
                 }
-                
+
+                .option-group:last-child {
+                    margin-bottom: 0;
+                }
+
                 .option-label {
-                    font-size: 13px;
+                    display: block;
+                    font-size: 12px;
                     font-weight: 600;
                     color: var(--heading-color);
                     margin-bottom: 8px;
-                    display: block;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }
-                
-                .color-swatches {
+
+                .option-label .selected-value {
+                    font-weight: 400;
+                    color: var(--text-color);
+                    text-transform: none;
+                    letter-spacing: 0;
+                }
+
+                /* Color Swatches */
+                .option-swatches {
                     display: flex;
-                    gap: 8px;
                     flex-wrap: wrap;
+                    gap: 8px;
                 }
-                
-                .color-swatch {
+
+                .option-swatch {
                     width: 32px;
                     height: 32px;
                     border-radius: 50%;
                     cursor: pointer;
-                    border: 2px solid transparent;
-                    transition: all 0.2s ease;
+                    border: 2px solid #e0e0e0;
                     position: relative;
+                    transition: all 0.2s ease;
+                    padding: 0;
+                    outline: none;
+                    background: none;
                 }
-                
-                .color-swatch:hover {
+
+                .option-swatch .swatch-inner {
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    display: block;
+                    border: 2px solid transparent;
+                }
+
+                .option-swatch:hover {
+                    border-color: var(--primary-accent);
                     transform: scale(1.1);
                 }
-                
-                .color-swatch.selected {
-                    border-color: var(--heading-color);
-                    box-shadow: 0 0 0 2px var(--card-bg), 0 0 0 4px var(--heading-color);
+
+                .option-swatch.active {
+                    border-color: var(--primary-accent);
+                    box-shadow: 0 0 0 2px var(--primary-accent);
                 }
-                
-                .color-swatch.disabled {
-                    opacity: 0.3;
+
+                .option-swatch.out-of-stock {
+                    opacity: 0.4;
                     cursor: not-allowed;
                 }
-                
-                .dropdown-select {
+
+                .option-swatch.out-of-stock::after {
+                    content: '';
+                    position: absolute;
+                    top: 50%;
+                    left: -2px;
+                    right: -2px;
+                    height: 2px;
+                    background: #cc0000;
+                    transform: rotate(-45deg);
+                }
+
+                /* Dropdown Options */
+                .option-dropdown {
                     width: 100%;
-                    padding: 10px 12px;
-                    border: 1px solid var(--border-color);
-                    border-radius: 6px;
+                    padding: 10px 14px;
+                    border: 2px solid var(--border-color);
+                    border-radius: 8px;
                     font-size: 14px;
                     font-family: var(--font-family);
-                    background: white;
+                    color: var(--heading-color);
+                    background: #fff;
                     cursor: pointer;
-                    transition: all 0.2s ease;
-                }
-                
-                .dropdown-select:hover {
-                    border-color: var(--primary-accent);
-                }
-                
-                .dropdown-select:focus {
+                    transition: border-color 0.2s ease;
                     outline: none;
+                    appearance: auto;
+                }
+
+                .option-dropdown:focus {
                     border-color: var(--primary-accent);
-                    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
                 }
-                
-                .dropdown-select option:disabled {
-                    color: #999;
-                }
-                
-                .button-group {
+
+                /* ─── BUTTONS SECTION ─── */
+
+                .product-buttons {
                     display: flex;
-                    gap: 10px;
-                    margin-top: auto;
+                    flex-direction: column;
+                    gap: 8px;
                 }
                 
                 .product-button {
                     display: block;
-                    flex: 1;
+                    width: 100%;
                     margin: 0;
                     border-radius: 8px;
                     font-weight: 700;
@@ -387,41 +672,55 @@ class ProductGalleryElement extends HTMLElement {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
                 }
-                
+
                 .add-to-cart-button {
                     display: block;
-                    flex: 1;
-                    margin: 0;
+                    width: 100%;
                     padding: 14px 28px;
-                    font-size: 14px;
                     border-radius: 8px;
                     font-weight: 700;
+                    font-size: 14px;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                     cursor: pointer;
                     transition: all 0.3s ease;
                     text-align: center;
                     border: none;
-                    background: var(--add-to-cart-bg);
-                    color: var(--add-to-cart-text);
+                    background: var(--cart-button-bg);
+                    color: var(--cart-button-text);
+                    font-family: var(--font-family);
                 }
-                
-                .add-to-cart-button:hover:not(:disabled) {
-                    background: var(--add-to-cart-hover-bg);
+
+                .add-to-cart-button:hover:not(.disabled):not(.loading) {
+                    background: var(--cart-button-hover-bg);
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
                 }
-                
-                .add-to-cart-button:disabled {
+
+                .add-to-cart-button.disabled {
                     opacity: 0.5;
                     cursor: not-allowed;
+                    transform: none;
+                    box-shadow: none;
                 }
-                
-                .add-to-cart-button.adding {
+
+                .add-to-cart-button.loading {
                     opacity: 0.7;
-                    pointer-events: none;
+                    cursor: wait;
+                }
+
+                .add-to-cart-button.success {
+                    background: #27ae60;
+                    color: #ffffff;
+                }
+
+                .add-to-cart-button.error {
+                    background: #e74c3c;
+                    color: #ffffff;
                 }
                 
+                /* ─── LOAD MORE ─── */
+
                 .load-more-container {
                     text-align: center;
                     padding: 30px 0;
@@ -467,17 +766,15 @@ class ProductGalleryElement extends HTMLElement {
                     .products-grid {
                         grid-template-columns: repeat(var(--columns-mobile), 1fr);
                     }
-                    
                     .product-name {
                         font-size: calc(var(--heading-size) * 0.9);
                     }
-                    
                     .product-description {
                         font-size: calc(var(--text-size) * 0.9);
                     }
-                    
-                    .button-group {
-                        flex-direction: column;
+                    .option-swatch {
+                        width: 28px;
+                        height: 28px;
                     }
                 }
             </style>
@@ -488,6 +785,10 @@ class ProductGalleryElement extends HTMLElement {
             </div>
         `;
     }
+
+    // ─────────────────────────────────────────
+    // RENDER PRODUCTS
+    // ─────────────────────────────────────────
 
     renderProducts() {
         const grid = this.querySelector('.products-grid');
@@ -503,287 +804,163 @@ class ProductGalleryElement extends HTMLElement {
 
         grid.innerHTML = this.products.map(product => this.renderProductCard(product)).join('');
 
-        // Setup event listeners for variants and add to cart
-        this.setupProductEventListeners();
-
         if (this.hasMore) {
             loadMoreContainer.innerHTML = `
-                <button class="load-more-button" id="loadMoreBtn">
+                <button class="load-more-button">
                     ${this.settings.loadMoreText}
                 </button>
             `;
-            
-            const loadMoreBtn = this.querySelector('#loadMoreBtn');
-            if (loadMoreBtn) {
-                loadMoreBtn.addEventListener('click', () => {
-                    this.dispatchEvent(new CustomEvent('load-more', {
-                        bubbles: true,
-                        composed: true
-                    }));
-                });
-            }
         } else {
             loadMoreContainer.innerHTML = '';
         }
 
         this.updateStyles();
+
+        // Restore selections for products that already have selections
+        for (const productId of Object.keys(this.productSelections)) {
+            this.updateProductCard(productId);
+        }
     }
 
     renderProductCard(product) {
         const hasComparePrice = product.compareAtPrice && product.compareAtPrice !== product.price;
-        const hasVariants = product.options && product.options.length > 0;
-        
-        // DEBUG logging for each product card
-        console.log(`Product: ${product.name}`);
-        console.log('- hasVariants:', hasVariants);
-        console.log('- options:', product.options);
-        console.log('- variants:', product.variants);
-        
-        // Initialize selected variant for this product
-        if (!this.selectedVariants[product.id]) {
-            this.selectedVariants[product.id] = {};
+        const hasOptions = product.hasOptions && product.options && product.options.length > 0;
+        const hasVariants = product.variants && product.variants.length > 0;
+
+        // Determine initial cart button state
+        let cartButtonText = this.settings.cartButtonText;
+        let cartButtonClass = 'add-to-cart-button';
+
+        if (hasOptions && hasVariants) {
+            cartButtonText = 'Select Options';
+            cartButtonClass += ' disabled';
+        } else if (!product.inStock) {
+            cartButtonText = 'Out of Stock';
+            cartButtonClass += ' disabled';
         }
-        
+
         return `
-            <div class="product-card" data-product-id="${product.id}">
+            <div class="product-card" data-product-card="${product.id}">
                 ${product.ribbon ? `<div class="product-ribbon">${product.ribbon}</div>` : ''}
                 
                 <div class="product-image-container">
                     <img src="${product.imageUrl}" 
-                         alt="${product.name}" 
+                         alt="${this.escapeHtml(product.name)}" 
                          class="product-image"
                          loading="lazy"
                          onerror="this.src='https://via.placeholder.com/400'">
                 </div>
                 
                 <div class="product-content">
-                    <h3 class="product-name">${product.name}</h3>
-                    <p class="product-description">${product.description || ''}</p>
+                    <h3 class="product-name">${this.escapeHtml(product.name)}</h3>
+                    <p class="product-description">${this.escapeHtml(product.description || '')}</p>
                     
                     <div class="product-price-section">
-                        <span class="product-price" data-price-display="${product.id}">${product.price}</span>
-                        ${hasComparePrice ? `<span class="product-compare-price" data-compare-price-display="${product.id}">${product.compareAtPrice}</span>` : ''}
+                        <span class="product-price">${product.price}</span>
+                        ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : '<span class="product-compare-price" style="display:none;"></span>'}
                     </div>
+
+                    ${hasOptions ? this.renderOptions(product) : ''}
                     
-                    ${hasVariants ? this.renderProductOptions(product) : '<!-- NO OPTIONS: hasVariants is false -->'}
-                    
-                    <div class="button-group">
+                    <div class="product-buttons">
+                        <button class="${cartButtonClass}" data-product-id="${product.id}">
+                            ${cartButtonText}
+                        </button>
                         <a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>
-                        ${this.settings.showAddToCart ? `
-                            <button class="add-to-cart-button" 
-                                    data-add-to-cart="${product.id}"
-                                    ${!product.inStock ? 'disabled' : ''}>
-                                ${!product.inStock ? 'Out of Stock' : this.settings.addToCartText}
-                            </button>
-                        ` : '<!-- ADD TO CART HIDDEN -->'}
                     </div>
                 </div>
             </div>
         `;
     }
 
-    renderProductOptions(product) {
+    // ─────────────────────────────────────────
+    // RENDER OPTIONS
+    // ─────────────────────────────────────────
+
+    renderOptions(product) {
         if (!product.options || product.options.length === 0) return '';
-        
+
+        const optionsHTML = product.options.map(option => {
+            if (option.type === 'color') {
+                return this.renderColorOption(product.id, option);
+            } else {
+                return this.renderDropdownOption(product.id, option);
+            }
+        }).join('');
+
+        return `<div class="product-options">${optionsHTML}</div>`;
+    }
+
+    renderColorOption(productId, option) {
+        const selections = this.productSelections[productId] || {};
+        const selectedValue = selections[option.name] || null;
+
+        const swatchesHTML = option.choices.map(choice => {
+            const isActive = selectedValue === choice.value ? 'active' : '';
+            const isOutOfStock = !choice.inStock ? 'out-of-stock' : '';
+            const title = choice.description || choice.value;
+
+            return `
+                <button class="option-swatch ${isActive} ${isOutOfStock}"
+                    data-product-id="${productId}"
+                    data-option-name="${this.escapeHtml(option.name)}"
+                    data-option-value="${this.escapeHtml(choice.value)}"
+                    title="${this.escapeHtml(title)}"
+                    ${!choice.inStock ? '' : ''}>
+                    <span class="swatch-inner" style="background-color: ${choice.color || '#ccc'};"></span>
+                </button>
+            `;
+        }).join('');
+
+        const selectedLabel = selectedValue ? `: ${selectedValue}` : '';
+
         return `
-            <div class="product-options" data-options="${product.id}">
-                ${product.options.map((option, index) => this.renderOption(product, option, index)).join('')}
+            <div class="option-group">
+                <span class="option-label">${this.escapeHtml(option.name)}<span class="selected-value">${selectedLabel}</span></span>
+                <div class="option-swatches">${swatchesHTML}</div>
             </div>
         `;
     }
 
-    renderOption(product, option, optionIndex) {
-        const isColorOption = option.optionType === 'color';
-        
-        if (isColorOption) {
-            return `
-                <div class="option-group">
-                    <label class="option-label">${option.name}</label>
-                    <div class="color-swatches">
-                        ${option.choices.map((choice, choiceIndex) => `
-                            <div class="color-swatch ${!choice.inStock ? 'disabled' : ''}" 
-                                 style="background-color: ${choice.value};"
-                                 data-product-id="${product.id}"
-                                 data-option-index="${optionIndex}"
-                                 data-choice-value="${choice.value}"
-                                 data-choice-description="${choice.description}"
-                                 title="${choice.description}${!choice.inStock ? ' (Out of Stock)' : ''}">
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="option-group">
-                    <label class="option-label">${option.name}</label>
-                    <select class="dropdown-select" 
-                            data-product-id="${product.id}"
-                            data-option-index="${optionIndex}">
-                        <option value="">Select ${option.name}</option>
-                        ${option.choices.map(choice => `
-                            <option value="${choice.value}" 
-                                    ${!choice.inStock ? 'disabled' : ''}>
-                                ${choice.description}${!choice.inStock ? ' (Out of Stock)' : ''}
-                            </option>
-                        `).join('')}
-                    </select>
-                </div>
-            `;
-        }
+    renderDropdownOption(productId, option) {
+        const selections = this.productSelections[productId] || {};
+        const selectedValue = selections[option.name] || '';
+
+        const optionsHTML = option.choices.map(choice => {
+            const label = choice.description || choice.value;
+            const stockLabel = !choice.inStock ? ' (Out of Stock)' : '';
+            const isSelected = selectedValue === choice.value ? 'selected' : '';
+
+            return `<option value="${this.escapeHtml(choice.value)}" ${isSelected}>${this.escapeHtml(label)}${stockLabel}</option>`;
+        }).join('');
+
+        return `
+            <div class="option-group">
+                <span class="option-label">${this.escapeHtml(option.name)}</span>
+                <select class="option-dropdown"
+                    data-product-id="${productId}"
+                    data-option-name="${this.escapeHtml(option.name)}">
+                    <option value="">Select ${this.escapeHtml(option.name)}</option>
+                    ${optionsHTML}
+                </select>
+            </div>
+        `;
     }
 
-    setupProductEventListeners() {
-        // Color swatch listeners
-        this.querySelectorAll('.color-swatch').forEach(swatch => {
-            swatch.addEventListener('click', (e) => {
-                if (swatch.classList.contains('disabled')) return;
-                
-                const productId = swatch.dataset.productId;
-                const optionIndex = swatch.dataset.optionIndex;
-                const choiceValue = swatch.dataset.choiceValue;
-                const choiceDescription = swatch.dataset.choiceDescription;
-                
-                // Remove selected from siblings
-                const siblings = swatch.parentElement.querySelectorAll('.color-swatch');
-                siblings.forEach(s => s.classList.remove('selected'));
-                
-                // Add selected to clicked swatch
-                swatch.classList.add('selected');
-                
-                // Store selection
-                const product = this.products.find(p => p.id === productId);
-                if (product && product.options[optionIndex]) {
-                    this.selectedVariants[productId][product.options[optionIndex].name] = choiceDescription;
-                    this.updateProductPriceAndImage(productId);
-                }
-            });
-        });
-        
-        // Dropdown listeners
-        this.querySelectorAll('.dropdown-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const productId = select.dataset.productId;
-                const optionIndex = select.dataset.optionIndex;
-                const choiceValue = select.value;
-                
-                const product = this.products.find(p => p.id === productId);
-                if (product && product.options[optionIndex]) {
-                    this.selectedVariants[productId][product.options[optionIndex].name] = choiceValue;
-                    this.updateProductPriceAndImage(productId);
-                }
-            });
-        });
-        
-        // Add to cart listeners
-        this.querySelectorAll('.add-to-cart-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const productId = button.dataset.addToCart;
-                this.handleAddToCart(productId, button);
-            });
-        });
+    // ─────────────────────────────────────────
+    // UTILITY
+    // ─────────────────────────────────────────
+
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
-    updateProductPriceAndImage(productId) {
-        const product = this.products.find(p => p.id === productId);
-        if (!product || !product.variants) return;
-        
-        const selectedOptions = this.selectedVariants[productId];
-        const variant = this.findMatchingVariant(product, selectedOptions);
-        
-        if (variant) {
-            // Update price display
-            const priceDisplay = this.querySelector(`[data-price-display="${productId}"]`);
-            const comparePriceDisplay = this.querySelector(`[data-compare-price-display="${productId}"]`);
-            
-            if (priceDisplay && variant.price) {
-                priceDisplay.textContent = variant.price;
-            }
-            
-            if (comparePriceDisplay && variant.compareAtPrice) {
-                comparePriceDisplay.textContent = variant.compareAtPrice;
-            }
-            
-            // Update image if variant has specific image
-            if (variant.imageUrl) {
-                const card = this.querySelector(`[data-product-id="${productId}"]`);
-                const img = card?.querySelector('.product-image');
-                if (img) {
-                    img.src = variant.imageUrl;
-                }
-            }
-            
-            // Update add to cart button stock status
-            const addToCartBtn = this.querySelector(`[data-add-to-cart="${productId}"]`);
-            if (addToCartBtn) {
-                if (variant.inStock) {
-                    addToCartBtn.disabled = false;
-                    addToCartBtn.textContent = this.settings.addToCartText;
-                } else {
-                    addToCartBtn.disabled = true;
-                    addToCartBtn.textContent = 'Out of Stock';
-                }
-            }
-        }
-    }
-
-    findMatchingVariant(product, selectedOptions) {
-        if (!product.variants || product.variants.length === 0) return null;
-        
-        return product.variants.find(variant => {
-            if (!variant.choices) return false;
-            
-            // Check if all selected options match this variant
-            return Object.keys(selectedOptions).every(optionName => {
-                const selectedValue = selectedOptions[optionName];
-                return variant.choices[optionName] === selectedValue;
-            });
-        });
-    }
-
-    handleAddToCart(productId, button) {
-        const product = this.products.find(p => p.id === productId);
-        if (!product) return;
-        
-        const selectedOptions = this.selectedVariants[productId];
-        
-        // Validate that all required options are selected
-        if (product.options && product.options.length > 0) {
-            const allSelected = product.options.every(option => 
-                selectedOptions[option.name] && selectedOptions[option.name] !== ''
-            );
-            
-            if (!allSelected) {
-                alert('Please select all product options before adding to cart.');
-                return;
-            }
-        }
-        
-        // Find matching variant
-        const variant = this.findMatchingVariant(product, selectedOptions);
-        
-        // Show loading state
-        button.classList.add('adding');
-        button.textContent = 'Adding...';
-        
-        // Dispatch event to widget code
-        this.dispatchEvent(new CustomEvent('add-to-cart', {
-            bubbles: true,
-            composed: true,
-            detail: {
-                productId: product.id,
-                variantId: variant ? variant._id : null,
-                selectedOptions: selectedOptions,
-                quantity: 1
-            }
-        }));
-        
-        // Reset button after 2 seconds
-        setTimeout(() => {
-            button.classList.remove('adding');
-            button.textContent = this.settings.addToCartText;
-        }, 2000);
-    }
+    // ─────────────────────────────────────────
+    // STYLES
+    // ─────────────────────────────────────────
 
     updateStyles() {
         const container = this.querySelector('.gallery-container');
@@ -819,9 +996,9 @@ class ProductGalleryElement extends HTMLElement {
         container.style.setProperty('--load-more-text', this.settings.loadMoreTextColor);
         container.style.setProperty('--load-more-border', this.settings.loadMoreBorderColor);
         container.style.setProperty('--primary-accent', this.settings.primaryAccent);
-        container.style.setProperty('--add-to-cart-bg', this.settings.addToCartBgColor);
-        container.style.setProperty('--add-to-cart-text', this.settings.addToCartTextColor);
-        container.style.setProperty('--add-to-cart-hover-bg', this.settings.addToCartHoverBgColor);
+        container.style.setProperty('--cart-button-bg', this.settings.cartButtonBgColor || '#2ecc71');
+        container.style.setProperty('--cart-button-text', this.settings.cartButtonTextColor || '#ffffff');
+        container.style.setProperty('--cart-button-hover-bg', this.settings.cartButtonHoverBgColor || '#27ae60');
     }
 }
 
