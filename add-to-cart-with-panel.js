@@ -7,6 +7,9 @@ class ProductGalleryElement extends HTMLElement {
         this.settings = this.getDefaultSettings();
         this.isRendered = false;
         this.pendingProductsData = null;
+        this.selectedOptions = {};
+        this.quantities = {};
+        this.errors = {};
     }
 
     getDefaultSettings() {
@@ -62,7 +65,7 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     static get observedAttributes() {
-        return ['products-data', 'settings'];
+        return ['products-data', 'settings', 'error-data', 'cart-success'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -78,6 +81,20 @@ class ProductGalleryElement extends HTMLElement {
                     
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
+                    
+                    // Initialize options and quantities for new products
+                    this.products.forEach(p => {
+                        if (!this.selectedOptions[p.id]) {
+                            this.selectedOptions[p.id] = {};
+                        }
+                        if (!this.quantities[p.id]) {
+                            this.quantities[p.id] = 1;
+                        }
+                        if (!this.errors[p.id]) {
+                            this.errors[p.id] = '';
+                        }
+                    });
+                    
                     this.renderProducts();
                 } catch (e) {
                     console.error('Error parsing products data:', e);
@@ -92,6 +109,93 @@ class ProductGalleryElement extends HTMLElement {
                 } catch (e) {
                     console.error('Error parsing settings:', e);
                 }
+            } else if (name === 'error-data') {
+                try {
+                    const errorData = JSON.parse(newValue);
+                    console.log('❌ Custom element received error:', errorData);
+                    this.errors[errorData.productId] = errorData.message;
+                    this.updateErrorDisplay(errorData.productId);
+                } catch (error) {
+                    console.error('Error parsing error data:', error);
+                }
+            } else if (name === 'cart-success') {
+                try {
+                    const successData = JSON.parse(newValue);
+                    this.showSuccessFeedback(successData.productId);
+                } catch (error) {
+                    console.error('Error parsing success data:', error);
+                }
+            }
+        }
+    }
+
+    // Optimize Wix image URL
+    optimizeImageUrl(url, width = 375, height = 375) {
+        if (!url) return '';
+        
+        try {
+            const mediaMatch = url.match(/\/media\/([^/]+)/);
+            if (!mediaMatch) return url;
+            
+            const mediaId = mediaMatch[1];
+            return `https://static.wixstatic.com/media/${mediaId}/v1/fill/w_${width},h_${height},al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/${mediaId}`;
+        } catch (error) {
+            return url;
+        }
+    }
+
+    // Validate product options
+    validateOptions(productId) {
+        const product = this.products.find(p => p.id === productId);
+        if (!product || !product.options || product.options.length === 0) {
+            return true; // No options to validate
+        }
+
+        const selected = this.selectedOptions[productId] || {};
+        const missing = [];
+
+        product.options.forEach(opt => {
+            if (!selected[opt.name] || selected[opt.name] === '') {
+                missing.push(opt.name);
+            }
+        });
+
+        if (missing.length > 0) {
+            this.errors[productId] = `Please select: ${missing.join(', ')}`;
+            this.updateErrorDisplay(productId);
+            return false;
+        }
+
+        this.errors[productId] = '';
+        this.updateErrorDisplay(productId);
+        return true;
+    }
+
+    // Update error message display
+    updateErrorDisplay(productId) {
+        const card = this.querySelector(`[data-product-id="${productId}"]`);
+        if (card) {
+            const errorEl = card.querySelector('.error-message');
+            if (errorEl) {
+                errorEl.textContent = this.errors[productId] || '';
+                errorEl.style.display = this.errors[productId] ? 'block' : 'none';
+            }
+        }
+    }
+
+    // Show success feedback
+    showSuccessFeedback(productId) {
+        const card = this.querySelector(`[data-product-id="${productId}"]`);
+        if (card) {
+            const btn = card.querySelector('.add-btn');
+            if (btn) {
+                btn.classList.add('success');
+                btn.textContent = '✓ Added to Cart!';
+                
+                setTimeout(() => {
+                    btn.classList.remove('success');
+                    btn.textContent = 'Add to Cart';
+                }, 2000);
             }
         }
     }
@@ -251,24 +355,13 @@ class ProductGalleryElement extends HTMLElement {
                     min-height: calc(var(--heading-size) * 2.6);
                 }
                 
-                .product-desc {
-                    font-size: var(--text-size);
-                    color: var(--text-color);
-                    margin: 0 0 auto 0;
-                    line-height: 1.5;
-                    overflow: hidden;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                }
-                
                 .price-section {
                     display: flex;
                     align-items: baseline;
                     gap: 10px;
-                    margin: 16px 0;
-                    padding-top: 12px;
-                    border-top: 1px solid var(--border-color);
+                    margin: 0 0 16px 0;
+                    padding-bottom: 12px;
+                    border-bottom: 1px solid var(--border-color);
                 }
                 
                 .price {
@@ -284,97 +377,59 @@ class ProductGalleryElement extends HTMLElement {
                     opacity: 0.7;
                 }
                 
-                .product-button {
-                    display: block;
-                    width: 100%;
-                    border-radius: var(--button-radius);
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    text-decoration: none;
-                    text-align: center;
-                    ${this.getButtonCSS()}
-                    ${this.getButtonSizeCSS()}
-                }
-                
-                .product-button:hover {
-                    background: var(--button-hover-bg);
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-                }
-                
                 /* Product Options */
-                .product-options {
-                    margin: 16px 0;
-                    padding-top: 12px;
-                    border-top: 1px solid var(--border-color);
+                .options-section {
+                    margin: 0 0 16px 0;
+                    flex: 1;
                 }
                 
-                .option-group {
+                .option {
                     margin-bottom: 16px;
                 }
                 
-                .option-label {
+                .option label {
                     display: block;
-                    font-size: 12px;
                     font-weight: 600;
-                    color: var(--text-color);
+                    font-size: 12px;
                     margin-bottom: 8px;
+                    color: var(--text-color);
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
                 
                 /* Color Swatches */
-                .color-swatches {
+                .swatches {
                     display: flex;
                     flex-wrap: wrap;
                     gap: 8px;
-                    margin-bottom: 6px;
+                    margin-bottom: 4px;
                 }
                 
-                .color-swatch {
+                .swatch {
                     width: 36px;
                     height: 36px;
                     border-radius: 50%;
                     border: 2px solid var(--border-color);
                     cursor: pointer;
-                    position: relative;
                     transition: all 0.2s ease;
-                    padding: 0;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                    position: relative;
+                    background-size: cover;
+                    background-position: center;
                 }
                 
-                .color-swatch:hover {
+                .swatch:hover {
                     transform: scale(1.1);
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                    border-color: #999;
                 }
                 
-                .color-swatch.selected {
+                .swatch.selected {
                     border-color: var(--primary-accent);
                     border-width: 3px;
                     box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary-accent);
                 }
                 
-                .color-swatch .checkmark {
-                    color: white;
-                    font-weight: bold;
-                    font-size: 16px;
-                    text-shadow: 0 0 3px rgba(0,0,0,0.5);
-                    position: absolute;
-                }
-                
-                .selected-option-text {
-                    font-size: 11px;
-                    color: var(--text-color);
-                    font-style: italic;
-                }
-                
                 /* Option Dropdowns */
-                .option-select {
+                select {
                     width: 100%;
                     padding: 10px 12px;
                     border: 1px solid var(--border-color);
@@ -387,27 +442,28 @@ class ProductGalleryElement extends HTMLElement {
                     font-family: var(--font-family);
                 }
                 
-                .option-select:hover {
+                select:hover,
+                select:focus {
                     border-color: var(--primary-accent);
-                }
-                
-                .option-select:focus {
                     outline: none;
-                    border-color: var(--primary-accent);
-                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
                 }
                 
                 /* Quantity Selector */
                 .quantity-selector {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
                     margin: 16px 0;
+                    padding: 12px;
+                    background: #f8f8f8;
+                    border-radius: 6px;
                 }
                 
-                .quantity-label {
-                    display: block;
-                    font-size: 12px;
+                .quantity-selector label {
                     font-weight: 600;
+                    font-size: 12px;
                     color: var(--text-color);
-                    margin-bottom: 8px;
+                    margin: 0;
                     text-transform: uppercase;
                     letter-spacing: 0.5px;
                 }
@@ -415,68 +471,70 @@ class ProductGalleryElement extends HTMLElement {
                 .quantity-controls {
                     display: flex;
                     align-items: center;
-                    border: 1px solid var(--border-color);
-                    border-radius: 6px;
-                    overflow: hidden;
-                    width: fit-content;
+                    gap: 8px;
+                    margin-left: auto;
                 }
                 
-                .qty-btn {
-                    width: 40px;
-                    height: 40px;
-                    border: none;
-                    background: var(--card-bg);
-                    color: var(--heading-color);
-                    font-size: 18px;
-                    font-weight: bold;
+                .quantity-btn {
+                    width: 32px;
+                    height: 32px;
+                    border: 1px solid var(--border-color);
+                    background: white;
+                    border-radius: 4px;
                     cursor: pointer;
-                    transition: all 0.2s ease;
+                    font-size: 1.2em;
+                    font-weight: bold;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    transition: all 0.2s;
+                    color: var(--heading-color);
+                    padding: 0;
                 }
                 
-                .qty-btn:hover {
+                .quantity-btn:hover {
                     background: var(--primary-accent);
+                    border-color: var(--primary-accent);
                     color: white;
                 }
                 
-                .qty-btn:active {
+                .quantity-btn:active {
                     transform: scale(0.95);
                 }
                 
-                .qty-input {
-                    width: 60px;
-                    height: 40px;
-                    border: none;
-                    border-left: 1px solid var(--border-color);
-                    border-right: 1px solid var(--border-color);
+                .quantity-btn:disabled {
+                    opacity: 0.3;
+                    cursor: not-allowed;
+                    background: #f5f5f5;
+                }
+                
+                .quantity-value {
+                    min-width: 40px;
                     text-align: center;
-                    font-size: 14px;
+                    font-size: 1.1em;
                     font-weight: 600;
                     color: var(--heading-color);
-                    font-family: var(--font-family);
                 }
                 
-                .qty-input:focus {
-                    outline: none;
+                .error-message {
+                    color: #d32f2f;
+                    font-size: 0.85em;
+                    margin: 8px 0;
+                    padding: 8px;
+                    background: #ffebee;
+                    border-radius: 4px;
+                    display: none;
                 }
                 
-                /* Remove spinner arrows */
-                .qty-input::-webkit-outer-spin-button,
-                .qty-input::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
+                /* Buttons */
+                .button-group {
+                    display: flex;
+                    gap: 8px;
+                    margin-top: auto;
                 }
                 
-                .qty-input[type=number] {
-                    -moz-appearance: textfield;
-                }
-                
-                /* Add to Cart Button */
-                .add-to-cart-btn {
-                    display: block;
-                    width: 100%;
+                .btn {
+                    flex: 1;
                     border-radius: var(--button-radius);
                     font-weight: 700;
                     text-transform: uppercase;
@@ -485,55 +543,33 @@ class ProductGalleryElement extends HTMLElement {
                     transition: all 0.3s ease;
                     text-align: center;
                     border: none;
-                    position: relative;
-                    overflow: hidden;
-                    ${this.getButtonCSS()}
                     ${this.getButtonSizeCSS()}
                 }
                 
-                .add-to-cart-btn:hover:not(:disabled) {
+                .view-btn {
+                    background: #f5f5f5;
+                    color: #333;
+                    border: 1px solid #ddd;
+                }
+                
+                .view-btn:hover {
+                    background: #e5e5e5;
+                    border-color: #999;
+                }
+                
+                .add-btn {
+                    background: var(--button-bg);
+                    color: var(--button-text);
+                }
+                
+                .add-btn:hover {
                     background: var(--button-hover-bg);
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                 }
                 
-                .add-to-cart-btn:disabled {
-                    opacity: 0.7;
-                    cursor: not-allowed;
-                }
-                
-                .add-to-cart-btn.success {
+                .add-btn.success {
                     background: #10b981 !important;
-                }
-                
-                .add-to-cart-btn.error {
-                    background: #ef4444 !important;
-                }
-                
-                .btn-loading {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                }
-                
-                .spinner {
-                    width: 14px;
-                    height: 14px;
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    border-top-color: white;
-                    border-radius: 50%;
-                    animation: spin 0.6s linear infinite;
-                }
-                
-                @keyframes spin {
-                    to { transform: rotate(360deg); }
-                }
-                
-                .success-icon,
-                .error-icon {
-                    font-size: 16px;
-                    font-weight: bold;
                 }
                 
                 .load-more-container {
@@ -589,12 +625,12 @@ class ProductGalleryElement extends HTMLElement {
                         font-size: calc(var(--heading-size) * 0.9);
                     }
                     
-                    .product-desc {
-                        font-size: calc(var(--text-size) * 0.9);
-                    }
-                    
                     .price {
                         font-size: calc(var(--price-size) * 0.85);
+                    }
+                    
+                    .button-group {
+                        flex-direction: column;
                     }
                 }
                 
@@ -622,27 +658,6 @@ class ProductGalleryElement extends HTMLElement {
         return effects[this.settings.hoverEffect] || effects.lift;
     }
 
-    getButtonCSS() {
-        const styles = {
-            filled: `
-                background: var(--button-bg);
-                color: var(--button-text);
-                border: none;
-            `,
-            outlined: `
-                background: transparent;
-                color: var(--button-bg);
-                border: 2px solid var(--button-bg);
-            `,
-            text: `
-                background: transparent;
-                color: var(--button-bg);
-                border: none;
-            `
-        };
-        return styles[this.settings.buttonStyle] || styles.filled;
-    }
-
     renderProducts() {
         console.log('📦 Rendering', this.products.length, 'products');
         
@@ -666,7 +681,7 @@ class ProductGalleryElement extends HTMLElement {
         ).join('');
 
         this.setupLazyLoading();
-        this.setupProductInteractions();
+        this.attachEventListeners();
 
         if (this.hasMore) {
             loadMoreContainer.innerHTML = `
@@ -705,8 +720,8 @@ class ProductGalleryElement extends HTMLElement {
                 <div class="image-container">
                     <img 
                         ${isAboveFold ? 
-                            `src="${product.imageUrl}" onload="this.classList.add('loaded')"` : 
-                            `data-src="${product.imageUrl}"`
+                            `src="${this.optimizeImageUrl(product.imageUrl, 375, 375)}" onload="this.classList.add('loaded')"` : 
+                            `data-src="${this.optimizeImageUrl(product.imageUrl, 375, 375)}"`
                         }
                         alt="${product.name}"
                         class="product-image ${isAboveFold ? '' : ''}"
@@ -716,7 +731,6 @@ class ProductGalleryElement extends HTMLElement {
                 
                 <div class="product-content">
                     <h3 class="product-title">${product.name}</h3>
-                    ${product.description ? `<p class="product-desc">${product.description}</p>` : ''}
                     
                     <div class="price-section">
                         <span class="price">${product.price}</span>
@@ -725,7 +739,13 @@ class ProductGalleryElement extends HTMLElement {
                     
                     ${hasOptions ? this.renderProductOptions(product) : ''}
                     ${hasOptions ? this.renderQuantitySelector(product.id) : ''}
-                    ${hasOptions ? this.renderAddToCartButton(product.id) : `<a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>`}
+                    
+                    <div class="error-message" role="alert"></div>
+                    
+                    <div class="button-group">
+                        <button class="btn view-btn" data-action="view">View Product</button>
+                        <button class="btn add-btn" data-action="add">${hasOptions ? 'Add to Cart' : 'View Product'}</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -735,49 +755,33 @@ class ProductGalleryElement extends HTMLElement {
         if (!product.options || product.options.length === 0) return '';
         
         return `
-            <div class="product-options" data-product-id="${product.id}">
-                ${product.options.map(option => this.renderOption(option, product.id)).join('')}
-            </div>
-        `;
-    }
-
-    renderOption(option, productId) {
-        const optionId = `option-${productId}-${option.name.replace(/\s+/g, '-')}`;
-        
-        // Color swatch for colors
-        if (option.optionType === 'COLOR' || option.name.toLowerCase().includes('color') || option.name.toLowerCase().includes('colour')) {
-            return `
-                <div class="option-group">
-                    <label class="option-label">${option.name}</label>
-                    <div class="color-swatches" data-option-name="${option.name}">
-                        ${option.choices.map((choice, idx) => `
-                            <button 
-                                class="color-swatch ${idx === 0 ? 'selected' : ''}" 
-                                data-choice="${choice.value || choice.description || choice}"
-                                style="background-color: ${this.getColorFromName(choice.value || choice.description || choice)}"
-                                title="${choice.description || choice.value || choice}"
-                                aria-label="${choice.description || choice.value || choice}"
-                            >
-                                ${idx === 0 ? '<span class="checkmark">✓</span>' : ''}
-                            </button>
-                        `).join('')}
+            <div class="options-section">
+                ${product.options.map(opt => `
+                    <div class="option">
+                        <label>${opt.name}</label>
+                        ${opt.optionType === 'color' || opt.name.toLowerCase().includes('color') ? `
+                            <div class="swatches">
+                                ${opt.choices.map(c => `
+                                    <button 
+                                        class="swatch" 
+                                        style="background-color: ${this.getColorValue(c)};" 
+                                        data-option="${opt.name}" 
+                                        data-value="${c.description || c.value || c}" 
+                                        title="${c.description || c.value || c}"
+                                        aria-label="Select ${c.description || c.value || c}">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <select data-option="${opt.name}" aria-label="Select ${opt.name}">
+                                <option value="">Choose ${opt.name}</option>
+                                ${opt.choices.map(c => `
+                                    <option value="${c.description || c.value || c}">${c.description || c.value || c}</option>
+                                `).join('')}
+                            </select>
+                        `}
                     </div>
-                    <div class="selected-option-text">${option.choices[0].description || option.choices[0].value || option.choices[0]}</div>
-                </div>
-            `;
-        }
-        
-        // Dropdown for other options (size, material, etc)
-        return `
-            <div class="option-group">
-                <label class="option-label" for="${optionId}">${option.name}</label>
-                <select class="option-select" id="${optionId}" data-option-name="${option.name}">
-                    ${option.choices.map(choice => `
-                        <option value="${choice.value || choice.description || choice}">
-                            ${choice.description || choice.value || choice}
-                        </option>
-                    `).join('')}
-                </select>
+                `).join('')}
             </div>
         `;
     }
@@ -785,29 +789,25 @@ class ProductGalleryElement extends HTMLElement {
     renderQuantitySelector(productId) {
         return `
             <div class="quantity-selector">
-                <label class="quantity-label">Quantity</label>
+                <label>Quantity</label>
                 <div class="quantity-controls">
-                    <button class="qty-btn qty-minus" data-product-id="${productId}" aria-label="Decrease quantity">−</button>
-                    <input type="number" class="qty-input" value="1" min="1" max="999" data-product-id="${productId}">
-                    <button class="qty-btn qty-plus" data-product-id="${productId}" aria-label="Increase quantity">+</button>
+                    <button class="quantity-btn" data-action="decrease" aria-label="Decrease quantity">−</button>
+                    <span class="quantity-value">${this.quantities[productId] || 1}</span>
+                    <button class="quantity-btn" data-action="increase" aria-label="Increase quantity">+</button>
                 </div>
             </div>
         `;
     }
 
-    renderAddToCartButton(productId) {
-        return `
-            <button class="add-to-cart-btn" data-product-id="${productId}">
-                <span class="btn-text">Add to Cart</span>
-                <span class="btn-loading" style="display: none;">
-                    <span class="spinner"></span>
-                    Adding...
-                </span>
-            </button>
-        `;
-    }
-
-    getColorFromName(colorName) {
+    getColorValue(choice) {
+        const value = choice.description || choice.value || choice;
+        
+        // If it's already a hex color, use it
+        if (value.startsWith('#')) {
+            return value;
+        }
+        
+        // Common color mappings
         const colorMap = {
             'black': '#000000',
             'white': '#FFFFFF',
@@ -822,181 +822,10 @@ class ProductGalleryElement extends HTMLElement {
             'gray': '#808080',
             'grey': '#808080',
             'navy': '#000080',
-            'teal': '#008080',
-            'lime': '#00FF00',
-            'maroon': '#800000',
-            'olive': '#808000',
-            'silver': '#C0C0C0',
-            'gold': '#FFD700',
-            'beige': '#F5F5DC',
-            'cream': '#FFFDD0',
-            'ivory': '#FFFFF0'
+            'teal': '#008080'
         };
         
-        const normalizedName = colorName.toLowerCase().trim();
-        
-        // Check if it's already a hex color
-        if (/^#[0-9A-F]{6}$/i.test(colorName)) {
-            return colorName;
-        }
-        
-        // Check color map
-        if (colorMap[normalizedName]) {
-            return colorMap[normalizedName];
-        }
-        
-        // Default gray for unknown colors
-        return '#CCCCCC';
-    }
-
-    setupProductInteractions() {
-        // Color swatch selection
-        this.querySelectorAll('.color-swatch').forEach(swatch => {
-            swatch.addEventListener('click', (e) => {
-                const button = e.currentTarget;
-                const container = button.closest('.color-swatches');
-                const selectedText = button.closest('.option-group').querySelector('.selected-option-text');
-                
-                // Remove selection from siblings
-                container.querySelectorAll('.color-swatch').forEach(s => {
-                    s.classList.remove('selected');
-                    s.querySelector('.checkmark')?.remove();
-                });
-                
-                // Add selection to clicked swatch
-                button.classList.add('selected');
-                button.innerHTML = '<span class="checkmark">✓</span>';
-                
-                // Update selected text
-                if (selectedText) {
-                    selectedText.textContent = button.getAttribute('title');
-                }
-            });
-        });
-
-        // Quantity controls
-        this.querySelectorAll('.qty-minus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const productId = e.currentTarget.dataset.productId;
-                const input = this.querySelector(`.qty-input[data-product-id="${productId}"]`);
-                if (input) {
-                    const currentValue = parseInt(input.value) || 1;
-                    if (currentValue > 1) {
-                        input.value = currentValue - 1;
-                    }
-                }
-            });
-        });
-
-        this.querySelectorAll('.qty-plus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const productId = e.currentTarget.dataset.productId;
-                const input = this.querySelector(`.qty-input[data-product-id="${productId}"]`);
-                if (input) {
-                    const currentValue = parseInt(input.value) || 1;
-                    const maxValue = parseInt(input.getAttribute('max')) || 999;
-                    if (currentValue < maxValue) {
-                        input.value = currentValue + 1;
-                    }
-                }
-            });
-        });
-
-        // Add to cart buttons
-        this.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                await this.handleAddToCart(e.currentTarget);
-            });
-        });
-    }
-
-    async handleAddToCart(button) {
-        const productId = button.dataset.productId;
-        const card = button.closest('.product-card');
-        
-        // Get selected options
-        const choices = {};
-        const optionsContainer = card.querySelector('.product-options');
-        
-        if (optionsContainer) {
-            // Get color swatches
-            optionsContainer.querySelectorAll('.color-swatches').forEach(container => {
-                const optionName = container.dataset.optionName;
-                const selectedSwatch = container.querySelector('.color-swatch.selected');
-                if (selectedSwatch) {
-                    choices[optionName] = selectedSwatch.dataset.choice;
-                }
-            });
-            
-            // Get dropdowns
-            optionsContainer.querySelectorAll('.option-select').forEach(select => {
-                const optionName = select.dataset.optionName;
-                choices[optionName] = select.value;
-            });
-        }
-        
-        // Get quantity
-        const qtyInput = card.querySelector('.qty-input');
-        const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
-        
-        // Show loading state
-        const btnText = button.querySelector('.btn-text');
-        const btnLoading = button.querySelector('.btn-loading');
-        button.disabled = true;
-        if (btnText) btnText.style.display = 'none';
-        if (btnLoading) btnLoading.style.display = 'flex';
-        
-        try {
-            // Import backend function
-            const { addToCart } = await import('@backend/productGallery.web');
-            
-            // Add to cart
-            await addToCart(productId, choices, quantity);
-            
-            // Show success state
-            button.classList.add('success');
-            if (btnLoading) {
-                btnLoading.innerHTML = '<span class="success-icon">✓</span> Added to Cart!';
-            }
-            
-            // Dispatch event for cart update
-            this.dispatchEvent(new CustomEvent('product-added-to-cart', {
-                bubbles: true,
-                composed: true,
-                detail: { productId, choices, quantity }
-            }));
-            
-            // Reset after 2 seconds
-            setTimeout(() => {
-                button.disabled = false;
-                button.classList.remove('success');
-                if (btnText) btnText.style.display = 'inline';
-                if (btnLoading) {
-                    btnLoading.style.display = 'none';
-                    btnLoading.innerHTML = '<span class="spinner"></span> Adding...';
-                }
-            }, 2000);
-            
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            
-            // Show error state
-            button.classList.add('error');
-            if (btnLoading) {
-                btnLoading.innerHTML = '<span class="error-icon">✕</span> Error';
-            }
-            
-            // Reset after 2 seconds
-            setTimeout(() => {
-                button.disabled = false;
-                button.classList.remove('error');
-                if (btnText) btnText.style.display = 'inline';
-                if (btnLoading) {
-                    btnLoading.style.display = 'none';
-                    btnLoading.innerHTML = '<span class="spinner"></span> Adding...';
-                }
-            }, 2000);
-        }
+        return colorMap[value.toLowerCase()] || '#CCCCCC';
     }
 
     setupLazyLoading() {
@@ -1023,6 +852,123 @@ class ProductGalleryElement extends HTMLElement {
 
         this.querySelectorAll('img[data-src]').forEach(img => {
             observer.observe(img);
+        });
+    }
+
+    attachEventListeners() {
+        // Color swatches
+        this.querySelectorAll('.swatch').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const option = e.target.dataset.option;
+                const value = e.target.dataset.value;
+                const card = e.target.closest('.card') || e.target.closest('.product-card');
+                const productId = card.dataset.productId;
+                
+                this.selectedOptions[productId][option] = value;
+                this.errors[productId] = '';
+                this.updateErrorDisplay(productId);
+
+                // Visual feedback
+                card.querySelectorAll(`.swatch[data-option="${option}"]`).forEach(s => 
+                    s.classList.remove('selected')
+                );
+                e.target.classList.add('selected');
+                
+                console.log('✅ Color selected:', option, '=', value);
+            });
+        });
+
+        // Dropdowns
+        this.querySelectorAll('select').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const option = e.target.dataset.option;
+                const value = e.target.value;
+                const card = e.target.closest('.card') || e.target.closest('.product-card');
+                const productId = card.dataset.productId;
+                
+                if (value === '') {
+                    delete this.selectedOptions[productId][option];
+                } else {
+                    this.selectedOptions[productId][option] = value;
+                    this.errors[productId] = '';
+                    this.updateErrorDisplay(productId);
+                }
+                
+                console.log('✅ Option selected:', option, '=', value);
+            });
+        });
+
+        // Quantity buttons
+        this.querySelectorAll('.quantity-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = e.target.dataset.action;
+                const card = e.target.closest('.card') || e.target.closest('.product-card');
+                const productId = card.dataset.productId;
+                const quantityValueEl = card.querySelector('.quantity-value');
+                
+                let currentQty = this.quantities[productId] || 1;
+                
+                if (action === 'decrease' && currentQty > 1) {
+                    currentQty--;
+                } else if (action === 'increase' && currentQty < 99) {
+                    currentQty++;
+                }
+                
+                this.quantities[productId] = currentQty;
+                quantityValueEl.textContent = currentQty;
+                
+                const decreaseBtn = card.querySelector('.quantity-btn[data-action="decrease"]');
+                const increaseBtn = card.querySelector('.quantity-btn[data-action="increase"]');
+                
+                if (decreaseBtn) decreaseBtn.disabled = currentQty <= 1;
+                if (increaseBtn) increaseBtn.disabled = currentQty >= 99;
+                
+                console.log('✅ Quantity updated:', productId, '=', currentQty);
+            });
+        });
+
+        // Action buttons
+        this.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = e.target.dataset.action;
+                const card = e.target.closest('.card') || e.target.closest('.product-card');
+                const productId = card.dataset.productId;
+                const product = this.products.find(p => p.id === productId);
+                
+                if (action === 'view') {
+                    console.log('👁️ View product:', productId);
+                    this.dispatchEvent(new CustomEvent('viewProduct', {
+                        detail: { productId, product },
+                        bubbles: true,
+                        composed: true
+                    }));
+                } else if (action === 'add') {
+                    // If no options, treat as view product
+                    if (!product.options || product.options.length === 0) {
+                        this.dispatchEvent(new CustomEvent('viewProduct', {
+                            detail: { productId, product },
+                            bubbles: true,
+                            composed: true
+                        }));
+                        return;
+                    }
+                    
+                    // Validate before adding
+                    if (this.validateOptions(productId)) {
+                        const choices = this.selectedOptions[productId];
+                        const quantity = this.quantities[productId] || 1;
+                        console.log('🛒 Add to cart:', productId, choices, 'qty:', quantity);
+                        this.dispatchEvent(new CustomEvent('addToCart', {
+                            detail: { productId, choices, quantity },
+                            bubbles: true,
+                            composed: true
+                        }));
+                    }
+                }
+            });
         });
     }
 
