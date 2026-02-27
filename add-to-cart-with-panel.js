@@ -6,6 +6,8 @@ class ProductGalleryElement extends HTMLElement {
         this.selectedOptions = {};
         this.quantities = {};
         this.errors = {};
+        this.pendingProductsData = null;
+        this.isRendered = false;
         this.settings = {
             cardBgColor: '#ffffff', cardHoverBgColor: '#f8f9fa', headingColor: '#1a1a1a', textColor: '#666666',
             fontFamily: 'Arial', headingSize: 18, textSize: 14, priceColor: '#2c3e50', comparePriceColor: '#999999',
@@ -18,7 +20,6 @@ class ProductGalleryElement extends HTMLElement {
             columnsMobile: 1, loadMoreText: 'Load More Products', loadMoreBgColor: '#ffffff',
             loadMoreTextColor: '#3498db', loadMoreBorderColor: '#3498db'
         };
-        this.isRendered = false;
     }
 
     static get observedAttributes() {
@@ -27,21 +28,34 @@ class ProductGalleryElement extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {
         if (!newValue || newValue === oldValue) return;
+
         if (name === 'products-data') {
             try {
                 const data = JSON.parse(newValue);
+                console.log('📦 Custom Element: Received products-data →', data.products?.length || 0, 'products');
+
+                if (!this.isRendered) {
+                    this.pendingProductsData = data;
+                    return;
+                }
+
                 this.products = data.products || [];
                 this.hasMore = data.hasMore || false;
+
                 this.products.forEach(p => {
                     this.selectedOptions[p.id] = {};
                     this.quantities[p.id] = 1;
                     this.errors[p.id] = '';
                 });
-                if (this.isRendered) this.renderProducts();
-            } catch (e) {}
+
+                this.renderProducts();
+            } catch (e) {
+                console.error('❌ Custom Element: Failed to parse products-data', e);
+            }
         } else if (name === 'settings') {
             try {
-                Object.assign(this.settings, JSON.parse(newValue));
+                const newSettings = JSON.parse(newValue);
+                Object.assign(this.settings, newSettings);
                 if (this.isRendered) this.updateStyles();
             } catch (e) {}
         } else if (name === 'error-data') {
@@ -54,9 +68,27 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     connectedCallback() {
+        console.log('🔗 Custom Element: Connected to DOM');
         this.render();
         this.isRendered = true;
-        if (this.products.length) this.renderProducts();
+
+        if (this.pendingProductsData) {
+            console.log('📦 Applying pending products data...');
+            const data = this.pendingProductsData;
+            this.products = data.products || [];
+            this.hasMore = data.hasMore || false;
+
+            this.products.forEach(p => {
+                this.selectedOptions[p.id] = {};
+                this.quantities[p.id] = 1;
+                this.errors[p.id] = '';
+            });
+
+            this.pendingProductsData = null;
+            this.renderProducts();
+        } else if (this.products.length === 0) {
+            this.renderProducts(); // show empty state
+        }
     }
 
     render() {
@@ -96,11 +128,14 @@ class ProductGalleryElement extends HTMLElement {
                 .load-more-container { text-align: center; padding: 30px 0; }
                 .load-more-button { padding: 16px 48px; border: 3px solid var(--load-more-border); background: var(--load-more-bg); color: var(--load-more-text); border-radius: 50px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
                 .load-more-button:hover { background: var(--load-more-text); color: var(--load-more-bg); }
+                .empty-state, .loading-state { text-align: center; padding: 80px 20px; color: #777; font-size: 18px; }
                 @media (max-width: 1024px) { .products-grid { grid-template-columns: repeat(var(--columns-tablet), 1fr); } }
                 @media (max-width: 768px) { .products-grid { grid-template-columns: repeat(var(--columns-mobile), 1fr); } }
             </style>
             <div class="gallery-container">
-                <div class="products-grid"></div>
+                <div class="products-grid">
+                    <div class="loading-state">Loading products...</div>
+                </div>
                 <div class="load-more-container"></div>
             </div>
         `;
@@ -120,6 +155,15 @@ class ProductGalleryElement extends HTMLElement {
     renderProducts() {
         const grid = this.querySelector('.products-grid');
         const loadMoreContainer = this.querySelector('.load-more-container');
+
+        if (!grid) return;
+
+        if (this.products.length === 0) {
+            grid.innerHTML = '<div class="empty-state">No products found.<br>Please select a category in the widget settings.</div>';
+            loadMoreContainer.innerHTML = '';
+            return;
+        }
+
         grid.innerHTML = this.products.map(product => this.renderProductCard(product)).join('');
 
         if (this.hasMore) {
@@ -130,7 +174,9 @@ class ProductGalleryElement extends HTMLElement {
         } else {
             loadMoreContainer.innerHTML = '';
         }
+
         this.attachEventListeners();
+        console.log('🎨 Custom Element: Rendered', this.products.length, 'product cards');
     }
 
     renderProductCard(product) {
@@ -167,7 +213,7 @@ class ProductGalleryElement extends HTMLElement {
                     <div class="options-section">${optionsHTML}</div>
                     <div class="quantity-selector">
                         <label>Quantity</label>
-                        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                             <button class="quantity-btn" data-action="decrease">-</button>
                             <span class="quantity-value">${this.quantities[product.id] || 1}</span>
                             <button class="quantity-btn" data-action="increase">+</button>
@@ -188,7 +234,7 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     attachEventListeners() {
-        // Swatches
+        // Swatches, selects, quantity, buttons (same reliable logic as before)
         this.querySelectorAll('.swatch').forEach(btn => {
             btn.addEventListener('click', e => {
                 const card = e.target.closest('.product-card');
@@ -203,7 +249,6 @@ class ProductGalleryElement extends HTMLElement {
             });
         });
 
-        // Dropdowns
         this.querySelectorAll('select').forEach(sel => {
             sel.addEventListener('change', e => {
                 const card = e.target.closest('.product-card');
@@ -217,7 +262,6 @@ class ProductGalleryElement extends HTMLElement {
             });
         });
 
-        // Quantity
         this.querySelectorAll('.quantity-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const card = e.target.closest('.product-card');
@@ -230,7 +274,6 @@ class ProductGalleryElement extends HTMLElement {
             });
         });
 
-        // Buttons
         this.querySelectorAll('.btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 const card = e.target.closest('.product-card');
