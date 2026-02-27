@@ -85,6 +85,19 @@ class ProductGalleryElement extends HTMLElement {
                     this.products = data.products || [];
                     this.hasMore = data.hasMore || false;
                     
+                    // DEBUG: Check if productOptions are present
+                    console.log('📦 Custom Element: Received products:', this.products.length);
+                    this.products.forEach((p, i) => {
+                        console.log(`Product ${i}: ${p.name}`);
+                        console.log(`  - hasVariants: ${p.hasVariants}`);
+                        console.log(`  - productOptions:`, p.productOptions);
+                        if (p.productOptions && p.productOptions.length > 0) {
+                            p.productOptions.forEach(opt => {
+                                console.log(`    * ${opt.name} (${opt.optionType}): ${opt.choices?.length} choices`);
+                            });
+                        }
+                    });
+                    
                     // Initialize selected variants for each product
                     this.products.forEach(p => {
                         if (!this.selectedVariants[p.id]) {
@@ -525,7 +538,12 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     renderVariantOptions(product) {
-        if (!product.productOptions || product.productOptions.length === 0) return '';
+        if (!product.productOptions || product.productOptions.length === 0) {
+            console.log(`⚠️ Product ${product.name}: No productOptions found`);
+            return '';
+        }
+        
+        console.log(`✅ Product ${product.name}: Rendering ${product.productOptions.length} options`);
         
         return `
             <div class="product-options">
