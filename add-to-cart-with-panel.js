@@ -305,6 +305,237 @@ class ProductGalleryElement extends HTMLElement {
                     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
                 }
                 
+                /* Product Options */
+                .product-options {
+                    margin: 16px 0;
+                    padding-top: 12px;
+                    border-top: 1px solid var(--border-color);
+                }
+                
+                .option-group {
+                    margin-bottom: 16px;
+                }
+                
+                .option-label {
+                    display: block;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-color);
+                    margin-bottom: 8px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                
+                /* Color Swatches */
+                .color-swatches {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-bottom: 6px;
+                }
+                
+                .color-swatch {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    border: 2px solid var(--border-color);
+                    cursor: pointer;
+                    position: relative;
+                    transition: all 0.2s ease;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .color-swatch:hover {
+                    transform: scale(1.1);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                }
+                
+                .color-swatch.selected {
+                    border-color: var(--primary-accent);
+                    border-width: 3px;
+                    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary-accent);
+                }
+                
+                .color-swatch .checkmark {
+                    color: white;
+                    font-weight: bold;
+                    font-size: 16px;
+                    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+                    position: absolute;
+                }
+                
+                .selected-option-text {
+                    font-size: 11px;
+                    color: var(--text-color);
+                    font-style: italic;
+                }
+                
+                /* Option Dropdowns */
+                .option-select {
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    font-size: 14px;
+                    color: var(--heading-color);
+                    background: white;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    font-family: var(--font-family);
+                }
+                
+                .option-select:hover {
+                    border-color: var(--primary-accent);
+                }
+                
+                .option-select:focus {
+                    outline: none;
+                    border-color: var(--primary-accent);
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                }
+                
+                /* Quantity Selector */
+                .quantity-selector {
+                    margin: 16px 0;
+                }
+                
+                .quantity-label {
+                    display: block;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-color);
+                    margin-bottom: 8px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                }
+                
+                .quantity-controls {
+                    display: flex;
+                    align-items: center;
+                    border: 1px solid var(--border-color);
+                    border-radius: 6px;
+                    overflow: hidden;
+                    width: fit-content;
+                }
+                
+                .qty-btn {
+                    width: 40px;
+                    height: 40px;
+                    border: none;
+                    background: var(--card-bg);
+                    color: var(--heading-color);
+                    font-size: 18px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .qty-btn:hover {
+                    background: var(--primary-accent);
+                    color: white;
+                }
+                
+                .qty-btn:active {
+                    transform: scale(0.95);
+                }
+                
+                .qty-input {
+                    width: 60px;
+                    height: 40px;
+                    border: none;
+                    border-left: 1px solid var(--border-color);
+                    border-right: 1px solid var(--border-color);
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: var(--heading-color);
+                    font-family: var(--font-family);
+                }
+                
+                .qty-input:focus {
+                    outline: none;
+                }
+                
+                /* Remove spinner arrows */
+                .qty-input::-webkit-outer-spin-button,
+                .qty-input::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                
+                .qty-input[type=number] {
+                    -moz-appearance: textfield;
+                }
+                
+                /* Add to Cart Button */
+                .add-to-cart-btn {
+                    display: block;
+                    width: 100%;
+                    border-radius: var(--button-radius);
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    text-align: center;
+                    border: none;
+                    position: relative;
+                    overflow: hidden;
+                    ${this.getButtonCSS()}
+                    ${this.getButtonSizeCSS()}
+                }
+                
+                .add-to-cart-btn:hover:not(:disabled) {
+                    background: var(--button-hover-bg);
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+                }
+                
+                .add-to-cart-btn:disabled {
+                    opacity: 0.7;
+                    cursor: not-allowed;
+                }
+                
+                .add-to-cart-btn.success {
+                    background: #10b981 !important;
+                }
+                
+                .add-to-cart-btn.error {
+                    background: #ef4444 !important;
+                }
+                
+                .btn-loading {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                }
+                
+                .spinner {
+                    width: 14px;
+                    height: 14px;
+                    border: 2px solid rgba(255, 255, 255, 0.3);
+                    border-top-color: white;
+                    border-radius: 50%;
+                    animation: spin 0.6s linear infinite;
+                }
+                
+                @keyframes spin {
+                    to { transform: rotate(360deg); }
+                }
+                
+                .success-icon,
+                .error-icon {
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                
                 .load-more-container {
                     text-align: center;
                     padding: 40px 20px;
@@ -435,6 +666,7 @@ class ProductGalleryElement extends HTMLElement {
         ).join('');
 
         this.setupLazyLoading();
+        this.setupProductInteractions();
 
         if (this.hasMore) {
             loadMoreContainer.innerHTML = `
@@ -463,9 +695,10 @@ class ProductGalleryElement extends HTMLElement {
         const hasComparePrice = product.compareAtPrice && 
                                product.compareAtPrice !== product.price;
         const isAboveFold = index < 6;
+        const hasOptions = product.options && product.options.length > 0;
         
         return `
-            <div class="product-card">
+            <div class="product-card" data-product-id="${product.id}">
                 ${product.ribbon ? `<div class="ribbon">${product.ribbon}</div>` : ''}
                 ${hasComparePrice ? '<div class="sale-badge">SALE</div>' : ''}
                 
@@ -490,10 +723,280 @@ class ProductGalleryElement extends HTMLElement {
                         ${hasComparePrice ? `<span class="price-sale">${product.compareAtPrice}</span>` : ''}
                     </div>
                     
-                    <a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>
+                    ${hasOptions ? this.renderProductOptions(product) : ''}
+                    ${hasOptions ? this.renderQuantitySelector(product.id) : ''}
+                    ${hasOptions ? this.renderAddToCartButton(product.id) : `<a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>`}
                 </div>
             </div>
         `;
+    }
+
+    renderProductOptions(product) {
+        if (!product.options || product.options.length === 0) return '';
+        
+        return `
+            <div class="product-options" data-product-id="${product.id}">
+                ${product.options.map(option => this.renderOption(option, product.id)).join('')}
+            </div>
+        `;
+    }
+
+    renderOption(option, productId) {
+        const optionId = `option-${productId}-${option.name.replace(/\s+/g, '-')}`;
+        
+        // Color swatch for colors
+        if (option.optionType === 'COLOR' || option.name.toLowerCase().includes('color') || option.name.toLowerCase().includes('colour')) {
+            return `
+                <div class="option-group">
+                    <label class="option-label">${option.name}</label>
+                    <div class="color-swatches" data-option-name="${option.name}">
+                        ${option.choices.map((choice, idx) => `
+                            <button 
+                                class="color-swatch ${idx === 0 ? 'selected' : ''}" 
+                                data-choice="${choice.value || choice.description || choice}"
+                                style="background-color: ${this.getColorFromName(choice.value || choice.description || choice)}"
+                                title="${choice.description || choice.value || choice}"
+                                aria-label="${choice.description || choice.value || choice}"
+                            >
+                                ${idx === 0 ? '<span class="checkmark">✓</span>' : ''}
+                            </button>
+                        `).join('')}
+                    </div>
+                    <div class="selected-option-text">${option.choices[0].description || option.choices[0].value || option.choices[0]}</div>
+                </div>
+            `;
+        }
+        
+        // Dropdown for other options (size, material, etc)
+        return `
+            <div class="option-group">
+                <label class="option-label" for="${optionId}">${option.name}</label>
+                <select class="option-select" id="${optionId}" data-option-name="${option.name}">
+                    ${option.choices.map(choice => `
+                        <option value="${choice.value || choice.description || choice}">
+                            ${choice.description || choice.value || choice}
+                        </option>
+                    `).join('')}
+                </select>
+            </div>
+        `;
+    }
+
+    renderQuantitySelector(productId) {
+        return `
+            <div class="quantity-selector">
+                <label class="quantity-label">Quantity</label>
+                <div class="quantity-controls">
+                    <button class="qty-btn qty-minus" data-product-id="${productId}" aria-label="Decrease quantity">−</button>
+                    <input type="number" class="qty-input" value="1" min="1" max="999" data-product-id="${productId}">
+                    <button class="qty-btn qty-plus" data-product-id="${productId}" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+        `;
+    }
+
+    renderAddToCartButton(productId) {
+        return `
+            <button class="add-to-cart-btn" data-product-id="${productId}">
+                <span class="btn-text">Add to Cart</span>
+                <span class="btn-loading" style="display: none;">
+                    <span class="spinner"></span>
+                    Adding...
+                </span>
+            </button>
+        `;
+    }
+
+    getColorFromName(colorName) {
+        const colorMap = {
+            'black': '#000000',
+            'white': '#FFFFFF',
+            'red': '#FF0000',
+            'blue': '#0000FF',
+            'green': '#00FF00',
+            'yellow': '#FFFF00',
+            'orange': '#FFA500',
+            'purple': '#800080',
+            'pink': '#FFC0CB',
+            'brown': '#8B4513',
+            'gray': '#808080',
+            'grey': '#808080',
+            'navy': '#000080',
+            'teal': '#008080',
+            'lime': '#00FF00',
+            'maroon': '#800000',
+            'olive': '#808000',
+            'silver': '#C0C0C0',
+            'gold': '#FFD700',
+            'beige': '#F5F5DC',
+            'cream': '#FFFDD0',
+            'ivory': '#FFFFF0'
+        };
+        
+        const normalizedName = colorName.toLowerCase().trim();
+        
+        // Check if it's already a hex color
+        if (/^#[0-9A-F]{6}$/i.test(colorName)) {
+            return colorName;
+        }
+        
+        // Check color map
+        if (colorMap[normalizedName]) {
+            return colorMap[normalizedName];
+        }
+        
+        // Default gray for unknown colors
+        return '#CCCCCC';
+    }
+
+    setupProductInteractions() {
+        // Color swatch selection
+        this.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', (e) => {
+                const button = e.currentTarget;
+                const container = button.closest('.color-swatches');
+                const selectedText = button.closest('.option-group').querySelector('.selected-option-text');
+                
+                // Remove selection from siblings
+                container.querySelectorAll('.color-swatch').forEach(s => {
+                    s.classList.remove('selected');
+                    s.querySelector('.checkmark')?.remove();
+                });
+                
+                // Add selection to clicked swatch
+                button.classList.add('selected');
+                button.innerHTML = '<span class="checkmark">✓</span>';
+                
+                // Update selected text
+                if (selectedText) {
+                    selectedText.textContent = button.getAttribute('title');
+                }
+            });
+        });
+
+        // Quantity controls
+        this.querySelectorAll('.qty-minus').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.dataset.productId;
+                const input = this.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                if (input) {
+                    const currentValue = parseInt(input.value) || 1;
+                    if (currentValue > 1) {
+                        input.value = currentValue - 1;
+                    }
+                }
+            });
+        });
+
+        this.querySelectorAll('.qty-plus').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.dataset.productId;
+                const input = this.querySelector(`.qty-input[data-product-id="${productId}"]`);
+                if (input) {
+                    const currentValue = parseInt(input.value) || 1;
+                    const maxValue = parseInt(input.getAttribute('max')) || 999;
+                    if (currentValue < maxValue) {
+                        input.value = currentValue + 1;
+                    }
+                }
+            });
+        });
+
+        // Add to cart buttons
+        this.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                await this.handleAddToCart(e.currentTarget);
+            });
+        });
+    }
+
+    async handleAddToCart(button) {
+        const productId = button.dataset.productId;
+        const card = button.closest('.product-card');
+        
+        // Get selected options
+        const choices = {};
+        const optionsContainer = card.querySelector('.product-options');
+        
+        if (optionsContainer) {
+            // Get color swatches
+            optionsContainer.querySelectorAll('.color-swatches').forEach(container => {
+                const optionName = container.dataset.optionName;
+                const selectedSwatch = container.querySelector('.color-swatch.selected');
+                if (selectedSwatch) {
+                    choices[optionName] = selectedSwatch.dataset.choice;
+                }
+            });
+            
+            // Get dropdowns
+            optionsContainer.querySelectorAll('.option-select').forEach(select => {
+                const optionName = select.dataset.optionName;
+                choices[optionName] = select.value;
+            });
+        }
+        
+        // Get quantity
+        const qtyInput = card.querySelector('.qty-input');
+        const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+        
+        // Show loading state
+        const btnText = button.querySelector('.btn-text');
+        const btnLoading = button.querySelector('.btn-loading');
+        button.disabled = true;
+        if (btnText) btnText.style.display = 'none';
+        if (btnLoading) btnLoading.style.display = 'flex';
+        
+        try {
+            // Import backend function
+            const { addToCart } = await import('@backend/productGallery.web');
+            
+            // Add to cart
+            await addToCart(productId, choices, quantity);
+            
+            // Show success state
+            button.classList.add('success');
+            if (btnLoading) {
+                btnLoading.innerHTML = '<span class="success-icon">✓</span> Added to Cart!';
+            }
+            
+            // Dispatch event for cart update
+            this.dispatchEvent(new CustomEvent('product-added-to-cart', {
+                bubbles: true,
+                composed: true,
+                detail: { productId, choices, quantity }
+            }));
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.classList.remove('success');
+                if (btnText) btnText.style.display = 'inline';
+                if (btnLoading) {
+                    btnLoading.style.display = 'none';
+                    btnLoading.innerHTML = '<span class="spinner"></span> Adding...';
+                }
+            }, 2000);
+            
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            
+            // Show error state
+            button.classList.add('error');
+            if (btnLoading) {
+                btnLoading.innerHTML = '<span class="error-icon">✕</span> Error';
+            }
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.classList.remove('error');
+                if (btnText) btnText.style.display = 'inline';
+                if (btnLoading) {
+                    btnLoading.style.display = 'none';
+                    btnLoading.innerHTML = '<span class="spinner"></span> Adding...';
+                }
+            }, 2000);
+        }
     }
 
     setupLazyLoading() {
