@@ -45,13 +45,29 @@ class ProductCard extends HTMLElement {
     }
   }
 
-  // Optimize Wix image URL
-  optimizeImageUrl(url, width = 300, height = 300) {
+  // Optimize Wix image URL - builds proper Wix media URL like official store widget
+  optimizeImageUrl(url, width = 375, height = 375) {
     if (!url) return '';
     
-    // Add Wix image optimization parameters
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}w=${width}&h=${height}&fit=fill&q=80`;
+    try {
+      // Extract the media ID from the URL
+      // Example: https://static.wixstatic.com/media/c22c23_1fc89607a43a4df9b54dd3a1f9603f25~mv2.jpg/v1/fit/w_2000,h_2000,q_90/file.jpg
+      // We need: c22c23_1fc89607a43a4df9b54dd3a1f9603f25~mv2.jpg
+      
+      const mediaMatch = url.match(/\/media\/([^/]+)/);
+      if (!mediaMatch) return url; // Not a Wix media URL, return as-is
+      
+      const mediaId = mediaMatch[1];
+      
+      // Build optimized URL like official Wix store widget
+      // Format: /media/{id}/v1/fill/w_{width},h_{height},al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/{id}
+      const optimizedUrl = `https://static.wixstatic.com/media/${mediaId}/v1/fill/w_${width},h_${height},al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/${mediaId}`;
+      
+      return optimizedUrl;
+    } catch (error) {
+      console.error('Error optimizing image URL:', error);
+      return url; // Return original URL if optimization fails
+    }
   }
 
   // Setup lazy loading for images
@@ -162,8 +178,19 @@ class ProductCard extends HTMLElement {
           position: relative;
           width: 100%;
           padding-top: 100%; /* 1:1 Aspect Ratio */
-          background: #f5f5f5;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
           overflow: hidden;
+        }
+        
+        @keyframes shimmer {
+          0% {
+            background-position: -100% 0;
+          }
+          100% {
+            background-position: 100% 0;
+          }
         }
         
         .card img {
@@ -181,7 +208,7 @@ class ProductCard extends HTMLElement {
           opacity: 1;
         }
         
-        .card:hover img {
+        .card:hover img.loaded {
           transform: scale(1.05);
         }
         
@@ -440,13 +467,13 @@ class ProductCard extends HTMLElement {
         }
       </style>
       <div class="grid">
-        ${this.products.map(p => `
+        ${this.products.map((p, index) => `
           <div class="card" data-product-id="${p._id}">
             <div class="image-container">
               <img 
-                data-src="${this.optimizeImageUrl(p.media?.mainMedia?.image?.url, 400, 400)}" 
+                ${index < 6 ? `src="${this.optimizeImageUrl(p.media?.mainMedia?.image?.url, 375, 375)}"` : `data-src="${this.optimizeImageUrl(p.media?.mainMedia?.image?.url, 375, 375)}"`}
                 alt="${p.name || 'Product'}"
-                loading="lazy"
+                ${index < 6 ? 'onload="this.classList.add(\'loaded\')"' : 'loading="lazy"'}
               >
             </div>
             <div class="card-content">
