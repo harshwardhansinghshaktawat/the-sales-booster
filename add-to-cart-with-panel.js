@@ -7,7 +7,7 @@ class ProductCard extends HTMLElement {
     this.errors = {};
     this.loadedImages = new Set();
     
-    // Default style props
+    // Default style prop
     this.styleProps = {
       primaryBg: '#ffffff',
       secondaryBg: '#f8f9fa',
