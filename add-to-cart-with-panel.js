@@ -1,3 +1,4 @@
+// Custom element code
 class ProductGalleryElement extends HTMLElement {
   constructor() {
     super();
@@ -294,17 +295,31 @@ class ProductGalleryElement extends HTMLElement {
           width: 100%;
           height: var(--image-height);
           overflow: hidden;
-          background: #f5f5f5;
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
           flex-shrink: 0;
           border-radius: var(--image-border-radius);
         }
         
+        @keyframes shimmer {
+          0% {
+            background-position: -100% 0;
+          }
+          100% {
+            background-position: 100% 0;
+          }
+        }
+        
         .product-image {
+          position: absolute;
+          top: 0;
+          left: 0;
           width: 100%;
           height: 100%;
           object-fit: cover;
           object-position: center;
-          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
           opacity: 0;
         }
         
@@ -710,7 +725,7 @@ class ProductGalleryElement extends HTMLElement {
               ${product.productOptions.map(opt => `
                 <div class="option">
                   <label>${opt.name}</label>
-                  ${opt.optionType === 'color' ? `
+                  ${opt.optionType.toLowerCase() === 'color' ? `
                     <div class="swatches">
                       ${opt.choices.map(c => `
                         <button 
