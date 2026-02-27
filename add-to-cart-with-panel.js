@@ -1,4 +1,3 @@
-<script>
 class ProductCard extends HTMLElement {
   constructor() {
     super();
@@ -383,4 +382,3 @@ select:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2)
 }
 
 customElements.define('product-card-element', ProductCard);
-</script>
