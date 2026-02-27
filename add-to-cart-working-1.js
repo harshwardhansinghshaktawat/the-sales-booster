@@ -496,7 +496,14 @@ class ProductGalleryElement extends HTMLElement {
         const hasComparePrice = product.compareAtPrice && product.compareAtPrice !== product.price;
         const hasVariants = product.hasVariants && product.productOptions && product.productOptions.length > 0;
         
-        return `
+        console.log(`🎨 Rendering card for: ${product.name}`);
+        console.log(`   - hasVariants: ${hasVariants}`);
+        console.log(`   - productOptions count: ${product.productOptions?.length || 0}`);
+        
+        const variantOptionsHTML = hasVariants ? this.renderVariantOptions(product) : '';
+        console.log(`   - Variant options HTML length: ${variantOptionsHTML.length}`);
+        
+        const cardHTML = `
             <div class="product-card" data-product-id="${product.id}">
                 ${product.ribbon ? `<div class="product-ribbon">${product.ribbon}</div>` : ''}
                 
@@ -516,7 +523,7 @@ class ProductGalleryElement extends HTMLElement {
                         ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : ''}
                     </div>
                     
-                    ${hasVariants ? this.renderVariantOptions(product) : ''}
+                    ${variantOptionsHTML}
                     
                     <div class="error-message" data-product-id="${product.id}"></div>
                     
@@ -535,6 +542,9 @@ class ProductGalleryElement extends HTMLElement {
                 </div>
             </div>
         `;
+        
+        console.log(`   - Total card HTML length: ${cardHTML.length}`);
+        return cardHTML;
     }
 
     renderVariantOptions(product) {
@@ -553,40 +563,53 @@ class ProductGalleryElement extends HTMLElement {
     }
 
     renderOption(productId, option) {
+        console.log(`🎨 Rendering option: ${option.name} (${option.optionType})`);
+        console.log(`   Choices:`, option.choices);
+        
         if (option.optionType === 'color') {
-            return `
+            const html = `
                 <div class="option-group">
                     <label class="option-label">${option.name}</label>
                     <div class="swatches">
-                        ${option.choices.filter(c => c.visible).map(choice => `
-                            <button class="swatch" 
-                                    style="background-color: ${choice.value};"
-                                    data-product-id="${productId}"
-                                    data-option="${option.name}"
-                                    data-value="${choice.description}"
-                                    title="${choice.description}"
-                                    ${!choice.inStock ? 'disabled' : ''}>
-                            </button>
-                        `).join('')}
+                        ${option.choices.filter(c => c.visible).map(choice => {
+                            console.log(`   - Color swatch: ${choice.description} = ${choice.value}`);
+                            return `
+                                <button class="swatch" 
+                                        style="background-color: ${choice.value};"
+                                        data-product-id="${productId}"
+                                        data-option="${option.name}"
+                                        data-value="${choice.description}"
+                                        title="${choice.description}"
+                                        ${!choice.inStock ? 'disabled' : ''}>
+                                </button>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
+            console.log(`   Generated HTML length: ${html.length}`);
+            return html;
         } else {
-            return `
+            const html = `
                 <div class="option-group">
                     <label class="option-label">${option.name}</label>
                     <select class="option-select" 
                             data-product-id="${productId}"
                             data-option="${option.name}">
                         <option value="">Select ${option.name}</option>
-                        ${option.choices.filter(c => c.visible).map(choice => `
-                            <option value="${choice.description}" ${!choice.inStock ? 'disabled' : ''}>
-                                ${choice.description}${!choice.inStock ? ' (Out of Stock)' : ''}
-                            </option>
-                        `).join('')}
+                        ${option.choices.filter(c => c.visible).map(choice => {
+                            console.log(`   - Dropdown option: ${choice.description}`);
+                            return `
+                                <option value="${choice.description}" ${!choice.inStock ? 'disabled' : ''}>
+                                    ${choice.description}${!choice.inStock ? ' (Out of Stock)' : ''}
+                                </option>
+                            `;
+                        }).join('')}
                     </select>
                 </div>
             `;
+            console.log(`   Generated HTML length: ${html.length}`);
+            return html;
         }
     }
 
