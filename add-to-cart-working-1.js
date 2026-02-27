@@ -200,18 +200,6 @@ class ProductGalleryElement extends HTMLElement {
                     object-fit: cover;
                     object-position: center;
                     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                    background: #f5f5f5;
-                }
-                
-                .product-image[loading="lazy"] {
-                    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-                    background-size: 200% 100%;
-                    animation: loading 1.5s ease-in-out infinite;
-                }
-                
-                @keyframes loading {
-                    0% { background-position: 200% 0; }
-                    100% { background-position: -200% 0; }
                 }
                 
                 .product-card:hover .product-image {
@@ -244,7 +232,7 @@ class ProductGalleryElement extends HTMLElement {
                 .product-name {
                     font-size: var(--heading-size);
                     font-weight: 700;
-                    margin: 0 0 12px 0;
+                    margin: 0 0 16px 0;
                     line-height: 1.3;
                     color: var(--heading-color);
                     height: calc(var(--heading-size) * 2.6);
@@ -254,21 +242,9 @@ class ProductGalleryElement extends HTMLElement {
                     -webkit-box-orient: vertical;
                 }
                 
-                .product-description {
-                    font-size: var(--text-size);
-                    line-height: 1.6;
-                    color: var(--text-color);
-                    margin: 0 0 16px 0;
-                    height: calc(var(--text-size) * 3.2);
-                    overflow: hidden;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 2;
-                    -webkit-box-orient: vertical;
-                }
-                
                 /* VARIANT OPTIONS */
                 .product-options {
-                    margin: 16px 0;
+                    margin: 0 0 16px 0;
                 }
                 
                 .option-group {
@@ -521,14 +497,15 @@ class ProductGalleryElement extends HTMLElement {
                 
                 <div class="product-content">
                     <h3 class="product-name">${product.name}</h3>
-                    <p class="product-description">${product.description || ''}</p>
-                    
-                    ${hasVariants ? this.renderVariantOptions(product) : ''}
                     
                     <div class="product-price-section">
                         <span class="product-price">${product.price}</span>
                         ${hasComparePrice ? `<span class="product-compare-price">${product.compareAtPrice}</span>` : ''}
                     </div>
+                    
+                    ${hasVariants ? this.renderVariantOptions(product) : ''}
+                    
+                    <div class="error-message" data-product-id="${product.id}"></div>
                     
                     <div class="product-buttons">
                         ${hasVariants ? `
@@ -542,8 +519,6 @@ class ProductGalleryElement extends HTMLElement {
                         `}
                         <a href="${product.productUrl}" class="product-button">${this.settings.buttonText}</a>
                     </div>
-                    
-                    <div class="error-message" data-product-id="${product.id}"></div>
                 </div>
             </div>
         `;
