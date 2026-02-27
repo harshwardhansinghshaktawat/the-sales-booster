@@ -7,7 +7,7 @@ class ProductCard extends HTMLElement {
     this.errors = {};
     this.loadedImages = new Set();
     
-    // Default style prop
+    // Default style props
     this.styleProps = {
       primaryBg: '#ffffff',
       secondaryBg: '#f8f9fa',
@@ -96,8 +96,8 @@ class ProductCard extends HTMLElement {
       
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-        gap: ${spacing}px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+        gap: ${parseInt(spacing) + 8}px;
         padding: ${spacing}px;
         background: ${secondaryBg};
       }
@@ -164,15 +164,15 @@ class ProductCard extends HTMLElement {
       }
       
       .card-content {
-        padding: ${parseInt(spacing) + 4}px;
+        padding: ${parseInt(spacing) + 8}px;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: ${parseInt(spacing) - 4}px;
+        gap: ${parseInt(spacing) - 2}px;
       }
       
       .card h3 {
-        font-size: ${parseInt(fontSize) + 2}px;
+        font-size: ${parseInt(fontSize) + 4}px;
         margin: 0;
         font-weight: 700;
         color: ${textPrimary};
@@ -181,13 +181,13 @@ class ProductCard extends HTMLElement {
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: ${(parseInt(fontSize) + 2) * 1.4 * 2}px;
+        min-height: ${(parseInt(fontSize) + 4) * 1.4 * 2}px;
       }
       
       .card p.price {
         font-weight: 800;
         color: ${priceColor};
-        font-size: ${parseInt(fontSize) + 8}px;
+        font-size: ${parseInt(fontSize) + 10}px;
         margin: 0;
         letter-spacing: -0.5px;
       }
@@ -197,19 +197,19 @@ class ProductCard extends HTMLElement {
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: ${parseInt(spacing) - 2}px;
+        gap: ${parseInt(spacing)}px;
       }
       
       .option {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
       
       .option label {
         display: block;
         font-weight: 600;
-        font-size: ${parseInt(fontSize) - 2}px;
+        font-size: ${parseInt(fontSize) - 3}px;
         color: ${textSecondary};
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -218,14 +218,14 @@ class ProductCard extends HTMLElement {
       .swatches {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
       }
       
       .swatch {
-        width: 44px;
-        height: 44px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
-        border: 3px solid ${borderColor};
+        border: 2px solid ${borderColor};
         cursor: pointer;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
@@ -237,32 +237,33 @@ class ProductCard extends HTMLElement {
       .swatch:hover {
         transform: scale(1.15);
         border-color: ${primaryAccent};
-        box-shadow: 0 4px 12px ${shadowColor};
+        box-shadow: 0 4px 8px ${shadowColor};
       }
       
       .swatch.selected {
         border-color: ${primaryAccent};
-        box-shadow: 0 0 0 3px ${primaryBg}, 0 0 0 5px ${primaryAccent}, 0 4px 12px ${shadowColor};
+        box-shadow: 0 0 0 2px ${primaryBg}, 0 0 0 4px ${primaryAccent}, 0 4px 8px ${shadowColor};
         transform: scale(1.1);
       }
       
       .swatch::after {
         content: attr(title);
         position: absolute;
-        bottom: -32px;
+        bottom: -30px;
         left: 50%;
         transform: translateX(-50%) scale(0.9);
         background: ${textPrimary};
         color: ${primaryBg};
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: ${parseInt(fontSize) - 5}px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: ${parseInt(fontSize) - 6}px;
         white-space: nowrap;
         opacity: 0;
         pointer-events: none;
         transition: all 0.2s;
         font-weight: 600;
         box-shadow: 0 4px 8px ${shadowColor};
+        z-index: 10;
       }
       
       .swatch:hover::after {
@@ -272,10 +273,10 @@ class ProductCard extends HTMLElement {
       
       select {
         width: 100%;
-        padding: 12px 14px;
+        padding: 10px 12px;
         border: 2px solid ${borderColor};
         border-radius: ${parseInt(cardRadius) / 2}px;
-        font-size: ${parseInt(fontSize) - 1}px;
+        font-size: ${parseInt(fontSize) - 2}px;
         background: ${primaryBg};
         color: ${textPrimary};
         cursor: pointer;
@@ -284,8 +285,8 @@ class ProductCard extends HTMLElement {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%236b7280' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 14px center;
-        padding-right: 40px;
+        background-position: right 12px center;
+        padding-right: 36px;
       }
       
       select:hover {
@@ -303,20 +304,20 @@ class ProductCard extends HTMLElement {
         color: ${errorColor};
         font-size: ${parseInt(fontSize) - 3}px;
         margin: 0;
-        padding: 10px 12px;
+        padding: 8px 10px;
         background: ${errorBg};
         border-radius: ${parseInt(cardRadius) / 2}px;
         display: none;
         font-weight: 600;
-        border-left: 4px solid ${errorColor};
+        border-left: 3px solid ${errorColor};
       }
       
       .quantity-selector {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: ${parseInt(spacing) - 4}px;
-        padding: ${parseInt(spacing) - 2}px;
+        gap: 10px;
+        padding: 12px;
         background: ${secondaryBg};
         border-radius: ${parseInt(cardRadius) / 2}px;
         border: 2px solid ${borderColor};
@@ -324,7 +325,7 @@ class ProductCard extends HTMLElement {
       
       .quantity-selector label {
         font-weight: 700;
-        font-size: ${parseInt(fontSize) - 2}px;
+        font-size: ${parseInt(fontSize) - 3}px;
         color: ${textPrimary};
         margin: 0;
         text-transform: uppercase;
@@ -334,17 +335,17 @@ class ProductCard extends HTMLElement {
       .quantity-controls {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
       }
       
       .quantity-btn {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border: 2px solid ${borderColor};
         background: ${primaryBg};
         border-radius: ${parseInt(cardRadius) / 3}px;
         cursor: pointer;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
         display: flex;
         align-items: center;
@@ -374,9 +375,9 @@ class ProductCard extends HTMLElement {
       }
       
       .quantity-value {
-        min-width: 36px;
+        min-width: 32px;
         text-align: center;
-        font-size: ${parseInt(fontSize) + 4}px;
+        font-size: ${parseInt(fontSize) + 2}px;
         font-weight: 800;
         color: ${textPrimary};
         letter-spacing: -0.5px;
@@ -384,13 +385,13 @@ class ProductCard extends HTMLElement {
       
       .button-group {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 2fr;
         gap: 10px;
         margin-top: auto;
       }
       
       .btn {
-        padding: 14px 18px;
+        padding: 12px 16px;
         border: none;
         border-radius: ${parseInt(cardRadius) / 2}px;
         cursor: pointer;
@@ -399,7 +400,8 @@ class ProductCard extends HTMLElement {
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         text-align: center;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
       }
       
       .view-btn {
@@ -434,25 +436,31 @@ class ProductCard extends HTMLElement {
         transform: translateY(0);
       }
       
+      @media (max-width: 1024px) {
+        .grid {
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+          gap: ${parseInt(spacing) + 4}px;
+        }
+      }
+      
       @media (max-width: 768px) {
         .grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
-          gap: ${parseInt(spacing) - 4}px;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+          gap: ${parseInt(spacing)}px;
           padding: ${parseInt(spacing) - 4}px;
         }
         
         .card h3 {
-          font-size: ${parseInt(fontSize)}px;
-          -webkit-line-clamp: 2;
-          min-height: ${parseInt(fontSize) * 1.4 * 2}px;
+          font-size: ${parseInt(fontSize) + 2}px;
+          min-height: ${(parseInt(fontSize) + 2) * 1.4 * 2}px;
         }
         
         .card p.price {
-          font-size: ${parseInt(fontSize) + 4}px;
+          font-size: ${parseInt(fontSize) + 6}px;
         }
         
         .card-content {
-          padding: ${parseInt(spacing) - 2}px;
+          padding: ${parseInt(spacing) + 4}px;
         }
         
         .button-group {
@@ -465,26 +473,37 @@ class ProductCard extends HTMLElement {
         }
         
         .swatch {
-          width: 38px;
-          height: 38px;
-        }
-        
-        .quantity-selector {
-          padding: ${parseInt(spacing) - 6}px;
+          width: 28px;
+          height: 28px;
         }
       }
       
       @media (max-width: 480px) {
         .grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+          gap: ${parseInt(spacing) - 4}px;
         }
         
         .card h3 {
-          font-size: ${parseInt(fontSize) - 1}px;
+          font-size: ${parseInt(fontSize)}px;
+          min-height: ${parseInt(fontSize) * 1.4 * 2}px;
         }
         
         .card p.price {
-          font-size: ${parseInt(fontSize) + 2}px;
+          font-size: ${parseInt(fontSize) + 4}px;
+        }
+        
+        .card-content {
+          padding: ${parseInt(spacing)}px;
+        }
+        
+        .swatch {
+          width: 24px;
+          height: 24px;
+        }
+        
+        .quantity-selector {
+          padding: 10px;
         }
       }
     `;
