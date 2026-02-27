@@ -6,6 +6,24 @@ class ProductCard extends HTMLElement {
     this.products = [];
     this.errors = {};
     this.loadedImages = new Set();
+    this.settings = {
+      color1: '#667eea',
+      color2: '#ffffff',
+      color3: '#1a202c',
+      color4: '#764ba2',
+      color5: '#f7fafc',
+      color6: '#e2e8f0',
+      color7: '#cbd5e0',
+      color8: '#4a5568',
+      borderWidth: 0,
+      cornerRadius: 16,
+      titleFontFamily: 'Arial',
+      titleFontSize: 18,
+      priceFontFamily: 'Arial',
+      priceFontSize: 24,
+      buttonFontFamily: 'Arial',
+      buttonFontSize: 14
+    };
   }
 
   connectedCallback() {
@@ -14,7 +32,7 @@ class ProductCard extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['products-data', 'error-data'];
+    return ['products-data', 'error-data', 'settings'];
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
@@ -41,6 +59,16 @@ class ProductCard extends HTMLElement {
         this.updateErrorDisplay(errorData.productId);
       } catch (error) {
         console.error('Error parsing error data:', error);
+      }
+    }
+
+    if (name === 'settings' && newVal && newVal !== oldVal) {
+      try {
+        const newSettings = JSON.parse(newVal);
+        Object.assign(this.settings, newSettings);
+        this.updateStyles();
+      } catch (error) {
+        console.error('Error parsing settings:', error);
       }
     }
   }
@@ -126,6 +154,31 @@ class ProductCard extends HTMLElement {
     }
   }
 
+  updateStyles() {
+    const root = this.querySelector(':host') || this;
+    
+    // Update CSS variables
+    const container = this.querySelector('.grid');
+    if (container) {
+      container.style.setProperty('--color1', this.settings.color1);
+      container.style.setProperty('--color2', this.settings.color2);
+      container.style.setProperty('--color3', this.settings.color3);
+      container.style.setProperty('--color4', this.settings.color4);
+      container.style.setProperty('--color5', this.settings.color5);
+      container.style.setProperty('--color6', this.settings.color6);
+      container.style.setProperty('--color7', this.settings.color7);
+      container.style.setProperty('--color8', this.settings.color8);
+      container.style.setProperty('--title-font-family', this.settings.titleFontFamily);
+      container.style.setProperty('--title-font-size', `${this.settings.titleFontSize}px`);
+      container.style.setProperty('--price-font-family', this.settings.priceFontFamily);
+      container.style.setProperty('--price-font-size', `${this.settings.priceFontSize}px`);
+      container.style.setProperty('--button-font-family', this.settings.buttonFontFamily);
+      container.style.setProperty('--button-font-size', `${this.settings.buttonFontSize}px`);
+      container.style.setProperty('--border-width', `${this.settings.borderWidth}px`);
+      container.style.setProperty('--corner-radius', `${this.settings.cornerRadius}px`);
+    }
+  }
+
   render() {
     console.log('🎨 Rendering custom element, products count:', this.products.length);
     if (!this.products.length) {
@@ -142,6 +195,23 @@ class ProductCard extends HTMLElement {
         }
         
         .grid {
+          --color1: ${this.settings.color1};
+          --color2: ${this.settings.color2};
+          --color3: ${this.settings.color3};
+          --color4: ${this.settings.color4};
+          --color5: ${this.settings.color5};
+          --color6: ${this.settings.color6};
+          --color7: ${this.settings.color7};
+          --color8: ${this.settings.color8};
+          --title-font-family: ${this.settings.titleFontFamily};
+          --title-font-size: ${this.settings.titleFontSize}px;
+          --price-font-family: ${this.settings.priceFontFamily};
+          --price-font-size: ${this.settings.priceFontSize}px;
+          --button-font-family: ${this.settings.buttonFontFamily};
+          --button-font-size: ${this.settings.buttonFontSize}px;
+          --border-width: ${this.settings.borderWidth}px;
+          --corner-radius: ${this.settings.cornerRadius}px;
+          
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
           gap: 32px;
@@ -152,14 +222,14 @@ class ProductCard extends HTMLElement {
         
         .card {
           position: relative;
-          border-radius: 16px;
+          border-radius: var(--corner-radius);
           overflow: hidden;
-          background: #ffffff;
+          background: var(--color2);
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
           transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           display: flex;
           flex-direction: column;
-          border: 1px solid rgba(0, 0, 0, 0.05);
+          border: var(--border-width) solid var(--color6);
         }
         
         .card:hover {
@@ -172,7 +242,7 @@ class ProductCard extends HTMLElement {
           position: relative;
           width: 100%;
           padding-top: 100%;
-          background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+          background: linear-gradient(135deg, var(--color5) 0%, var(--color6) 100%);
           overflow: hidden;
         }
         
@@ -215,22 +285,6 @@ class ProductCard extends HTMLElement {
           transform: scale(1.08);
         }
         
-        .card-badge {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 6px 12px;
-          border-radius: 20px;
-          font-size: 0.75em;
-          font-weight: 700;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          z-index: 2;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
         .card-content {
           padding: 24px;
           flex: 1;
@@ -246,9 +300,10 @@ class ProductCard extends HTMLElement {
         }
         
         .card h3 {
-          font-size: 1.2em;
+          font-size: var(--title-font-size);
+          font-family: var(--title-font-family);
           font-weight: 700;
-          color: #1a202c;
+          color: var(--color3);
           line-height: 1.4;
           display: -webkit-box;
           -webkit-line-clamp: 2;
@@ -259,17 +314,18 @@ class ProductCard extends HTMLElement {
         
         .card p.price {
           font-weight: 800;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, var(--color1) 0%, var(--color4) 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          font-size: 1.5em;
+          font-size: var(--price-font-size);
+          font-family: var(--price-font-family);
           letter-spacing: -0.03em;
         }
         
         .divider {
           height: 1px;
-          background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+          background: linear-gradient(90deg, transparent, var(--color6), transparent);
           margin: 8px 0;
         }
         
@@ -289,7 +345,7 @@ class ProductCard extends HTMLElement {
         .option label {
           font-weight: 700;
           font-size: 0.85em;
-          color: #4a5568;
+          color: var(--color8);
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -319,8 +375,8 @@ class ProductCard extends HTMLElement {
         }
         
         .swatch.selected {
-          border-color: #667eea;
-          box-shadow: 0 0 0 2px white, 0 0 0 4px #667eea, 0 4px 12px rgba(102, 126, 234, 0.4);
+          border-color: var(--color1);
+          box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color1), 0 4px 12px rgba(102, 126, 234, 0.4);
           transform: scale(1.1);
         }
         
@@ -330,7 +386,7 @@ class ProductCard extends HTMLElement {
           bottom: -30px;
           left: 50%;
           transform: translateX(-50%);
-          background: #1a202c;
+          background: var(--color3);
           color: white;
           padding: 6px 12px;
           border-radius: 6px;
@@ -350,14 +406,14 @@ class ProductCard extends HTMLElement {
         select {
           width: 100%;
           padding: 12px 16px;
-          border: 2px solid #e2e8f0;
+          border: 2px solid var(--color6);
           border-radius: 10px;
           font-size: 0.95em;
           background: white;
           cursor: pointer;
           transition: all 0.3s ease;
           font-weight: 500;
-          color: #2d3748;
+          color: var(--color3);
           appearance: none;
           background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%234a5568' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
@@ -366,11 +422,11 @@ class ProductCard extends HTMLElement {
         }
         
         select:hover {
-          border-color: #cbd5e0;
+          border-color: var(--color7);
         }
         
         select:focus {
-          border-color: #667eea;
+          border-color: var(--color1);
           outline: none;
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
@@ -403,15 +459,15 @@ class ProductCard extends HTMLElement {
           align-items: center;
           justify-content: space-between;
           padding: 16px;
-          background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+          background: linear-gradient(135deg, var(--color5) 0%, #edf2f7 100%);
           border-radius: 12px;
-          border: 2px solid #e2e8f0;
+          border: 2px solid var(--color6);
         }
         
         .quantity-selector label {
           font-weight: 700;
           font-size: 0.85em;
-          color: #4a5568;
+          color: var(--color8);
           text-transform: uppercase;
           letter-spacing: 0.5px;
         }
@@ -429,7 +485,7 @@ class ProductCard extends HTMLElement {
         .quantity-btn {
           width: 36px;
           height: 36px;
-          border: 2px solid #e2e8f0;
+          border: 2px solid var(--color6);
           background: white;
           border-radius: 8px;
           cursor: pointer;
@@ -439,13 +495,13 @@ class ProductCard extends HTMLElement {
           align-items: center;
           justify-content: center;
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          color: #4a5568;
+          color: var(--color8);
           padding: 0;
         }
         
         .quantity-btn:hover:not(:disabled) {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          border-color: #667eea;
+          background: linear-gradient(135deg, var(--color1) 0%, var(--color4) 100%);
+          border-color: var(--color1);
           color: white;
           transform: scale(1.1);
           box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
@@ -458,7 +514,7 @@ class ProductCard extends HTMLElement {
         .quantity-btn:disabled {
           opacity: 0.3;
           cursor: not-allowed;
-          background: #f7fafc;
+          background: var(--color5);
         }
         
         .quantity-value {
@@ -466,7 +522,7 @@ class ProductCard extends HTMLElement {
           text-align: center;
           font-size: 1.1em;
           font-weight: 800;
-          color: #1a202c;
+          color: var(--color3);
         }
         
         .button-group {
@@ -482,7 +538,8 @@ class ProductCard extends HTMLElement {
           border-radius: 12px;
           cursor: pointer;
           font-weight: 700;
-          font-size: 0.95em;
+          font-size: var(--button-font-size);
+          font-family: var(--button-font-family);
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           text-align: center;
           letter-spacing: 0.3px;
@@ -510,20 +567,20 @@ class ProductCard extends HTMLElement {
         
         .view-btn {
           background: white;
-          color: #4a5568;
-          border: 2px solid #e2e8f0;
+          color: var(--color8);
+          border: 2px solid var(--color6);
           position: relative;
         }
         
         .view-btn:hover {
-          background: #f7fafc;
-          border-color: #cbd5e0;
+          background: var(--color5);
+          border-color: var(--color7);
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .add-btn {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, var(--color1) 0%, var(--color4) 100%);
           color: white;
           position: relative;
           box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
@@ -560,11 +617,11 @@ class ProductCard extends HTMLElement {
           }
           
           .card h3 {
-            font-size: 1.05em;
+            font-size: calc(var(--title-font-size) * 0.9);
           }
           
           .card p.price {
-            font-size: 1.3em;
+            font-size: calc(var(--price-font-size) * 0.85);
           }
           
           .button-group {
@@ -598,16 +655,16 @@ class ProductCard extends HTMLElement {
           }
           
           .card h3 {
-            font-size: 0.95em;
+            font-size: calc(var(--title-font-size) * 0.8);
           }
           
           .card p.price {
-            font-size: 1.2em;
+            font-size: calc(var(--price-font-size) * 0.75);
           }
           
           .btn {
             padding: 12px 16px;
-            font-size: 0.9em;
+            font-size: calc(var(--button-font-size) * 0.9);
           }
           
           .quantity-selector {
@@ -697,6 +754,7 @@ class ProductCard extends HTMLElement {
 
     this.setupIntersectionObserver();
     this.attachEventListeners();
+    this.updateStyles();
   }
 
   attachEventListeners() {
