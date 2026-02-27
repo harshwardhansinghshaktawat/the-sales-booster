@@ -2,6 +2,7 @@ class ProductCard extends HTMLElement {
   constructor() {
     super();
     this.selectedOptions = {};
+    this.quantities = {};
     this.products = [];
     this.errors = {};
     this.loadedImages = new Set();
@@ -13,7 +14,7 @@ class ProductCard extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['products-data'];
+    return ['products-data', 'error-data'];
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
@@ -23,11 +24,23 @@ class ProductCard extends HTMLElement {
         console.log('📦 Custom element received products:', this.products.length);
         this.products.forEach(p => {
           this.selectedOptions[p._id] = {};
+          this.quantities[p._id] = 1; // Initialize quantity to 1
           this.errors[p._id] = '';
         });
         this.render();
       } catch (error) {
         console.error('Error parsing products data:', error);
+      }
+    }
+    
+    if (name === 'error-data' && newVal && newVal !== oldVal) {
+      try {
+        const errorData = JSON.parse(newVal);
+        console.log('❌ Custom element received error:', errorData);
+        this.errors[errorData.productId] = errorData.message;
+        this.updateErrorDisplay(errorData.productId);
+      } catch (error) {
+        console.error('Error parsing error data:', error);
       }
     }
   }
@@ -291,6 +304,77 @@ class ProductCard extends HTMLElement {
           display: none;
         }
         
+        .quantity-selector {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 16px 0;
+          padding: 12px;
+          background: #f8f8f8;
+          border-radius: 6px;
+        }
+        
+        .quantity-selector label {
+          font-weight: 600;
+          font-size: 0.9em;
+          color: #555;
+          margin: 0;
+        }
+        
+        .quantity-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: auto;
+        }
+        
+        .quantity-btn {
+          width: 32px;
+          height: 32px;
+          border: 1px solid #ddd;
+          background: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 1.2em;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+          color: #333;
+          padding: 0;
+        }
+        
+        .quantity-btn:hover {
+          background: #007bff;
+          border-color: #007bff;
+          color: white;
+        }
+        
+        .quantity-btn:active {
+          transform: scale(0.95);
+        }
+        
+        .quantity-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+          background: #f5f5f5;
+        }
+        
+        .quantity-btn:disabled:hover {
+          background: #f5f5f5;
+          border-color: #ddd;
+          color: #333;
+        }
+        
+        .quantity-value {
+          min-width: 40px;
+          text-align: center;
+          font-size: 1.1em;
+          font-weight: 600;
+          color: #333;
+        }
+        
         .button-group {
           display: flex;
           gap: 8px;
@@ -399,8 +483,18 @@ class ProductCard extends HTMLElement {
                     </div>
                   `).join('')}
                 </div>
-                <div class="error-message" role="alert"></div>
               ` : ''}
+              
+              <div class="quantity-selector">
+                <label>Quantity</label>
+                <div class="quantity-controls">
+                  <button class="quantity-btn" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="quantity-value">${this.quantities[p._id] || 1}</span>
+                  <button class="quantity-btn" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </div>
+              
+              <div class="error-message" role="alert"></div>
               
               <div class="button-group">
                 <button class="btn view-btn" data-action="view">View Product</button>
@@ -461,6 +555,37 @@ class ProductCard extends HTMLElement {
       });
     });
 
+    // Quantity buttons
+    this.querySelectorAll('.quantity-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const action = e.target.dataset.action;
+        const card = e.target.closest('.card');
+        const productId = card.dataset.productId;
+        const quantityValueEl = card.querySelector('.quantity-value');
+        
+        let currentQty = this.quantities[productId] || 1;
+        
+        if (action === 'decrease' && currentQty > 1) {
+          currentQty--;
+        } else if (action === 'increase' && currentQty < 99) {
+          currentQty++;
+        }
+        
+        this.quantities[productId] = currentQty;
+        quantityValueEl.textContent = currentQty;
+        
+        // Update button states
+        const decreaseBtn = card.querySelector('.quantity-btn[data-action="decrease"]');
+        const increaseBtn = card.querySelector('.quantity-btn[data-action="increase"]');
+        
+        decreaseBtn.disabled = currentQty <= 1;
+        increaseBtn.disabled = currentQty >= 99;
+        
+        console.log('✅ Quantity updated:', productId, '=', currentQty);
+      });
+    });
+
     // Action buttons
     this.querySelectorAll('.btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -479,9 +604,10 @@ class ProductCard extends HTMLElement {
           // Validate before adding
           if (this.validateOptions(productId)) {
             const choices = this.selectedOptions[productId];
-            console.log('🛒 Add to cart:', productId, choices);
+            const quantity = this.quantities[productId] || 1;
+            console.log('🛒 Add to cart:', productId, choices, 'qty:', quantity);
             this.dispatchEvent(new CustomEvent('addToCart', {
-              detail: { productId, choices }
+              detail: { productId, choices, quantity }
             }));
           }
         }
