@@ -32,26 +32,26 @@ class MarketplaceShop extends HTMLElement {
       slider3: '14',
       
       // Text Inputs (20)
-      text1: 'Summer Sale',
-      text2: 'Up to 70% Off',
-      text3: 'Shop Now',
-      text4: 'Flash Deals',
-      text5: 'Limited Time Offers',
-      text6: 'Trending Products',
-      text7: "What's Hot Right Now",
-      text8: 'Best Sellers',
-      text9: 'Most Popular Items',
-      text10: 'New Arrivals',
-      text11: 'Just Landed',
-      text12: 'Featured Categories',
-      text13: 'Shop by Category',
-      text14: 'Top Rated',
-      text15: 'Customer Favorites',
-      text16: 'Special Offers',
-      text17: 'Deals You Cannot Miss',
-      text18: '50% OFF',
-      text19: 'FREE SHIPPING',
-      text20: 'LIMITED STOCK'
+      text1: 'Flash Deals',
+      text2: 'Limited Time Offers',
+      text3: 'Trending Products',
+      text4: "What's Hot Right Now",
+      text5: 'Best Sellers',
+      text6: 'Most Popular Items',
+      text7: 'New Arrivals',
+      text8: 'Just Landed',
+      text9: 'Featured Categories',
+      text10: 'Shop by Category',
+      text11: 'Top Rated',
+      text12: 'Customer Favorites',
+      text13: 'Special Offers',
+      text14: 'Deals You Cannot Miss',
+      text15: 'Special Mid-Season Sale!',
+      text16: "Don't miss out on incredible deals",
+      text17: 'Shop Sale Items',
+      text18: '/shop', // Promo Banner URL
+      text19: '',
+      text20: ''
     };
   }
 
@@ -140,147 +140,7 @@ class MarketplaceShop extends HTMLElement {
         width: 100%;
         background: ${color2};
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
-      }
-      
-      /* Hero Banner Section - Full Width with Background */
-      .hero-banner {
-        position: relative;
-        background: linear-gradient(135deg, ${color5} 0%, ${color6} 50%, #6366f1 100%);
-        padding: ${spacing * 6}px ${spacing * 2}px;
-        text-align: center;
-        overflow: hidden;
-        min-height: 500px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      .hero-banner::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-image: 
-          radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15) 0%, transparent 50%),
-          radial-gradient(circle at 40% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-        animation: breathe 8s ease-in-out infinite;
-      }
-      
-      @keyframes breathe {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
-      }
-      
-      .hero-shapes {
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-      }
-      
-      .hero-shape {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.1);
-        animation: float 20s infinite ease-in-out;
-      }
-      
-      .hero-shape:nth-child(1) {
-        width: 300px;
-        height: 300px;
-        top: -150px;
-        left: -100px;
-        animation-delay: 0s;
-      }
-      
-      .hero-shape:nth-child(2) {
-        width: 200px;
-        height: 200px;
-        bottom: -100px;
-        right: 10%;
-        animation-delay: 2s;
-      }
-      
-      .hero-shape:nth-child(3) {
-        width: 150px;
-        height: 150px;
-        top: 20%;
-        right: -75px;
-        animation-delay: 4s;
-      }
-      
-      @keyframes float {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); }
-        33% { transform: translate(30px, -30px) rotate(120deg); }
-        66% { transform: translate(-20px, 20px) rotate(240deg); }
-      }
-      
-      .hero-content {
-        position: relative;
-        z-index: 1;
-        max-width: 900px;
-        margin: 0 auto;
-      }
-      
-      .hero-badge {
-        display: inline-block;
-        background: ${color11};
-        color: ${color1};
-        padding: 10px 24px;
-        border-radius: ${radius * 3}px;
-        font-size: ${fontSize - 1}px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1.2px;
-        margin-bottom: ${spacing * 1.5}px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-        animation: pulse 2s infinite;
-      }
-      
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-      }
-      
-      .hero-title {
-        font-size: ${fontSize * 4.5}px;
-        font-weight: 900;
-        color: ${color1};
-        margin-bottom: ${spacing * 1.5}px;
-        text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        letter-spacing: -2px;
-        line-height: 1.1;
-      }
-      
-      .hero-subtitle {
-        font-size: ${fontSize + 8}px;
-        color: rgba(255,255,255,0.95);
-        margin-bottom: ${spacing * 3}px;
-        font-weight: 400;
-        line-height: 1.5;
-      }
-      
-      .hero-cta {
-        display: inline-block;
-        padding: ${spacing + 4}px ${spacing * 5}px;
-        background: ${color1};
-        color: ${color5};
-        font-size: ${fontSize + 2}px;
-        font-weight: 700;
-        border: none;
-        border-radius: ${radius * 3}px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      }
-      
-      .hero-cta:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        padding: ${spacing * 3}px 0;
       }
       
       /* Main Content */
@@ -293,7 +153,6 @@ class MarketplaceShop extends HTMLElement {
       /* Section Container */
       .section {
         margin: ${spacing * 5}px 0;
-        padding: ${spacing * 3}px 0;
       }
       
       .section-header {
@@ -315,115 +174,40 @@ class MarketplaceShop extends HTMLElement {
         font-weight: 400;
       }
       
-      /* Deal Badges */
-      .deal-badges {
-        display: flex;
-        gap: ${spacing}px;
-        justify-content: center;
-        margin-bottom: ${spacing * 2}px;
-        flex-wrap: wrap;
-      }
-      
-      .deal-badge {
-        background: linear-gradient(135deg, ${color11} 0%, #dc2626 100%);
-        color: ${color1};
-        padding: ${spacing - 2}px ${spacing * 2}px;
-        border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 3}px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 12px ${color7};
-      }
-      
-      /* Timer Section */
-      .timer-section {
-        display: flex;
-        justify-content: center;
-        gap: ${spacing}px;
-        margin: ${spacing * 2}px 0 ${spacing * 3}px;
-        flex-wrap: wrap;
-      }
-      
-      .timer-box {
-        background: ${color1};
-        border: 2px solid ${color3};
-        border-radius: ${radius}px;
-        padding: ${spacing}px ${spacing * 2}px;
-        text-align: center;
-        min-width: 90px;
-        box-shadow: 0 4px 8px ${color7};
-      }
-      
-      .timer-value {
-        font-size: ${fontSize * 2.5}px;
-        font-weight: 900;
-        color: ${color5};
-        display: block;
-      }
-      
-      .timer-label {
-        font-size: ${fontSize - 5}px;
-        color: ${color9};
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 4px;
-      }
-      
-      /* Product Slider Container */
+      /* Infinite Scroll Slider Container */
       .product-slider {
         position: relative;
-        margin: 0 -${spacing}px;
-        padding: 0 ${spacing * 4}px;
+        overflow: hidden;
+        margin: 0 -${spacing * 2}px;
       }
       
       .slider-wrapper {
-        overflow: hidden;
+        display: flex;
+        width: 100%;
       }
       
       .slider-track {
         display: flex;
         gap: ${spacing * 1.5}px;
-        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        animation: infiniteScroll 40s linear infinite;
+        will-change: transform;
       }
       
-      .slider-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: ${color1};
-        border: 2px solid ${color3};
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 10;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px ${color7};
+      .slider-track:hover {
+        animation-play-state: paused;
       }
       
-      .slider-nav:hover {
-        background: ${color5};
-        border-color: ${color5};
-        color: ${color1};
-        transform: translateY(-50%) scale(1.1);
+      @keyframes infiniteScroll {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
       }
       
-      .slider-nav.prev {
-        left: 0;
-      }
-      
-      .slider-nav.next {
-        right: 0;
-      }
-      
-      .slider-nav svg {
-        width: 24px;
-        height: 24px;
-        fill: currentColor;
+      .slider-track.paused {
+        animation-play-state: paused;
       }
       
       /* Product Grid */
@@ -433,7 +217,7 @@ class MarketplaceShop extends HTMLElement {
         gap: ${spacing * 2}px;
       }
       
-      /* Product Card */
+      /* Product Card - Fixed Height */
       .product-card {
         background: ${color1};
         border: 2px solid ${color3};
@@ -445,7 +229,7 @@ class MarketplaceShop extends HTMLElement {
         position: relative;
         cursor: pointer;
         min-width: 280px;
-        height: 100%;
+        height: 480px;
       }
       
       .product-card:hover {
@@ -454,19 +238,17 @@ class MarketplaceShop extends HTMLElement {
         border-color: ${color5};
       }
       
-      /* Image Container */
+      /* Image Container - Fixed Height */
       .image-container {
         position: relative;
         width: 100%;
-        padding-top: 100%;
+        height: 280px;
         background: linear-gradient(135deg, ${color2} 0%, #e0e7ff 100%);
         overflow: hidden;
+        flex-shrink: 0;
       }
       
       .product-card img {
-        position: absolute;
-        top: 0;
-        left: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -516,73 +298,14 @@ class MarketplaceShop extends HTMLElement {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       }
       
-      /* Quick Actions */
-      .quick-actions {
-        position: absolute;
-        top: ${spacing}px;
-        right: ${spacing}px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        opacity: 0;
-        transform: translateX(20px);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 3;
-      }
-      
-      .product-card:hover .quick-actions {
-        opacity: 1;
-        transform: translateX(0);
-      }
-      
-      .quick-action-btn {
-        width: 40px;
-        height: 40px;
-        background: ${color1};
-        border: 1px solid ${color3};
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        box-shadow: 0 4px 12px ${color7};
-        font-size: ${fontSize + 4}px;
-      }
-      
-      .quick-action-btn:hover {
-        background: ${color5};
-        border-color: ${color5};
-        color: ${color1};
-        transform: scale(1.15);
-      }
-      
-      /* Card Body */
+      /* Card Body - Fixed Height */
       .card-body {
         padding: ${spacing * 1.5}px;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: ${spacing - 2}px;
-      }
-      
-      /* Rating */
-      .rating {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      
-      .stars {
-        display: flex;
-        gap: 2px;
-        color: #fbbf24;
-        font-size: ${fontSize - 2}px;
-      }
-      
-      .rating-count {
-        font-size: ${fontSize - 6}px;
-        color: ${color9};
+        gap: ${spacing - 4}px;
+        min-height: 0;
       }
       
       .product-name {
@@ -594,7 +317,7 @@ class MarketplaceShop extends HTMLElement {
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: ${fontSize * 1.4 * 2}px;
+        height: ${fontSize * 1.4 * 2}px;
         margin: 0;
       }
       
@@ -604,7 +327,6 @@ class MarketplaceShop extends HTMLElement {
         align-items: center;
         gap: ${spacing - 4}px;
         flex-wrap: wrap;
-        margin-top: auto;
       }
       
       .current-price {
@@ -625,17 +347,73 @@ class MarketplaceShop extends HTMLElement {
         font-weight: 600;
       }
       
-      /* Options Section */
-      .options-section {
+      /* Options Dropdown - Compact */
+      .options-compact {
+        position: relative;
+      }
+      
+      .options-trigger {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid ${color3};
+        border-radius: ${radius - 2}px;
+        font-size: ${fontSize - 4}px;
+        font-weight: 600;
+        background: ${color2};
+        color: ${color8};
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
         display: flex;
-        flex-direction: column;
-        gap: 8px;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .options-trigger:hover {
+        border-color: ${color5};
+      }
+      
+      .options-trigger.active {
+        border-color: ${color5};
+        background: ${color1};
+      }
+      
+      .options-trigger .arrow {
+        font-size: ${fontSize - 6}px;
+        transition: transform 0.2s;
+      }
+      
+      .options-trigger.active .arrow {
+        transform: rotate(180deg);
+      }
+      
+      .options-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: ${color1};
+        border: 2px solid ${color5};
+        border-radius: ${radius - 2}px;
+        margin-top: 4px;
+        padding: ${spacing - 4}px;
+        display: none;
+        z-index: 100;
+        box-shadow: 0 8px 16px ${color7};
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      
+      .options-dropdown.active {
+        display: block;
       }
       
       .option-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+        margin-bottom: ${spacing - 4}px;
+      }
+      
+      .option-group:last-child {
+        margin-bottom: 0;
       }
       
       .option-label {
@@ -644,6 +422,8 @@ class MarketplaceShop extends HTMLElement {
         color: ${color9};
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        display: block;
       }
       
       /* Color Swatches */
@@ -654,8 +434,8 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .color-swatch {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
         border: 2px solid ${color3};
         cursor: pointer;
@@ -679,10 +459,10 @@ class MarketplaceShop extends HTMLElement {
       /* Dropdown Options */
       .option-select {
         width: 100%;
-        padding: 8px 10px;
+        padding: 6px 8px;
         border: 1px solid ${color3};
-        border-radius: ${radius - 2}px;
-        font-size: ${fontSize - 4}px;
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 5}px;
         font-weight: 600;
         background: ${color1};
         color: ${color8};
@@ -701,7 +481,7 @@ class MarketplaceShop extends HTMLElement {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px;
+        padding: 6px 8px;
         background: ${color2};
         border-radius: ${radius - 2}px;
         border: 1px solid ${color3};
@@ -718,17 +498,17 @@ class MarketplaceShop extends HTMLElement {
       .quantity-controls {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
       }
       
       .qty-btn {
-        width: 26px;
-        height: 26px;
+        width: 24px;
+        height: 24px;
         border: 1px solid ${color3};
         background: ${color1};
         border-radius: ${radius - 4}px;
         cursor: pointer;
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 2}px;
         font-weight: 900;
         display: flex;
         align-items: center;
@@ -750,9 +530,9 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .qty-value {
-        min-width: 28px;
+        min-width: 24px;
         text-align: center;
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 2}px;
         font-weight: 900;
         color: ${color8};
       }
@@ -761,9 +541,9 @@ class MarketplaceShop extends HTMLElement {
       .error-msg {
         color: ${color11};
         background: ${color12};
-        padding: 6px 8px;
-        border-radius: ${radius - 2}px;
-        font-size: ${fontSize - 6}px;
+        padding: 4px 6px;
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 7}px;
         font-weight: 700;
         border-left: 3px solid ${color11};
         display: none;
@@ -830,6 +610,11 @@ class MarketplaceShop extends HTMLElement {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
       }
       
       .category-card::before {
@@ -936,6 +721,7 @@ class MarketplaceShop extends HTMLElement {
         transition: all 0.3s;
         text-transform: uppercase;
         letter-spacing: 1px;
+        text-decoration: none;
       }
       
       .promo-cta:hover {
@@ -968,26 +754,9 @@ class MarketplaceShop extends HTMLElement {
         .products-grid {
           grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         }
-        
-        .product-slider {
-          padding: 0 ${spacing * 3}px;
-        }
       }
       
       @media (max-width: 768px) {
-        .hero-banner {
-          min-height: 400px;
-          padding: ${spacing * 4}px ${spacing}px;
-        }
-        
-        .hero-title {
-          font-size: ${fontSize * 2.5}px;
-        }
-        
-        .hero-subtitle {
-          font-size: ${fontSize + 2}px;
-        }
-        
         .section-title {
           font-size: ${fontSize * 2}px;
         }
@@ -997,26 +766,20 @@ class MarketplaceShop extends HTMLElement {
           gap: ${spacing}px;
         }
         
-        .product-slider {
-          padding: 0 ${spacing * 2.5}px;
+        .product-card {
+          height: 460px;
         }
         
-        .slider-nav {
-          width: 40px;
-          height: 40px;
+        .image-container {
+          height: 260px;
         }
         
         .actions {
           grid-template-columns: 1fr;
         }
         
-        .timer-box {
-          min-width: 70px;
-          padding: ${spacing - 2}px ${spacing}px;
-        }
-        
-        .timer-value {
-          font-size: ${fontSize * 2}px;
+        .category-card {
+          height: 180px;
         }
       }
       
@@ -1031,15 +794,11 @@ class MarketplaceShop extends HTMLElement {
         
         .product-card {
           min-width: auto;
+          height: 440px;
         }
         
-        .hero-banner {
-          min-height: 350px;
-          padding: ${spacing * 3}px ${spacing}px;
-        }
-        
-        .hero-title {
-          font-size: ${fontSize * 2}px;
+        .image-container {
+          height: 240px;
         }
         
         .section {
@@ -1088,86 +847,6 @@ class MarketplaceShop extends HTMLElement {
     this.querySelectorAll('img[data-src]').forEach(img => {
       observer.observe(img);
     });
-  }
-
-  initializeSliders() {
-    this.querySelectorAll('.product-slider').forEach((slider, index) => {
-      this.currentSlides[index] = 0;
-      this.updateSlider(index);
-      
-      // Auto-slide every 5 seconds
-      this.autoSlideIntervals[index] = setInterval(() => {
-        this.slideNext(index, true);
-      }, 5000);
-    });
-  }
-
-  updateSlider(sliderIndex) {
-    const slider = this.querySelectorAll('.product-slider')[sliderIndex];
-    if (!slider) return;
-
-    const track = slider.querySelector('.slider-track');
-    const cards = track.querySelectorAll('.product-card');
-    
-    if (cards.length === 0) return;
-    
-    const containerWidth = slider.querySelector('.slider-wrapper').offsetWidth;
-    const cardWidth = 300; // Fixed card width
-    const gap = 24; // Gap between cards
-    const visibleCards = Math.floor(containerWidth / (cardWidth + gap));
-    const maxSlide = Math.max(0, cards.length - visibleCards);
-    
-    // Ensure currentSlide doesn't exceed maxSlide
-    if (this.currentSlides[sliderIndex] > maxSlide) {
-      this.currentSlides[sliderIndex] = maxSlide;
-    }
-    
-    const offset = -this.currentSlides[sliderIndex] * (cardWidth + gap);
-    track.style.transform = `translateX(${offset}px)`;
-  }
-
-  slideNext(sliderIndex, isAuto = false) {
-    const slider = this.querySelectorAll('.product-slider')[sliderIndex];
-    const track = slider.querySelector('.slider-track');
-    const cards = track.querySelectorAll('.product-card');
-    
-    const containerWidth = slider.querySelector('.slider-wrapper').offsetWidth;
-    const cardWidth = 300;
-    const gap = 24;
-    const visibleCards = Math.floor(containerWidth / (cardWidth + gap));
-    const maxSlide = Math.max(0, cards.length - visibleCards);
-    
-    if (this.currentSlides[sliderIndex] < maxSlide) {
-      this.currentSlides[sliderIndex]++;
-    } else if (isAuto) {
-      // Loop back to start on auto-slide
-      this.currentSlides[sliderIndex] = 0;
-    }
-    
-    this.updateSlider(sliderIndex);
-    
-    // Reset auto-slide timer on manual navigation
-    if (!isAuto && this.autoSlideIntervals[sliderIndex]) {
-      clearInterval(this.autoSlideIntervals[sliderIndex]);
-      this.autoSlideIntervals[sliderIndex] = setInterval(() => {
-        this.slideNext(sliderIndex, true);
-      }, 5000);
-    }
-  }
-
-  slidePrev(sliderIndex) {
-    if (this.currentSlides[sliderIndex] > 0) {
-      this.currentSlides[sliderIndex]--;
-      this.updateSlider(sliderIndex);
-    }
-    
-    // Reset auto-slide timer
-    if (this.autoSlideIntervals[sliderIndex]) {
-      clearInterval(this.autoSlideIntervals[sliderIndex]);
-      this.autoSlideIntervals[sliderIndex] = setInterval(() => {
-        this.slideNext(sliderIndex, true);
-      }, 5000);
-    }
   }
 
   validateOptions(productId) {
@@ -1233,14 +912,29 @@ class MarketplaceShop extends HTMLElement {
     return 0;
   }
 
-  renderProductCard(product, index, showFull = false) {
+  getSelectedOptionsText(productId) {
+    const product = this.findProductById(productId);
+    if (!product || !product.productOptions || product.productOptions.length === 0) {
+      return 'No options available';
+    }
+
+    const selected = this.selectedOptions[productId] || {};
+    const selectedCount = Object.keys(selected).length;
+    
+    if (selectedCount === 0) {
+      return 'Select options';
+    }
+    
+    return `${selectedCount} option${selectedCount > 1 ? 's' : ''} selected`;
+  }
+
+  renderProductCard(product, index) {
     const hasDiscount = product.priceData?.formatted?.discountedPrice && 
                         product.priceData?.formatted?.discountedPrice !== product.priceData?.formatted?.price;
     const discountPercent = hasDiscount ? 
       this.calculateDiscount(product.priceData?.formatted?.price, product.priceData?.formatted?.discountedPrice) : 0;
     
-    const rating = 4 + Math.random();
-    const ratingCount = Math.floor(Math.random() * 500) + 50;
+    const hasOptions = product.productOptions && product.productOptions.length > 0;
     
     return `
       <div class="product-card" data-product-id="${product._id}">
@@ -1250,30 +944,14 @@ class MarketplaceShop extends HTMLElement {
             ${discountPercent > 0 ? `<div class="discount-percent">-${discountPercent}%</div>` : ''}
           </div>
           
-          <div class="quick-actions">
-            <button class="quick-action-btn" data-action="wishlist" title="Add to Wishlist">
-              ♡
-            </button>
-            <button class="quick-action-btn" data-action="view" title="Quick View">
-              👁
-            </button>
-          </div>
-          
           <img 
-            ${index < 8 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 300, 300)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 300, 300)}"`}
+            ${index < 8 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 280, 280)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 280, 280)}"`}
             alt="${product.name || 'Product'}"
             ${index < 8 ? 'onload="this.classList.add(\'loaded\')"' : 'loading="lazy"'}
           >
         </div>
         
         <div class="card-body">
-          <div class="rating">
-            <div class="stars">
-              ${'★'.repeat(Math.floor(rating))}${'☆'.repeat(5 - Math.floor(rating))}
-            </div>
-            <span class="rating-count">(${ratingCount})</span>
-          </div>
-          
           <h3 class="product-name">${product.name || 'Product'}</h3>
           
           <div class="price-section">
@@ -1285,49 +963,53 @@ class MarketplaceShop extends HTMLElement {
             `}
           </div>
           
-          ${showFull && product.productOptions && product.productOptions.length > 0 ? `
-            <div class="options-section">
-              ${product.productOptions.map(opt => `
-                <div class="option-group">
-                  <label class="option-label">${opt.name}</label>
-                  ${opt.optionType === 'color' ? `
-                    <div class="color-swatches">
-                      ${opt.choices.slice(0, 6).map(c => `
-                        <button 
-                          class="color-swatch" 
-                          style="background-color: ${c.value};" 
-                          data-option="${opt.name}" 
-                          data-value="${c.value}" 
-                          data-description="${c.description}"
-                          title="${c.description}">
-                        </button>
-                      `).join('')}
-                    </div>
-                  ` : `
-                    <select class="option-select" data-option="${opt.name}">
-                      <option value="">Choose ${opt.name}</option>
-                      ${opt.choices.map(c => `
-                        <option value="${c.description}">${c.description}</option>
-                      `).join('')}
-                    </select>
-                  `}
-                </div>
-              `).join('')}
+          ${hasOptions ? `
+            <div class="options-compact">
+              <button class="options-trigger" data-action="toggle-options">
+                <span>${this.getSelectedOptionsText(product._id)}</span>
+                <span class="arrow">▼</span>
+              </button>
+              <div class="options-dropdown">
+                ${product.productOptions.map(opt => `
+                  <div class="option-group">
+                    <label class="option-label">${opt.name}</label>
+                    ${opt.optionType === 'color' ? `
+                      <div class="color-swatches">
+                        ${opt.choices.slice(0, 8).map(c => `
+                          <button 
+                            class="color-swatch" 
+                            style="background-color: ${c.value};" 
+                            data-option="${opt.name}" 
+                            data-value="${c.value}" 
+                            data-description="${c.description}"
+                            title="${c.description}">
+                          </button>
+                        `).join('')}
+                      </div>
+                    ` : `
+                      <select class="option-select" data-option="${opt.name}">
+                        <option value="">Choose ${opt.name}</option>
+                        ${opt.choices.map(c => `
+                          <option value="${c.description}">${c.description}</option>
+                        `).join('')}
+                      </select>
+                    `}
+                  </div>
+                `).join('')}
+              </div>
             </div>
           ` : ''}
           
-          ${showFull ? `
-            <div class="quantity-section">
-              <span class="quantity-label">Qty</span>
-              <div class="quantity-controls">
-                <button class="qty-btn" data-action="decrease">−</button>
-                <span class="qty-value">${this.quantities[product._id] || 1}</span>
-                <button class="qty-btn" data-action="increase">+</button>
-              </div>
+          <div class="quantity-section">
+            <span class="quantity-label">Qty</span>
+            <div class="quantity-controls">
+              <button class="qty-btn" data-action="decrease">−</button>
+              <span class="qty-value">${this.quantities[product._id] || 1}</span>
+              <button class="qty-btn" data-action="increase">+</button>
             </div>
-            
-            <div class="error-msg"></div>
-          ` : ''}
+          </div>
+          
+          <div class="error-msg"></div>
           
           <div class="actions">
             <button class="action-btn view-btn" data-action="view">View</button>
@@ -1372,26 +1054,11 @@ class MarketplaceShop extends HTMLElement {
     this.innerHTML = `
       <style>${this.getStyles()}</style>
       <div class="marketplace-container">
-        <!-- Hero Banner -->
-        <section class="hero-banner">
-          <div class="hero-shapes">
-            <div class="hero-shape"></div>
-            <div class="hero-shape"></div>
-            <div class="hero-shape"></div>
-          </div>
-          <div class="hero-content">
-            <div class="hero-badge">${this.styleProps.text18}</div>
-            <h1 class="hero-title">${this.styleProps.text1}</h1>
-            <p class="hero-subtitle">${this.styleProps.text2}</p>
-            <button class="hero-cta" data-action="scroll-shop">${this.styleProps.text3}</button>
-          </div>
-        </section>
-
         <!-- Main Content -->
         <div class="main-content">
           ${sections.map((section, sectionIndex) => {
-            const titleKey = `text${(sectionIndex * 2) + 4}`;
-            const subtitleKey = `text${(sectionIndex * 2) + 5}`;
+            const titleKey = `text${(sectionIndex * 2) + 1}`;
+            const subtitleKey = `text${(sectionIndex * 2) + 2}`;
             
             return `
               <!-- Section ${sectionIndex + 1}: ${section.name} -->
@@ -1401,45 +1068,17 @@ class MarketplaceShop extends HTMLElement {
                   <p class="section-subtitle">${this.styleProps[subtitleKey] || ''}</p>
                 </div>
                 
-                ${sectionIndex === 0 && section.products && section.products.length > 0 ? `
-                  <!-- Deal Badges for Flash Deals -->
-                  <div class="deal-badges">
-                    <div class="deal-badge">${this.styleProps.text18}</div>
-                    <div class="deal-badge">${this.styleProps.text19}</div>
-                    <div class="deal-badge">${this.styleProps.text20}</div>
-                  </div>
-                  
-                  <!-- Timer -->
-                  <div class="timer-section">
-                    <div class="timer-box">
-                      <span class="timer-value">23</span>
-                      <span class="timer-label">Hours</span>
-                    </div>
-                    <div class="timer-box">
-                      <span class="timer-value">45</span>
-                      <span class="timer-label">Minutes</span>
-                    </div>
-                    <div class="timer-box">
-                      <span class="timer-value">12</span>
-                      <span class="timer-label">Seconds</span>
-                    </div>
-                  </div>
-                ` : ''}
-                
                 ${section.products && section.products.length > 0 ? `
                   ${sectionIndex % 2 === 0 ? `
-                    <!-- Slider Layout -->
+                    <!-- Infinite Slider Layout -->
                     <div class="product-slider">
-                      <button class="slider-nav prev" data-slider="${sectionIndex}" data-action="prev">
-                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                      </button>
-                      <button class="slider-nav next" data-slider="${sectionIndex}" data-action="next">
-                        <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                      </button>
                       <div class="slider-wrapper">
-                        <div class="slider-track">
+                        <div class="slider-track" data-slider="${sectionIndex}">
                           ${section.products.slice(0, 12).map((product, index) => 
-                            this.renderProductCard(product, index, sectionIndex === 0)
+                            this.renderProductCard(product, index)
+                          ).join('')}
+                          ${section.products.slice(0, 12).map((product, index) => 
+                            this.renderProductCard(product, index + 12)
                           ).join('')}
                         </div>
                       </div>
@@ -1448,7 +1087,7 @@ class MarketplaceShop extends HTMLElement {
                     <!-- Grid Layout -->
                     <div class="products-grid">
                       ${section.products.slice(0, 8).map((product, index) => 
-                        this.renderProductCard(product, index + 100, true)
+                        this.renderProductCard(product, index + 100)
                       ).join('')}
                     </div>
                   `}
@@ -1463,9 +1102,9 @@ class MarketplaceShop extends HTMLElement {
                 <!-- Promotional Banner -->
                 <div class="promo-banner">
                   <div class="promo-content">
-                    <h2 class="promo-title">Special Mid-Season Sale!</h2>
-                    <p class="promo-text">Don't miss out on incredible deals - Limited time only</p>
-                    <button class="promo-cta" data-action="scroll-shop">Shop Sale Items</button>
+                    <h2 class="promo-title">${this.styleProps.text15}</h2>
+                    <p class="promo-text">${this.styleProps.text16}</p>
+                    <a href="${this.styleProps.text18 || '/shop'}" class="promo-cta">${this.styleProps.text17}</a>
                   </div>
                 </div>
               ` : ''}
@@ -1474,8 +1113,8 @@ class MarketplaceShop extends HTMLElement {
                 <!-- Featured Categories -->
                 <section class="section">
                   <div class="section-header">
-                    <h2 class="section-title">${this.styleProps.text12}</h2>
-                    <p class="section-subtitle">${this.styleProps.text13}</p>
+                    <h2 class="section-title">${this.styleProps.text9}</h2>
+                    <p class="section-subtitle">${this.styleProps.text10}</p>
                   </div>
                   <div class="category-grid">
                     ${this.categoriesData.slice(0, 8).map((cat, idx) => 
@@ -1491,39 +1130,50 @@ class MarketplaceShop extends HTMLElement {
     `;
 
     this.setupIntersectionObserver();
-    this.initializeSliders();
     this.attachEventListeners();
   }
 
   attachEventListeners() {
-    // Hero CTA & Promo CTA
-    this.querySelectorAll('[data-action="scroll-shop"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const mainContent = this.querySelector('.main-content');
-        if (mainContent) {
-          mainContent.scrollIntoView({ behavior: 'smooth' });
-        }
+    // Options Trigger
+    this.querySelectorAll('.options-trigger').forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = e.target.closest('.product-card');
+        const dropdown = card.querySelector('.options-dropdown');
+        const allDropdowns = this.querySelectorAll('.options-dropdown');
+        const allTriggers = this.querySelectorAll('.options-trigger');
+        
+        // Close all other dropdowns
+        allDropdowns.forEach(d => {
+          if (d !== dropdown) {
+            d.classList.remove('active');
+          }
+        });
+        allTriggers.forEach(t => {
+          if (t !== trigger) {
+            t.classList.remove('active');
+          }
+        });
+        
+        // Toggle current dropdown
+        dropdown.classList.toggle('active');
+        trigger.classList.toggle('active');
       });
     });
 
-    // Slider Navigation
-    this.querySelectorAll('.slider-nav').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const sliderIndex = parseInt(e.currentTarget.dataset.slider);
-        const action = e.currentTarget.dataset.action;
-        
-        if (action === 'next') {
-          this.slideNext(sliderIndex);
-        } else {
-          this.slidePrev(sliderIndex);
-        }
-      });
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.options-compact')) {
+        this.querySelectorAll('.options-dropdown').forEach(d => d.classList.remove('active'));
+        this.querySelectorAll('.options-trigger').forEach(t => t.classList.remove('active'));
+      }
     });
 
     // Color Swatches
     this.querySelectorAll('.color-swatch').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const option = e.target.dataset.option;
         const description = e.target.dataset.description;
         const card = e.target.closest('.product-card');
@@ -1532,6 +1182,12 @@ class MarketplaceShop extends HTMLElement {
         this.selectedOptions[productId][option] = description;
         this.errors[productId] = '';
         this.updateErrorDisplay(productId);
+
+        // Update trigger text
+        const trigger = card.querySelector('.options-trigger span:first-child');
+        if (trigger) {
+          trigger.textContent = this.getSelectedOptionsText(productId);
+        }
 
         card.querySelectorAll(`.color-swatch[data-option="${option}"]`).forEach(s => 
           s.classList.remove('selected')
@@ -1543,6 +1199,7 @@ class MarketplaceShop extends HTMLElement {
     // Option Selects
     this.querySelectorAll('.option-select').forEach(sel => {
       sel.addEventListener('change', (e) => {
+        e.stopPropagation();
         const option = e.target.dataset.option;
         const value = e.target.value;
         const card = e.target.closest('.product-card');
@@ -1554,6 +1211,12 @@ class MarketplaceShop extends HTMLElement {
           this.selectedOptions[productId][option] = value;
           this.errors[productId] = '';
           this.updateErrorDisplay(productId);
+        }
+
+        // Update trigger text
+        const trigger = card.querySelector('.options-trigger span:first-child');
+        if (trigger) {
+          trigger.textContent = this.getSelectedOptionsText(productId);
         }
       });
     });
@@ -1587,7 +1250,7 @@ class MarketplaceShop extends HTMLElement {
     });
 
     // Action Buttons
-    this.querySelectorAll('.action-btn, .quick-action-btn').forEach(btn => {
+    this.querySelectorAll('.action-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const action = e.target.dataset.action;
@@ -1595,7 +1258,7 @@ class MarketplaceShop extends HTMLElement {
         const productId = card.dataset.productId;
         const product = this.findProductById(productId);
         
-        if (action === 'view' || action === 'wishlist') {
+        if (action === 'view') {
           this.dispatchEvent(new CustomEvent('viewProduct', {
             detail: { productId, product }
           }));
@@ -1618,6 +1281,17 @@ class MarketplaceShop extends HTMLElement {
         this.dispatchEvent(new CustomEvent('viewCategory', {
           detail: { categoryId }
         }));
+      });
+    });
+
+    // Pause slider on hover
+    this.querySelectorAll('.slider-track').forEach(track => {
+      track.addEventListener('mouseenter', () => {
+        track.classList.add('paused');
+      });
+      
+      track.addEventListener('mouseleave', () => {
+        track.classList.remove('paused');
       });
     });
   }
