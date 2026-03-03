@@ -135,7 +135,7 @@ class EcommerceHomepage extends HTMLElement {
       /* Hero Section */
       .hero {
         background: linear-gradient(135deg, ${color5} 0%, ${color6} 100%);
-        padding: ${spacing * 4}px ${spacing}px;
+        padding: ${spacing * 3}px ${spacing}px;
         text-align: center;
         position: relative;
         overflow: hidden;
@@ -168,72 +168,72 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .hero-title {
-        font-size: ${fontSize * 3}px;
+        font-size: ${fontSize * 2.5}px;
         font-weight: 900;
         color: ${color1};
-        margin-bottom: ${spacing}px;
+        margin-bottom: ${spacing - 4}px;
         text-shadow: 0 4px 12px rgba(0,0,0,0.2);
         letter-spacing: -1px;
       }
       
       .hero-subtitle {
-        font-size: ${fontSize + 6}px;
+        font-size: ${fontSize + 2}px;
         color: rgba(255,255,255,0.95);
-        margin-bottom: ${spacing * 2}px;
+        margin-bottom: ${spacing * 1.5}px;
         font-weight: 400;
       }
       
       .hero-cta {
         display: inline-block;
-        padding: ${spacing + 4}px ${spacing * 4}px;
+        padding: ${spacing - 2}px ${spacing * 2.5}px;
         background: ${color1};
         color: ${color5};
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize - 1}px;
         font-weight: 700;
         border: none;
-        border-radius: ${radius * 3}px;
+        border-radius: ${radius * 2}px;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         text-transform: uppercase;
-        letter-spacing: 1.5px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        letter-spacing: 1px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
       }
       
       .hero-cta:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.3);
       }
       
       /* Main Content */
       .main-content {
         max-width: 1600px;
         margin: 0 auto;
-        padding: ${spacing * 3}px ${spacing}px;
+        padding: ${spacing * 2}px ${spacing}px;
       }
       
       /* Filters Sidebar */
       .layout {
         display: grid;
-        grid-template-columns: 280px 1fr;
-        gap: ${spacing * 2}px;
+        grid-template-columns: 260px 1fr;
+        gap: ${spacing * 1.5}px;
         align-items: start;
       }
       
       .filters-sidebar {
         background: ${color1};
-        border: 2px solid ${color3};
-        border-radius: ${radius * 2}px;
-        padding: ${spacing * 2}px;
+        border: 1px solid ${color3};
+        border-radius: ${radius}px;
+        padding: ${spacing}px;
         position: sticky;
-        top: ${spacing * 2}px;
-        max-height: calc(100vh - ${spacing * 4}px);
+        top: ${spacing}px;
+        max-height: calc(100vh - ${spacing * 2}px);
         overflow-y: auto;
       }
       
       .filter-section {
-        margin-bottom: ${spacing * 2}px;
-        padding-bottom: ${spacing * 2}px;
-        border-bottom: 2px solid ${color3};
+        margin-bottom: ${spacing * 1.5}px;
+        padding-bottom: ${spacing * 1.5}px;
+        border-bottom: 1px solid ${color3};
       }
       
       .filter-section:last-child {
@@ -243,10 +243,10 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .filter-title {
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 3}px;
         font-weight: 700;
         color: ${color8};
-        margin-bottom: ${spacing}px;
+        margin-bottom: ${spacing - 4}px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         display: flex;
@@ -255,7 +255,7 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .clear-filter {
-        font-size: ${fontSize - 4}px;
+        font-size: ${fontSize - 5}px;
         color: ${color5};
         cursor: pointer;
         font-weight: 600;
@@ -275,10 +275,10 @@ class EcommerceHomepage extends HTMLElement {
       
       .search-input {
         width: 100%;
-        padding: ${spacing - 2}px ${spacing * 3}px ${spacing - 2}px ${spacing}px;
-        border: 2px solid ${color3};
-        border-radius: ${radius}px;
-        font-size: ${fontSize - 2}px;
+        padding: ${spacing - 6}px ${spacing * 2.5}px ${spacing - 6}px ${spacing - 4}px;
+        border: 1px solid ${color3};
+        border-radius: ${radius - 2}px;
+        font-size: ${fontSize - 4}px;
         background: ${color1};
         color: ${color8};
         transition: all 0.2s;
@@ -287,7 +287,7 @@ class EcommerceHomepage extends HTMLElement {
       .search-input:focus {
         outline: none;
         border-color: ${color5};
-        box-shadow: 0 0 0 3px ${color5}20;
+        box-shadow: 0 0 0 2px ${color5}20;
       }
       
       .search-input::placeholder {
@@ -296,11 +296,11 @@ class EcommerceHomepage extends HTMLElement {
       
       .search-icon {
         position: absolute;
-        right: ${spacing}px;
+        right: ${spacing - 4}px;
         top: 50%;
         transform: translateY(-50%);
         color: ${color9};
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize - 2}px;
         pointer-events: none;
       }
       
@@ -308,14 +308,14 @@ class EcommerceHomepage extends HTMLElement {
       .price-inputs {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: ${spacing}px;
+        gap: ${spacing - 4}px;
       }
       
       .price-input {
-        padding: ${spacing - 4}px ${spacing - 2}px;
-        border: 2px solid ${color3};
-        border-radius: ${radius / 2}px;
-        font-size: ${fontSize - 3}px;
+        padding: ${spacing - 8}px ${spacing - 6}px;
+        border: 1px solid ${color3};
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 5}px;
         background: ${color1};
         color: ${color8};
         width: 100%;
@@ -327,9 +327,9 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .price-label {
-        font-size: ${fontSize - 4}px;
+        font-size: ${fontSize - 6}px;
         color: ${color9};
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         display: block;
         font-weight: 600;
       }
@@ -338,16 +338,16 @@ class EcommerceHomepage extends HTMLElement {
       .checkbox-group {
         display: flex;
         flex-direction: column;
-        gap: ${spacing - 4}px;
+        gap: ${spacing - 8}px;
       }
       
       .checkbox-item {
         display: flex;
         align-items: center;
-        gap: ${spacing - 4}px;
+        gap: ${spacing - 8}px;
         cursor: pointer;
-        padding: ${spacing - 6}px;
-        border-radius: ${radius / 2}px;
+        padding: ${spacing - 10}px ${spacing - 8}px;
+        border-radius: ${radius - 4}px;
         transition: background 0.2s;
       }
       
@@ -356,25 +356,25 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .checkbox-item input {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
         cursor: pointer;
         accent-color: ${color5};
       }
       
       .checkbox-label {
-        font-size: ${fontSize - 3}px;
+        font-size: ${fontSize - 5}px;
         color: ${color8};
         cursor: pointer;
         flex: 1;
       }
       
       .checkbox-count {
-        font-size: ${fontSize - 5}px;
+        font-size: ${fontSize - 7}px;
         color: ${color9};
         background: ${color4};
-        padding: 2px 6px;
-        border-radius: 10px;
+        padding: 2px 5px;
+        border-radius: 8px;
         font-weight: 600;
       }
       
@@ -382,12 +382,12 @@ class EcommerceHomepage extends HTMLElement {
       .active-filters {
         display: flex;
         flex-wrap: wrap;
-        gap: ${spacing - 4}px;
-        margin-bottom: ${spacing * 2}px;
-        padding: ${spacing}px;
+        gap: ${spacing - 8}px;
+        margin-bottom: ${spacing}px;
+        padding: ${spacing - 4}px;
         background: ${color1};
-        border-radius: ${radius}px;
-        border: 2px solid ${color3};
+        border-radius: ${radius - 2}px;
+        border: 1px solid ${color3};
       }
       
       .active-filters:empty {
@@ -397,18 +397,18 @@ class EcommerceHomepage extends HTMLElement {
       .filter-tag {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
+        gap: 4px;
+        padding: 4px 10px;
         background: ${color5};
         color: ${color1};
-        border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 4}px;
+        border-radius: ${radius}px;
+        font-size: ${fontSize - 6}px;
         font-weight: 600;
       }
       
       .filter-tag-close {
         cursor: pointer;
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize}px;
         line-height: 1;
         opacity: 0.8;
         transition: opacity 0.2s;
@@ -419,12 +419,12 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .clear-all-filters {
-        padding: 6px 12px;
+        padding: 4px 10px;
         background: ${color11};
         color: ${color1};
         border: none;
-        border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 4}px;
+        border-radius: ${radius}px;
+        font-size: ${fontSize - 6}px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
@@ -443,24 +443,24 @@ class EcommerceHomepage extends HTMLElement {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: ${spacing * 2}px;
-        padding: ${spacing}px;
+        margin-bottom: ${spacing}px;
+        padding: ${spacing - 4}px ${spacing}px;
         background: ${color1};
-        border-radius: ${radius}px;
-        border: 2px solid ${color3};
+        border-radius: ${radius - 2}px;
+        border: 1px solid ${color3};
       }
       
       .results-count {
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 2}px;
         color: ${color8};
         font-weight: 700;
       }
       
       .sort-select {
-        padding: ${spacing - 4}px ${spacing}px;
-        border: 2px solid ${color3};
-        border-radius: ${radius}px;
-        font-size: ${fontSize - 3}px;
+        padding: ${spacing - 8}px ${spacing - 4}px;
+        border: 1px solid ${color3};
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 5}px;
         background: ${color1};
         color: ${color8};
         cursor: pointer;
@@ -472,20 +472,20 @@ class EcommerceHomepage extends HTMLElement {
         border-color: ${color5};
       }
       
-      /* Product Grid */
+      /* Product Grid - Sleek & Modern */
       .products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-        gap: ${spacing * 2}px;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+        gap: ${spacing}px;
       }
       
-      /* Modern Product Card */
+      /* Modern Sleek Product Card */
       .product-card {
         background: ${color1};
-        border: 2px solid ${color3};
-        border-radius: ${radius * 2}px;
+        border: 1px solid ${color3};
+        border-radius: ${radius}px;
         overflow: hidden;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
         position: relative;
@@ -493,12 +493,12 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .product-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 40px ${color7}, 0 0 0 4px ${color5}15;
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px ${color7};
         border-color: ${color5};
       }
       
-      /* Image Container */
+      /* Image Container - Compact */
       .image-wrapper {
         position: relative;
         width: 100%;
@@ -511,7 +511,7 @@ class EcommerceHomepage extends HTMLElement {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         transform: translateX(-100%);
         animation: shimmer 2.5s infinite;
       }
@@ -527,7 +527,7 @@ class EcommerceHomepage extends HTMLElement {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: 0;
       }
       
@@ -536,39 +536,39 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .product-card:hover img.loaded {
-        transform: scale(1.1);
+        transform: scale(1.05);
       }
       
-      /* Ribbon Badge */
+      /* Ribbon Badge - Smaller */
       .ribbon {
         position: absolute;
-        top: ${spacing}px;
-        left: ${spacing}px;
+        top: 8px;
+        left: 8px;
         background: ${color11};
         color: ${color1};
-        padding: 6px 14px;
-        border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 6}px;
+        padding: 3px 8px;
+        border-radius: ${radius - 2}px;
+        font-size: ${fontSize - 8}px;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         z-index: 2;
       }
       
-      /* Quick View Button */
+      /* Quick View Button - Sleeker */
       .quick-view {
         position: absolute;
-        bottom: ${spacing}px;
+        bottom: 8px;
         left: 50%;
-        transform: translateX(-50%) translateY(20px);
+        transform: translateX(-50%) translateY(10px);
         opacity: 0;
         background: ${color1};
         color: ${color5};
-        padding: ${spacing - 4}px ${spacing * 2}px;
-        border: 2px solid ${color5};
-        border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 4}px;
+        padding: 6px ${spacing}px;
+        border: 1px solid ${color5};
+        border-radius: ${radius - 2}px;
+        font-size: ${fontSize - 6}px;
         font-weight: 700;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -586,17 +586,17 @@ class EcommerceHomepage extends HTMLElement {
         color: ${color1};
       }
       
-      /* Card Body */
+      /* Card Body - Compact */
       .card-body {
-        padding: ${spacing * 1.5}px;
+        padding: ${spacing - 2}px;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: ${spacing}px;
+        gap: ${spacing - 6}px;
       }
       
       .product-name {
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize - 3}px;
         font-weight: 700;
         color: ${color8};
         line-height: 1.3;
@@ -604,20 +604,20 @@ class EcommerceHomepage extends HTMLElement {
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: ${(fontSize + 2) * 1.3 * 2}px;
+        min-height: ${(fontSize - 3) * 1.3 * 2}px;
         margin: 0;
       }
       
-      /* Price Display */
+      /* Price Display - Compact */
       .price-wrapper {
         display: flex;
         align-items: center;
-        gap: ${spacing - 2}px;
+        gap: 6px;
         flex-wrap: wrap;
       }
       
       .current-price {
-        font-size: ${fontSize + 10}px;
+        font-size: ${fontSize + 4}px;
         font-weight: 900;
         color: ${color10};
         letter-spacing: -0.5px;
@@ -628,94 +628,80 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .original-price {
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 4}px;
         color: ${color9};
         text-decoration: line-through;
         font-weight: 600;
       }
       
       .discount-badge {
-        background: linear-gradient(135deg, ${color13} 0%, #059669 100%);
+        background: ${color13};
         color: ${color1};
-        padding: 4px 10px;
-        border-radius: ${radius}px;
-        font-size: ${fontSize - 6}px;
+        padding: 2px 6px;
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 8}px;
         font-weight: 800;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
       }
       
-      /* Options Section */
+      /* Options Section - Compact */
       .options-wrapper {
         display: flex;
         flex-direction: column;
-        gap: ${spacing}px;
+        gap: ${spacing - 6}px;
       }
       
       .option-group {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
       }
       
       .option-label {
-        font-size: ${fontSize - 4}px;
+        font-size: ${fontSize - 6}px;
         font-weight: 700;
         color: ${color9};
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
       }
       
-      /* Color Swatches */
+      /* Color Swatches - Smaller */
       .color-swatches {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 5px;
       }
       
       .color-swatch {
-        width: 36px;
-        height: 36px;
-        border-radius: ${radius}px;
-        border: 3px solid ${color3};
+        width: 24px;
+        height: 24px;
+        border-radius: ${radius - 4}px;
+        border: 2px solid ${color3};
         cursor: pointer;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         background-size: cover;
         background-position: center;
       }
       
       .color-swatch:hover {
-        transform: scale(1.15) rotate(5deg);
+        transform: scale(1.1);
         border-color: ${color5};
       }
       
       .color-swatch.selected {
         border-color: ${color5};
-        box-shadow: 0 0 0 2px ${color1}, 0 0 0 5px ${color5}, 0 4px 12px ${color7};
-        transform: scale(1.12);
+        box-shadow: 0 0 0 1px ${color1}, 0 0 0 3px ${color5};
+        transform: scale(1.08);
       }
       
-      .color-swatch::after {
-        content: '';
-        position: absolute;
-        inset: -6px;
-        border-radius: ${radius + 2}px;
-        border: 2px solid ${color5};
-        opacity: 0;
-        transition: opacity 0.25s;
-      }
-      
-      .color-swatch.selected::after {
-        opacity: 1;
-      }
-      
-      /* Dropdown Options */
+      /* Dropdown Options - Compact */
       .option-select {
         width: 100%;
-        padding: ${spacing - 2}px ${spacing}px;
-        border: 2px solid ${color3};
-        border-radius: ${radius}px;
-        font-size: ${fontSize - 3}px;
+        padding: 6px 8px;
+        border: 1px solid ${color3};
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 5}px;
         font-weight: 600;
         background: ${color1};
         color: ${color8};
@@ -727,47 +713,46 @@ class EcommerceHomepage extends HTMLElement {
       .option-select:focus {
         border-color: ${color5};
         outline: none;
-        box-shadow: 0 0 0 3px ${color5}20;
       }
       
-      /* Quantity Selector */
+      /* Quantity Selector - Compact */
       .quantity-wrapper {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: ${spacing}px;
+        padding: 6px 8px;
         background: ${color2};
-        border-radius: ${radius}px;
-        border: 2px solid ${color3};
+        border-radius: ${radius - 4}px;
+        border: 1px solid ${color3};
       }
       
       .quantity-label {
-        font-size: ${fontSize - 4}px;
+        font-size: ${fontSize - 6}px;
         font-weight: 800;
         color: ${color8};
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
       }
       
       .quantity-controls {
         display: flex;
         align-items: center;
-        gap: ${spacing - 2}px;
+        gap: 6px;
       }
       
       .qty-btn {
-        width: 32px;
-        height: 32px;
-        border: 2px solid ${color3};
+        width: 22px;
+        height: 22px;
+        border: 1px solid ${color3};
         background: ${color1};
-        border-radius: ${radius}px;
+        border-radius: ${radius - 6}px;
         cursor: pointer;
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize - 2}px;
         font-weight: 900;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         color: ${color8};
       }
       
@@ -775,7 +760,7 @@ class EcommerceHomepage extends HTMLElement {
         background: ${color5};
         border-color: ${color5};
         color: ${color1};
-        transform: scale(1.15);
+        transform: scale(1.1);
       }
       
       .qty-btn:disabled {
@@ -784,92 +769,113 @@ class EcommerceHomepage extends HTMLElement {
       }
       
       .qty-display {
-        min-width: 36px;
+        min-width: 24px;
         text-align: center;
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize - 3}px;
         font-weight: 900;
         color: ${color8};
       }
       
-      /* Error Message */
+      /* Error Message - Compact */
       .error-msg {
         color: ${color11};
         background: ${color12};
-        padding: ${spacing - 2}px ${spacing}px;
-        border-radius: ${radius}px;
-        font-size: ${fontSize - 4}px;
+        padding: 4px 6px;
+        border-radius: ${radius - 4}px;
+        font-size: ${fontSize - 7}px;
         font-weight: 700;
-        border-left: 4px solid ${color11};
+        border-left: 3px solid ${color11};
         display: none;
       }
       
-      /* Action Buttons */
+      /* Action Buttons - Sleek & Compact */
       .actions {
         display: grid;
         grid-template-columns: auto 1fr;
-        gap: ${spacing - 2}px;
+        gap: 6px;
         margin-top: auto;
       }
       
       .action-btn {
-        padding: ${spacing + 2}px ${spacing + 4}px;
+        padding: 8px 12px;
         border: none;
-        border-radius: ${radius}px;
+        border-radius: ${radius - 2}px;
         cursor: pointer;
-        font-weight: 800;
-        font-size: ${fontSize - 3}px;
+        font-weight: 700;
+        font-size: ${fontSize - 5}px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: 0.3px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
       }
       
       .view-btn {
         background: ${color1};
         color: ${color5};
-        border: 2px solid ${color5};
+        border: 1px solid ${color5};
       }
       
       .view-btn:hover {
         background: ${color4};
-        transform: translateY(-2px);
+        transform: translateY(-1px);
       }
       
       .cart-btn {
-        background: linear-gradient(135deg, ${color5} 0%, ${color6} 100%);
+        background: ${color5};
         color: ${color1};
-        border: 2px solid ${color5};
-        box-shadow: 0 4px 12px ${color5}40;
+        border: 1px solid ${color5};
+        box-shadow: 0 2px 8px ${color5}30;
       }
       
       .cart-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px ${color5}60;
+        background: ${color6};
+        border-color: ${color6};
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px ${color5}40;
       }
       
       /* Empty State */
       .empty-state {
         text-align: center;
-        padding: ${spacing * 6}px ${spacing * 2}px;
+        padding: ${spacing * 4}px ${spacing * 2}px;
         color: ${color9};
       }
       
       .empty-icon {
-        font-size: ${fontSize * 5}px;
+        font-size: ${fontSize * 4}px;
         opacity: 0.3;
-        margin-bottom: ${spacing * 2}px;
-      }
-      
-      .empty-text {
-        font-size: ${fontSize + 4}px;
-        font-weight: 700;
-        color: ${color8};
         margin-bottom: ${spacing}px;
       }
       
+      .empty-text {
+        font-size: ${fontSize + 2}px;
+        font-weight: 700;
+        color: ${color8};
+        margin-bottom: ${spacing - 4}px;
+      }
+      
       .empty-subtext {
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 2}px;
         color: ${color9};
+      }
+      
+      /* Scrollbar Styling */
+      .filters-sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .filters-sidebar::-webkit-scrollbar-track {
+        background: ${color2};
+        border-radius: 3px;
+      }
+      
+      .filters-sidebar::-webkit-scrollbar-thumb {
+        background: ${color3};
+        border-radius: 3px;
+      }
+      
+      .filters-sidebar::-webkit-scrollbar-thumb:hover {
+        background: ${color5};
       }
       
       /* Mobile Responsive */
@@ -884,22 +890,22 @@ class EcommerceHomepage extends HTMLElement {
         }
         
         .products-grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
         }
       }
       
       @media (max-width: 768px) {
         .hero-title {
-          font-size: ${fontSize * 2}px;
+          font-size: ${fontSize * 1.8}px;
         }
         
         .hero-subtitle {
-          font-size: ${fontSize + 2}px;
+          font-size: ${fontSize}px;
         }
         
         .products-grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
-          gap: ${spacing}px;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+          gap: ${spacing - 4}px;
         }
         
         .actions {
@@ -909,21 +915,25 @@ class EcommerceHomepage extends HTMLElement {
       
       @media (max-width: 480px) {
         .main-content {
-          padding: ${spacing * 2}px ${spacing}px;
+          padding: ${spacing}px ${spacing - 4}px;
         }
         
         .products-grid {
-          grid-template-columns: 1fr;
+          grid-template-columns: repeat(2, 1fr);
         }
         
         .hero {
-          padding: ${spacing * 3}px ${spacing}px;
+          padding: ${spacing * 2}px ${spacing}px;
+        }
+        
+        .card-body {
+          padding: ${spacing - 4}px;
         }
       }
     `;
   }
 
-  optimizeImageUrl(url, width = 320, height = 320) {
+  optimizeImageUrl(url, width = 240, height = 240) {
     if (!url) return '';
     
     try {
@@ -1142,7 +1152,7 @@ class EcommerceHomepage extends HTMLElement {
         <div class="image-wrapper">
           ${product.ribbon ? `<div class="ribbon">${product.ribbon}</div>` : ''}
           <img 
-            ${index < 6 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 320, 320)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 320, 320)}"`}
+            ${index < 6 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 240, 240)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 240, 240)}"`}
             alt="${product.name || 'Product'}"
             ${index < 6 ? 'onload="this.classList.add(\'loaded\')"' : 'loading="lazy"'}
           >
@@ -1270,7 +1280,7 @@ class EcommerceHomepage extends HTMLElement {
               <!-- Price Range -->
               <div class="filter-section">
                 <h3 class="filter-title">
-                  Price Range
+                  Price
                   ${this.filters.priceRange.min > 0 || this.filters.priceRange.max < Infinity ? 
                     '<span class="clear-filter" data-clear="price">Clear</span>' : ''}
                 </h3>
@@ -1559,7 +1569,6 @@ class EcommerceHomepage extends HTMLElement {
     if (sortSelect) {
       sortSelect.addEventListener('change', (e) => {
         const sortType = e.target.value;
-        // Sorting will be implemented in the getFilteredProducts method
         console.log('Sort by:', sortType);
       });
     }
