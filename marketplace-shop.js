@@ -7,57 +7,62 @@ class MarketplaceShop extends HTMLElement {
     this.errors = {};
     this.loadedImages = new Set();
     this.currentSlides = {};
+    this.autoSlideIntervals = {};
     
     // Default style props
     this.styleProps = {
       // Colors (13)
-      color1: '#ffffff',      // Primary BG
-      color2: '#f8f9fa',      // Secondary BG
-      color3: '#e5e7eb',      // Border
-      color4: '#f3f4f6',      // Card BG
-      color5: '#3b82f6',      // Primary Accent
-      color6: '#2563eb',      // Hover Accent
-      color7: 'rgba(0, 0, 0, 0.1)', // Shadow
-      color8: '#1f2937',      // Text Primary
-      color9: '#6b7280',      // Text Secondary
-      color10: '#111827',     // Price
-      color11: '#ef4444',     // Error/Sale
-      color12: '#fee2e2',     // Error BG
-      color13: '#10b981',     // Success
+      color1: '#ffffff',
+      color2: '#f8f9fa',
+      color3: '#e5e7eb',
+      color4: '#f3f4f6',
+      color5: '#3b82f6',
+      color6: '#2563eb',
+      color7: 'rgba(0, 0, 0, 0.1)',
+      color8: '#1f2937',
+      color9: '#6b7280',
+      color10: '#111827',
+      color11: '#ef4444',
+      color12: '#fee2e2',
+      color13: '#10b981',
       
       // Sliders (3)
-      slider1: '16',  // Card Radius
-      slider2: '20',  // Spacing
-      slider3: '14',  // Font Size
+      slider1: '16',
+      slider2: '20',
+      slider3: '14',
       
       // Text Inputs (20)
-      text1: 'Summer Sale',                           // Banner Title
-      text2: 'Up to 70% Off',                        // Banner Subtitle
-      text3: 'Shop Now',                             // Banner Button
-      text4: 'Flash Deals',                          // Section 1 Title
-      text5: 'Limited Time Offers',                  // Section 1 Subtitle
-      text6: 'Trending Products',                    // Section 2 Title
-      text7: "What's Hot Right Now",                 // Section 2 Subtitle
-      text8: 'Best Sellers',                         // Section 3 Title
-      text9: 'Most Popular Items',                   // Section 3 Subtitle
-      text10: 'New Arrivals',                        // Section 4 Title
-      text11: 'Just Landed',                         // Section 4 Subtitle
-      text12: 'Featured Categories',                 // Section 5 Title
-      text13: 'Shop by Category',                    // Section 5 Subtitle
-      text14: 'Top Rated',                           // Section 6 Title
-      text15: 'Customer Favorites',                  // Section 6 Subtitle
-      text16: 'Special Offers',                      // Section 7 Title
-      text17: 'Deals You Cannot Miss',               // Section 7 Subtitle
-      text18: '50% OFF',                             // Deal Badge 1
-      text19: 'FREE SHIPPING',                       // Deal Badge 2
-      text20: 'LIMITED STOCK'                        // Deal Badge 3
+      text1: 'Summer Sale',
+      text2: 'Up to 70% Off',
+      text3: 'Shop Now',
+      text4: 'Flash Deals',
+      text5: 'Limited Time Offers',
+      text6: 'Trending Products',
+      text7: "What's Hot Right Now",
+      text8: 'Best Sellers',
+      text9: 'Most Popular Items',
+      text10: 'New Arrivals',
+      text11: 'Just Landed',
+      text12: 'Featured Categories',
+      text13: 'Shop by Category',
+      text14: 'Top Rated',
+      text15: 'Customer Favorites',
+      text16: 'Special Offers',
+      text17: 'Deals You Cannot Miss',
+      text18: '50% OFF',
+      text19: 'FREE SHIPPING',
+      text20: 'LIMITED STOCK'
     };
   }
 
   connectedCallback() {
     this.render();
     this.setupIntersectionObserver();
-    this.initializeSliders();
+  }
+
+  disconnectedCallback() {
+    // Clear all auto-slide intervals
+    Object.values(this.autoSlideIntervals).forEach(interval => clearInterval(interval));
   }
 
   static get observedAttributes() {
@@ -134,17 +139,17 @@ class MarketplaceShop extends HTMLElement {
       .marketplace-container {
         width: 100%;
         background: ${color2};
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
       }
       
-      /* Hero Banner Section */
+      /* Hero Banner Section - Full Width with Background */
       .hero-banner {
         position: relative;
         background: linear-gradient(135deg, ${color5} 0%, ${color6} 50%, #6366f1 100%);
-        padding: ${spacing * 4}px ${spacing}px;
+        padding: ${spacing * 6}px ${spacing * 2}px;
         text-align: center;
         overflow: hidden;
-        min-height: 400px;
+        min-height: 500px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -157,21 +162,65 @@ class MarketplaceShop extends HTMLElement {
         left: 0;
         right: 0;
         bottom: 0;
-        background: 
-          radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-          radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
-        animation: pulse 15s ease-in-out infinite;
+        background-image: 
+          radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15) 0%, transparent 50%),
+          radial-gradient(circle at 40% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        animation: breathe 8s ease-in-out infinite;
       }
       
-      @keyframes pulse {
+      @keyframes breathe {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
+        50% { opacity: 0.7; }
+      }
+      
+      .hero-shapes {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+      
+      .hero-shape {
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        animation: float 20s infinite ease-in-out;
+      }
+      
+      .hero-shape:nth-child(1) {
+        width: 300px;
+        height: 300px;
+        top: -150px;
+        left: -100px;
+        animation-delay: 0s;
+      }
+      
+      .hero-shape:nth-child(2) {
+        width: 200px;
+        height: 200px;
+        bottom: -100px;
+        right: 10%;
+        animation-delay: 2s;
+      }
+      
+      .hero-shape:nth-child(3) {
+        width: 150px;
+        height: 150px;
+        top: 20%;
+        right: -75px;
+        animation-delay: 4s;
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
       }
       
       .hero-content {
         position: relative;
         z-index: 1;
-        max-width: 800px;
+        max-width: 900px;
         margin: 0 auto;
       }
       
@@ -179,41 +228,43 @@ class MarketplaceShop extends HTMLElement {
         display: inline-block;
         background: ${color11};
         color: ${color1};
-        padding: 8px 20px;
+        padding: 10px 24px;
         border-radius: ${radius * 3}px;
-        font-size: ${fontSize - 2}px;
+        font-size: ${fontSize - 1}px;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: ${spacing}px;
-        animation: bounce 2s infinite;
+        letter-spacing: 1.2px;
+        margin-bottom: ${spacing * 1.5}px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        animation: pulse 2s infinite;
       }
       
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
       }
       
       .hero-title {
-        font-size: ${fontSize * 4}px;
+        font-size: ${fontSize * 4.5}px;
         font-weight: 900;
         color: ${color1};
-        margin-bottom: ${spacing}px;
+        margin-bottom: ${spacing * 1.5}px;
         text-shadow: 0 4px 20px rgba(0,0,0,0.3);
         letter-spacing: -2px;
         line-height: 1.1;
       }
       
       .hero-subtitle {
-        font-size: ${fontSize + 6}px;
+        font-size: ${fontSize + 8}px;
         color: rgba(255,255,255,0.95);
-        margin-bottom: ${spacing * 2}px;
+        margin-bottom: ${spacing * 3}px;
         font-weight: 400;
+        line-height: 1.5;
       }
       
       .hero-cta {
         display: inline-block;
-        padding: ${spacing}px ${spacing * 4}px;
+        padding: ${spacing + 4}px ${spacing * 5}px;
         background: ${color1};
         color: ${color5};
         font-size: ${fontSize + 2}px;
@@ -234,14 +285,15 @@ class MarketplaceShop extends HTMLElement {
       
       /* Main Content */
       .main-content {
-        max-width: 1600px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: ${spacing * 3}px ${spacing}px;
+        padding: 0 ${spacing * 2}px;
       }
       
       /* Section Container */
       .section {
-        margin-bottom: ${spacing * 5}px;
+        margin: ${spacing * 5}px 0;
+        padding: ${spacing * 3}px 0;
       }
       
       .section-header {
@@ -253,7 +305,7 @@ class MarketplaceShop extends HTMLElement {
         font-size: ${fontSize * 2.5}px;
         font-weight: 900;
         color: ${color8};
-        margin-bottom: ${spacing / 2}px;
+        margin-bottom: ${spacing}px;
         letter-spacing: -1px;
       }
       
@@ -275,28 +327,64 @@ class MarketplaceShop extends HTMLElement {
       .deal-badge {
         background: linear-gradient(135deg, ${color11} 0%, #dc2626 100%);
         color: ${color1};
-        padding: ${spacing - 4}px ${spacing * 2}px;
+        padding: ${spacing - 2}px ${spacing * 2}px;
         border-radius: ${radius * 2}px;
-        font-size: ${fontSize - 4}px;
+        font-size: ${fontSize - 3}px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         box-shadow: 0 4px 12px ${color7};
-        animation: pulse 2s infinite;
+      }
+      
+      /* Timer Section */
+      .timer-section {
+        display: flex;
+        justify-content: center;
+        gap: ${spacing}px;
+        margin: ${spacing * 2}px 0 ${spacing * 3}px;
+        flex-wrap: wrap;
+      }
+      
+      .timer-box {
+        background: ${color1};
+        border: 2px solid ${color3};
+        border-radius: ${radius}px;
+        padding: ${spacing}px ${spacing * 2}px;
+        text-align: center;
+        min-width: 90px;
+        box-shadow: 0 4px 8px ${color7};
+      }
+      
+      .timer-value {
+        font-size: ${fontSize * 2.5}px;
+        font-weight: 900;
+        color: ${color5};
+        display: block;
+      }
+      
+      .timer-label {
+        font-size: ${fontSize - 5}px;
+        color: ${color9};
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 4px;
       }
       
       /* Product Slider Container */
       .product-slider {
         position: relative;
+        margin: 0 -${spacing}px;
+        padding: 0 ${spacing * 4}px;
+      }
+      
+      .slider-wrapper {
         overflow: hidden;
-        padding: 0 ${spacing * 3}px;
       }
       
       .slider-track {
         display: flex;
-        gap: ${spacing}px;
-        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        will-change: transform;
+        gap: ${spacing * 1.5}px;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       }
       
       .slider-nav {
@@ -305,8 +393,8 @@ class MarketplaceShop extends HTMLElement {
         transform: translateY(-50%);
         background: ${color1};
         border: 2px solid ${color3};
-        width: 48px;
-        height: 48px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -341,22 +429,23 @@ class MarketplaceShop extends HTMLElement {
       /* Product Grid */
       .products-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-        gap: ${spacing * 1.5}px;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: ${spacing * 2}px;
       }
       
-      /* Gorgeous Product Card */
+      /* Product Card */
       .product-card {
-        background: ${color4};
-        border: 1px solid ${color3};
+        background: ${color1};
+        border: 2px solid ${color3};
         border-radius: ${radius}px;
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
         position: relative;
-        height: 480px;
         cursor: pointer;
+        min-width: 280px;
+        height: 100%;
       }
       
       .product-card:hover {
@@ -369,25 +458,15 @@ class MarketplaceShop extends HTMLElement {
       .image-container {
         position: relative;
         width: 100%;
-        height: 320px;
+        padding-top: 100%;
         background: linear-gradient(135deg, ${color2} 0%, #e0e7ff 100%);
         overflow: hidden;
       }
       
-      .image-container::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        transform: translateX(-100%);
-        animation: shimmer 2.5s infinite;
-      }
-      
-      @keyframes shimmer {
-        100% { transform: translateX(100%); }
-      }
-      
       .product-card img {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -400,7 +479,7 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .product-card:hover img.loaded {
-        transform: scale(1.08);
+        transform: scale(1.1);
       }
       
       /* Badges */
@@ -437,7 +516,7 @@ class MarketplaceShop extends HTMLElement {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       }
       
-      /* Wishlist & Quick View */
+      /* Quick Actions */
       .quick-actions {
         position: absolute;
         top: ${spacing}px;
@@ -468,6 +547,7 @@ class MarketplaceShop extends HTMLElement {
         cursor: pointer;
         transition: all 0.3s;
         box-shadow: 0 4px 12px ${color7};
+        font-size: ${fontSize + 4}px;
       }
       
       .quick-action-btn:hover {
@@ -479,11 +559,11 @@ class MarketplaceShop extends HTMLElement {
       
       /* Card Body */
       .card-body {
-        padding: ${spacing}px;
+        padding: ${spacing * 1.5}px;
         flex: 1;
         display: flex;
         flex-direction: column;
-        gap: ${spacing - 4}px;
+        gap: ${spacing - 2}px;
       }
       
       /* Rating */
@@ -497,6 +577,7 @@ class MarketplaceShop extends HTMLElement {
         display: flex;
         gap: 2px;
         color: #fbbf24;
+        font-size: ${fontSize - 2}px;
       }
       
       .rating-count {
@@ -521,13 +602,13 @@ class MarketplaceShop extends HTMLElement {
       .price-section {
         display: flex;
         align-items: center;
-        gap: ${spacing - 2}px;
+        gap: ${spacing - 4}px;
         flex-wrap: wrap;
         margin-top: auto;
       }
       
       .current-price {
-        font-size: ${fontSize + 8}px;
+        font-size: ${fontSize + 6}px;
         font-weight: 900;
         color: ${color10};
         letter-spacing: -0.5px;
@@ -538,7 +619,7 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .original-price {
-        font-size: ${fontSize}px;
+        font-size: ${fontSize - 1}px;
         color: ${color9};
         text-decoration: line-through;
         font-weight: 600;
@@ -712,7 +793,7 @@ class MarketplaceShop extends HTMLElement {
       .view-btn {
         background: ${color1};
         color: ${color5};
-        border: 1px solid ${color5};
+        border: 2px solid ${color5};
       }
       
       .view-btn:hover {
@@ -723,7 +804,7 @@ class MarketplaceShop extends HTMLElement {
       .cart-btn {
         background: linear-gradient(135deg, ${color5} 0%, ${color6} 100%);
         color: ${color1};
-        border: 1px solid ${color5};
+        border: 2px solid ${color5};
         box-shadow: 0 4px 12px ${color5}30;
       }
       
@@ -735,15 +816,15 @@ class MarketplaceShop extends HTMLElement {
       /* Category Cards */
       .category-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
-        gap: ${spacing}px;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: ${spacing * 1.5}px;
       }
       
       .category-card {
-        background: ${color4};
-        border: 1px solid ${color3};
+        background: ${color1};
+        border: 2px solid ${color3};
         border-radius: ${radius}px;
-        padding: ${spacing * 2}px;
+        padding: ${spacing * 2.5}px;
         text-align: center;
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -771,7 +852,7 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .category-icon {
-        font-size: ${fontSize * 3}px;
+        font-size: ${fontSize * 3.5}px;
         margin-bottom: ${spacing}px;
         position: relative;
         z-index: 1;
@@ -797,10 +878,10 @@ class MarketplaceShop extends HTMLElement {
       .promo-banner {
         background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
         border-radius: ${radius * 2}px;
-        padding: ${spacing * 3}px;
+        padding: ${spacing * 4}px ${spacing * 2}px;
         text-align: center;
         color: ${color1};
-        margin: ${spacing * 3}px 0;
+        margin: ${spacing * 4}px 0;
         position: relative;
         overflow: hidden;
       }
@@ -816,7 +897,12 @@ class MarketplaceShop extends HTMLElement {
           rgba(255,255,255,0.05) 10px,
           rgba(255,255,255,0.05) 20px
         );
-        animation: slide 20s linear infinite;
+        animation: slidePattern 20s linear infinite;
+      }
+      
+      @keyframes slidePattern {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(50px, 50px); }
       }
       
       .promo-content {
@@ -825,14 +911,14 @@ class MarketplaceShop extends HTMLElement {
       }
       
       .promo-title {
-        font-size: ${fontSize * 2}px;
+        font-size: ${fontSize * 2.5}px;
         font-weight: 900;
         margin-bottom: ${spacing}px;
         text-shadow: 0 2px 10px rgba(0,0,0,0.3);
       }
       
       .promo-text {
-        font-size: ${fontSize + 2}px;
+        font-size: ${fontSize + 4}px;
         margin-bottom: ${spacing * 2}px;
         opacity: 0.95;
       }
@@ -857,38 +943,6 @@ class MarketplaceShop extends HTMLElement {
         box-shadow: 0 10px 25px rgba(0,0,0,0.3);
       }
       
-      /* Timer Section */
-      .timer-section {
-        display: flex;
-        justify-content: center;
-        gap: ${spacing}px;
-        margin: ${spacing * 2}px 0;
-      }
-      
-      .timer-box {
-        background: ${color1};
-        border: 2px solid ${color3};
-        border-radius: ${radius}px;
-        padding: ${spacing}px ${spacing * 1.5}px;
-        text-align: center;
-        min-width: 80px;
-      }
-      
-      .timer-value {
-        font-size: ${fontSize * 2}px;
-        font-weight: 900;
-        color: ${color5};
-        display: block;
-      }
-      
-      .timer-label {
-        font-size: ${fontSize - 6}px;
-        color: ${color9};
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 4px;
-      }
-      
       /* Empty State */
       .empty-state {
         text-align: center;
@@ -910,21 +964,22 @@ class MarketplaceShop extends HTMLElement {
       }
       
       /* Responsive */
-      @media (max-width: 1024px) {
+      @media (max-width: 1200px) {
         .products-grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         }
         
-        .product-card {
-          height: 440px;
-        }
-        
-        .image-container {
-          height: 280px;
+        .product-slider {
+          padding: 0 ${spacing * 3}px;
         }
       }
       
       @media (max-width: 768px) {
+        .hero-banner {
+          min-height: 400px;
+          padding: ${spacing * 4}px ${spacing}px;
+        }
+        
         .hero-title {
           font-size: ${fontSize * 2.5}px;
         }
@@ -938,48 +993,63 @@ class MarketplaceShop extends HTMLElement {
         }
         
         .products-grid {
-          grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+          gap: ${spacing}px;
         }
         
-        .product-card {
-          height: 400px;
+        .product-slider {
+          padding: 0 ${spacing * 2.5}px;
         }
         
-        .image-container {
-          height: 240px;
+        .slider-nav {
+          width: 40px;
+          height: 40px;
         }
         
         .actions {
           grid-template-columns: 1fr;
         }
+        
+        .timer-box {
+          min-width: 70px;
+          padding: ${spacing - 2}px ${spacing}px;
+        }
+        
+        .timer-value {
+          font-size: ${fontSize * 2}px;
+        }
       }
       
       @media (max-width: 480px) {
         .main-content {
-          padding: ${spacing * 2}px ${spacing}px;
+          padding: 0 ${spacing}px;
         }
         
         .products-grid {
           grid-template-columns: repeat(2, 1fr);
-          gap: ${spacing}px;
         }
         
         .product-card {
-          height: 380px;
-        }
-        
-        .image-container {
-          height: 220px;
+          min-width: auto;
         }
         
         .hero-banner {
+          min-height: 350px;
           padding: ${spacing * 3}px ${spacing}px;
+        }
+        
+        .hero-title {
+          font-size: ${fontSize * 2}px;
+        }
+        
+        .section {
+          margin: ${spacing * 3}px 0;
         }
       }
     `;
   }
 
-  optimizeImageUrl(url, width = 280, height = 320) {
+  optimizeImageUrl(url, width = 280, height = 280) {
     if (!url) return '';
     
     try {
@@ -1024,6 +1094,11 @@ class MarketplaceShop extends HTMLElement {
     this.querySelectorAll('.product-slider').forEach((slider, index) => {
       this.currentSlides[index] = 0;
       this.updateSlider(index);
+      
+      // Auto-slide every 5 seconds
+      this.autoSlideIntervals[index] = setInterval(() => {
+        this.slideNext(index, true);
+      }, 5000);
     });
   }
 
@@ -1033,22 +1108,50 @@ class MarketplaceShop extends HTMLElement {
 
     const track = slider.querySelector('.slider-track');
     const cards = track.querySelectorAll('.product-card');
-    const cardWidth = cards[0]?.offsetWidth || 280;
-    const gap = 20;
-    const offset = -this.currentSlides[sliderIndex] * (cardWidth + gap);
     
+    if (cards.length === 0) return;
+    
+    const containerWidth = slider.querySelector('.slider-wrapper').offsetWidth;
+    const cardWidth = 300; // Fixed card width
+    const gap = 24; // Gap between cards
+    const visibleCards = Math.floor(containerWidth / (cardWidth + gap));
+    const maxSlide = Math.max(0, cards.length - visibleCards);
+    
+    // Ensure currentSlide doesn't exceed maxSlide
+    if (this.currentSlides[sliderIndex] > maxSlide) {
+      this.currentSlides[sliderIndex] = maxSlide;
+    }
+    
+    const offset = -this.currentSlides[sliderIndex] * (cardWidth + gap);
     track.style.transform = `translateX(${offset}px)`;
   }
 
-  slideNext(sliderIndex) {
+  slideNext(sliderIndex, isAuto = false) {
     const slider = this.querySelectorAll('.product-slider')[sliderIndex];
     const track = slider.querySelector('.slider-track');
     const cards = track.querySelectorAll('.product-card');
-    const maxSlide = Math.max(0, cards.length - 4);
+    
+    const containerWidth = slider.querySelector('.slider-wrapper').offsetWidth;
+    const cardWidth = 300;
+    const gap = 24;
+    const visibleCards = Math.floor(containerWidth / (cardWidth + gap));
+    const maxSlide = Math.max(0, cards.length - visibleCards);
     
     if (this.currentSlides[sliderIndex] < maxSlide) {
       this.currentSlides[sliderIndex]++;
-      this.updateSlider(sliderIndex);
+    } else if (isAuto) {
+      // Loop back to start on auto-slide
+      this.currentSlides[sliderIndex] = 0;
+    }
+    
+    this.updateSlider(sliderIndex);
+    
+    // Reset auto-slide timer on manual navigation
+    if (!isAuto && this.autoSlideIntervals[sliderIndex]) {
+      clearInterval(this.autoSlideIntervals[sliderIndex]);
+      this.autoSlideIntervals[sliderIndex] = setInterval(() => {
+        this.slideNext(sliderIndex, true);
+      }, 5000);
     }
   }
 
@@ -1056,6 +1159,14 @@ class MarketplaceShop extends HTMLElement {
     if (this.currentSlides[sliderIndex] > 0) {
       this.currentSlides[sliderIndex]--;
       this.updateSlider(sliderIndex);
+    }
+    
+    // Reset auto-slide timer
+    if (this.autoSlideIntervals[sliderIndex]) {
+      clearInterval(this.autoSlideIntervals[sliderIndex]);
+      this.autoSlideIntervals[sliderIndex] = setInterval(() => {
+        this.slideNext(sliderIndex, true);
+      }, 5000);
     }
   }
 
@@ -1128,7 +1239,7 @@ class MarketplaceShop extends HTMLElement {
     const discountPercent = hasDiscount ? 
       this.calculateDiscount(product.priceData?.formatted?.price, product.priceData?.formatted?.discountedPrice) : 0;
     
-    const rating = 4 + Math.random(); // Mock rating
+    const rating = 4 + Math.random();
     const ratingCount = Math.floor(Math.random() * 500) + 50;
     
     return `
@@ -1149,7 +1260,7 @@ class MarketplaceShop extends HTMLElement {
           </div>
           
           <img 
-            ${index < 8 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 280, 320)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 280, 320)}"`}
+            ${index < 8 ? `src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 300, 300)}"` : `data-src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 300, 300)}"`}
             alt="${product.name || 'Product'}"
             ${index < 8 ? 'onload="this.classList.add(\'loaded\')"' : 'loading="lazy"'}
           >
@@ -1263,6 +1374,11 @@ class MarketplaceShop extends HTMLElement {
       <div class="marketplace-container">
         <!-- Hero Banner -->
         <section class="hero-banner">
+          <div class="hero-shapes">
+            <div class="hero-shape"></div>
+            <div class="hero-shape"></div>
+            <div class="hero-shape"></div>
+          </div>
           <div class="hero-content">
             <div class="hero-badge">${this.styleProps.text18}</div>
             <h1 class="hero-title">${this.styleProps.text1}</h1>
@@ -1285,7 +1401,7 @@ class MarketplaceShop extends HTMLElement {
                   <p class="section-subtitle">${this.styleProps[subtitleKey] || ''}</p>
                 </div>
                 
-                ${sectionIndex === 0 ? `
+                ${sectionIndex === 0 && section.products && section.products.length > 0 ? `
                   <!-- Deal Badges for Flash Deals -->
                   <div class="deal-badges">
                     <div class="deal-badge">${this.styleProps.text18}</div>
@@ -1310,27 +1426,35 @@ class MarketplaceShop extends HTMLElement {
                   </div>
                 ` : ''}
                 
-                ${sectionIndex % 2 === 0 ? `
-                  <!-- Slider Layout -->
-                  <div class="product-slider">
-                    <button class="slider-nav prev" data-slider="${sectionIndex}" data-action="prev">
-                      <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-                    </button>
-                    <button class="slider-nav next" data-slider="${sectionIndex}" data-action="next">
-                      <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-                    </button>
-                    <div class="slider-track">
-                      ${section.products.slice(0, 12).map((product, index) => 
-                        this.renderProductCard(product, index, sectionIndex === 0)
+                ${section.products && section.products.length > 0 ? `
+                  ${sectionIndex % 2 === 0 ? `
+                    <!-- Slider Layout -->
+                    <div class="product-slider">
+                      <button class="slider-nav prev" data-slider="${sectionIndex}" data-action="prev">
+                        <svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+                      </button>
+                      <button class="slider-nav next" data-slider="${sectionIndex}" data-action="next">
+                        <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                      </button>
+                      <div class="slider-wrapper">
+                        <div class="slider-track">
+                          ${section.products.slice(0, 12).map((product, index) => 
+                            this.renderProductCard(product, index, sectionIndex === 0)
+                          ).join('')}
+                        </div>
+                      </div>
+                    </div>
+                  ` : `
+                    <!-- Grid Layout -->
+                    <div class="products-grid">
+                      ${section.products.slice(0, 8).map((product, index) => 
+                        this.renderProductCard(product, index + 100, true)
                       ).join('')}
                     </div>
-                  </div>
+                  `}
                 ` : `
-                  <!-- Grid Layout -->
-                  <div class="products-grid">
-                    ${section.products.slice(0, 8).map((product, index) => 
-                      this.renderProductCard(product, index + 100, true)
-                    ).join('')}
+                  <div class="empty-state">
+                    <p>No products available in this section.</p>
                   </div>
                 `}
               </section>
@@ -1341,7 +1465,7 @@ class MarketplaceShop extends HTMLElement {
                   <div class="promo-content">
                     <h2 class="promo-title">Special Mid-Season Sale!</h2>
                     <p class="promo-text">Don't miss out on incredible deals - Limited time only</p>
-                    <button class="promo-cta">Shop Sale Items</button>
+                    <button class="promo-cta" data-action="scroll-shop">Shop Sale Items</button>
                   </div>
                 </div>
               ` : ''}
@@ -1372,16 +1496,15 @@ class MarketplaceShop extends HTMLElement {
   }
 
   attachEventListeners() {
-    // Hero CTA
-    const heroCta = this.querySelector('[data-action="scroll-shop"]');
-    if (heroCta) {
-      heroCta.addEventListener('click', () => {
+    // Hero CTA & Promo CTA
+    this.querySelectorAll('[data-action="scroll-shop"]').forEach(btn => {
+      btn.addEventListener('click', () => {
         const mainContent = this.querySelector('.main-content');
         if (mainContent) {
           mainContent.scrollIntoView({ behavior: 'smooth' });
         }
       });
-    }
+    });
 
     // Slider Navigation
     this.querySelectorAll('.slider-nav').forEach(btn => {
