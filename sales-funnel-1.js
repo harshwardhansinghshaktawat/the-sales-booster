@@ -558,6 +558,201 @@ class SalesFunnel extends HTMLElement {
       }
       
       /* ========== STEP 4: CONFIRMATION ========== */
+      .checkout-container {
+        display: grid;
+        grid-template-columns: 1fr 450px;
+        gap: ${parseInt(slider2) * 3}px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      
+      .checkout-form-section {
+        background: ${color1};
+        padding: ${parseInt(slider2) * 3}px;
+        border-radius: ${parseInt(slider1) * 2}px;
+        box-shadow: 0 4px 16px ${color7};
+      }
+      
+      .form-section-title {
+        font-size: ${parseInt(slider3) + 6}px;
+        font-weight: 700;
+        color: ${color8};
+        margin: 0 0 ${parseInt(slider2) * 1.5}px 0;
+        padding-bottom: ${slider2}px;
+        border-bottom: 2px solid ${color3};
+      }
+      
+      .form-group {
+        margin-bottom: ${parseInt(slider2) * 1.5}px;
+      }
+      
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: ${slider2}px;
+      }
+      
+      .form-label {
+        display: block;
+        font-weight: 600;
+        font-size: ${parseInt(slider3) - 2}px;
+        color: ${color8};
+        margin-bottom: ${parseInt(slider2) / 2}px;
+      }
+      
+      .form-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid ${color3};
+        border-radius: ${slider1}px;
+        font-size: ${slider3}px;
+        color: ${color8};
+        background: ${color1};
+        transition: all 0.3s;
+      }
+      
+      .form-input:focus {
+        outline: none;
+        border-color: ${color5};
+        box-shadow: 0 0 0 3px ${color5}20;
+      }
+      
+      .form-input::placeholder {
+        color: ${color9};
+        opacity: 0.6;
+      }
+      
+      .form-checkbox {
+        margin-right: 8px;
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+      
+      .order-summary-section {
+        background: ${color1};
+        padding: ${parseInt(slider2) * 2}px;
+        border-radius: ${parseInt(slider1) * 2}px;
+        box-shadow: 0 4px 16px ${color7};
+        height: fit-content;
+        position: sticky;
+        top: ${slider2}px;
+      }
+      
+      .summary-title {
+        font-size: ${parseInt(slider3) + 4}px;
+        font-weight: 700;
+        color: ${color8};
+        margin: 0 0 ${parseInt(slider2) * 1.5}px 0;
+        padding-bottom: ${slider2}px;
+        border-bottom: 2px solid ${color3};
+      }
+      
+      .summary-items {
+        margin-bottom: ${parseInt(slider2) * 2}px;
+      }
+      
+      .summary-product {
+        display: grid;
+        grid-template-columns: 60px 1fr auto;
+        gap: ${slider2}px;
+        padding: ${slider2}px;
+        margin-bottom: ${slider2}px;
+        border-bottom: 1px solid ${color3};
+      }
+      
+      .summary-product:last-child {
+        border-bottom: none;
+      }
+      
+      .summary-product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: ${parseInt(slider1) / 2}px;
+        overflow: hidden;
+        background: ${color4};
+      }
+      
+      .summary-product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      
+      .summary-product-details {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      
+      .summary-product-name {
+        font-weight: 600;
+        font-size: ${parseInt(slider3) - 1}px;
+        color: ${color8};
+        margin-bottom: 4px;
+      }
+      
+      .summary-product-options {
+        font-size: ${parseInt(slider3) - 3}px;
+        color: ${color9};
+        margin-bottom: 2px;
+      }
+      
+      .summary-product-qty {
+        font-size: ${parseInt(slider3) - 3}px;
+        color: ${color9};
+      }
+      
+      .summary-product-price {
+        font-weight: 700;
+        font-size: ${parseInt(slider3)}px;
+        color: ${color10};
+        align-self: center;
+      }
+      
+      .summary-totals {
+        padding: ${slider2}px 0;
+        border-top: 2px solid ${color3};
+        margin-top: ${slider2}px;
+      }
+      
+      .summary-line {
+        display: flex;
+        justify-content: space-between;
+        padding: ${parseInt(slider2) / 2}px 0;
+        font-size: ${parseInt(slider3) - 1}px;
+        color: ${color8};
+      }
+      
+      .summary-line.total {
+        font-size: ${parseInt(slider3) + 4}px;
+        font-weight: 800;
+        color: ${color10};
+        padding-top: ${slider2}px;
+        margin-top: ${parseInt(slider2) / 2}px;
+        border-top: 2px solid ${color3};
+      }
+      
+      .checkout-submit-btn {
+        width: 100%;
+        margin: ${parseInt(slider2) * 1.5}px 0;
+      }
+      
+      .security-badges {
+        display: flex;
+        justify-content: center;
+        gap: ${slider2}px;
+        margin-top: ${slider2}px;
+      }
+      
+      .security-badge {
+        font-size: ${parseInt(slider3) - 4}px;
+        color: ${color9};
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      
       .confirmation-card {
         background: ${color1};
         border-radius: ${parseInt(slider1) * 2}px;
@@ -721,6 +916,15 @@ class SalesFunnel extends HTMLElement {
         .upsell-grid {
           grid-template-columns: 1fr;
         }
+        
+        .checkout-container {
+          grid-template-columns: 1fr;
+        }
+        
+        .order-summary-section {
+          position: relative;
+          top: 0;
+        }
       }
       
       @media (max-width: 768px) {
@@ -748,6 +952,10 @@ class SalesFunnel extends HTMLElement {
         
         .step-label {
           font-size: ${parseInt(slider3) - 5}px;
+        }
+        
+        .form-row {
+          grid-template-columns: 1fr;
         }
       }
     `;
@@ -889,6 +1097,10 @@ class SalesFunnel extends HTMLElement {
   }
 
   renderStep() {
+    if (this.currentStep === 3.5) {
+      return this.renderCheckoutForm();
+    }
+    
     switch (this.currentStep) {
       case 1:
         return this.renderStep1();
@@ -1010,6 +1222,12 @@ class SalesFunnel extends HTMLElement {
   renderStep2() {
     const upsells = this.upsellProducts.slice(0, 2);
     
+    if (upsells.length === 0) {
+      // Skip to step 3 if no upsells
+      setTimeout(() => this.goToStep(3), 100);
+      return '<div></div>';
+    }
+    
     return `
       <div class="step-container active">
         <div class="step-header">
@@ -1029,7 +1247,7 @@ class SalesFunnel extends HTMLElement {
                 <div class="upsell-price">${product.priceData?.formatted?.price || 'N/A'}</div>
                 <div class="upsell-actions">
                   <button class="upsell-btn" data-action="add-upsell" data-product-id="${product._id}">${this.styleProps.text10}</button>
-                  <button class="skip-btn" data-action="skip">${this.styleProps.text11}</button>
+                  <button class="skip-btn" data-action="skip-upsell">${this.styleProps.text11}</button>
                 </div>
               </div>
             </div>
@@ -1038,7 +1256,7 @@ class SalesFunnel extends HTMLElement {
         
         <div class="funnel-actions">
           <button class="funnel-btn secondary-btn" data-action="skip-all">${this.styleProps.text11}</button>
-          <button class="funnel-btn primary-btn" data-action="next-step">${this.styleProps.text9}</button>
+          <button class="funnel-btn primary-btn" data-action="continue-step2">${this.styleProps.text9}</button>
         </div>
       </div>
     `;
@@ -1048,9 +1266,8 @@ class SalesFunnel extends HTMLElement {
     const upsells = this.upsellProducts.slice(2, 4);
     
     if (upsells.length === 0) {
-      // Skip to step 4 if no more upsells
-      this.currentStep = 4;
-      return this.renderStep4();
+      // No more upsells, show checkout form
+      return this.renderCheckoutForm();
     }
     
     return `
@@ -1072,7 +1289,7 @@ class SalesFunnel extends HTMLElement {
                 <div class="upsell-price">${product.priceData?.formatted?.price || 'N/A'}</div>
                 <div class="upsell-actions">
                   <button class="upsell-btn" data-action="add-upsell" data-product-id="${product._id}">${this.styleProps.text10}</button>
-                  <button class="skip-btn" data-action="skip">${this.styleProps.text11}</button>
+                  <button class="skip-btn" data-action="skip-upsell">${this.styleProps.text11}</button>
                 </div>
               </div>
             </div>
@@ -1081,7 +1298,145 @@ class SalesFunnel extends HTMLElement {
         
         <div class="funnel-actions">
           <button class="funnel-btn secondary-btn" data-action="skip-all">${this.styleProps.text11}</button>
-          <button class="funnel-btn primary-btn" data-action="complete-order">${this.styleProps.text12}</button>
+          <button class="funnel-btn primary-btn" data-action="show-checkout">${this.styleProps.text9}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderCheckoutForm() {
+    return `
+      <div class="step-container active">
+        <div class="step-header">
+          <h1 class="step-headline">Complete Your Order</h1>
+          <p class="step-subheadline">Enter your details to finalize your purchase</p>
+        </div>
+        
+        <div class="checkout-container">
+          <div class="checkout-form-section">
+            <form class="checkout-form" id="checkoutForm">
+              <h3 class="form-section-title">Contact Information</h3>
+              
+              <div class="form-group">
+                <label class="form-label">Email Address *</label>
+                <input type="email" class="form-input" name="email" required placeholder="your@email.com">
+              </div>
+              
+              <h3 class="form-section-title">Shipping Address</h3>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">First Name *</label>
+                  <input type="text" class="form-input" name="firstName" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Last Name *</label>
+                  <input type="text" class="form-input" name="lastName" required>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Address *</label>
+                <input type="text" class="form-input" name="address" required>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">City *</label>
+                  <input type="text" class="form-input" name="city" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">State/Province *</label>
+                  <input type="text" class="form-input" name="state" required>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Postal Code *</label>
+                  <input type="text" class="form-input" name="postalCode" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Country *</label>
+                  <input type="text" class="form-input" name="country" required>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" class="form-input" name="phone" placeholder="+1 (555) 000-0000">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <input type="checkbox" name="saveInfo" class="form-checkbox">
+                  Save this information for next time
+                </label>
+              </div>
+            </form>
+          </div>
+          
+          <div class="order-summary-section">
+            <h3 class="summary-title">Order Summary</h3>
+            
+            <div class="summary-items">
+              <div class="summary-product">
+                <div class="summary-product-image">
+                  <img src="${this.optimizeImageUrl(this.mainProduct.media?.mainMedia?.image?.url, 80, 80)}" alt="${this.mainProduct.name}">
+                </div>
+                <div class="summary-product-details">
+                  <div class="summary-product-name">${this.mainProduct.name}</div>
+                  <div class="summary-product-options">
+                    ${Object.entries(this.selectedOptions).map(([key, value]) => `
+                      <span>${key}: ${value}</span>
+                    `).join(', ')}
+                  </div>
+                  <div class="summary-product-qty">Qty: ${this.quantity}</div>
+                </div>
+                <div class="summary-product-price">${this.mainProduct.priceData?.formatted?.price || 'N/A'}</div>
+              </div>
+              
+              ${this.selectedUpsells.map(id => {
+                const product = this.upsellProducts.find(p => p._id === id);
+                return product ? `
+                  <div class="summary-product">
+                    <div class="summary-product-image">
+                      <img src="${this.optimizeImageUrl(product.media?.mainMedia?.image?.url, 80, 80)}" alt="${product.name}">
+                    </div>
+                    <div class="summary-product-details">
+                      <div class="summary-product-name">${product.name}</div>
+                      <div class="summary-product-qty">Qty: 1</div>
+                    </div>
+                    <div class="summary-product-price">${product.priceData?.formatted?.price || 'N/A'}</div>
+                  </div>
+                ` : '';
+              }).join('')}
+            </div>
+            
+            <div class="summary-totals">
+              <div class="summary-line">
+                <span>Subtotal</span>
+                <span id="subtotalAmount">Calculating...</span>
+              </div>
+              <div class="summary-line">
+                <span>Shipping</span>
+                <span>Calculated at next step</span>
+              </div>
+              <div class="summary-line total">
+                <span>Total</span>
+                <span id="totalAmount">Calculating...</span>
+              </div>
+            </div>
+            
+            <button type="button" class="funnel-btn primary-btn checkout-submit-btn" data-action="submit-order">
+              ${this.styleProps.text12}
+            </button>
+            
+            <div class="security-badges">
+              <div class="security-badge">🔒 Secure Checkout</div>
+              <div class="security-badge">✓ SSL Encrypted</div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -1188,47 +1543,94 @@ class SalesFunnel extends HTMLElement {
       });
     });
 
-    // Next step
+    // Skip single upsell
+    this.querySelectorAll('[data-action="skip-upsell"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Just visual feedback, doesn't need to do anything
+      });
+    });
+
+    // Next step from Step 1
     this.querySelectorAll('[data-action="next-step"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (this.currentStep === 1) {
-          if (this.validateMainProduct()) {
-            this.dispatchEvent(new CustomEvent('step1Complete', {
-              detail: {
-                productId: this.mainProduct._id,
-                choices: this.selectedOptions,
-                quantity: this.quantity
-              }
-            }));
-            this.nextStep();
-          }
-        } else {
+        if (this.validateMainProduct()) {
+          this.dispatchEvent(new CustomEvent('step1Complete', {
+            detail: {
+              productId: this.mainProduct._id,
+              choices: this.selectedOptions,
+              quantity: this.quantity
+            }
+          }));
           this.nextStep();
         }
       });
     });
 
-    // Skip/Skip all
-    this.querySelectorAll('[data-action="skip"], [data-action="skip-all"]').forEach(btn => {
+    // Continue from Step 2
+    this.querySelectorAll('[data-action="continue-step2"]').forEach(btn => {
       btn.addEventListener('click', () => {
         this.nextStep();
       });
     });
 
-    // Complete order
-    this.querySelectorAll('[data-action="complete-order"]').forEach(btn => {
+    // Show checkout from Step 3
+    this.querySelectorAll('[data-action="show-checkout"]').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.dispatchEvent(new CustomEvent('completeOrder', {
-          detail: {
-            mainProduct: {
-              productId: this.mainProduct._id,
-              choices: this.selectedOptions,
-              quantity: this.quantity
-            },
-            upsells: this.selectedUpsells
-          }
-        }));
-        this.nextStep();
+        this.currentStep = 3.5; // Intermediate step for checkout
+        this.render();
+      });
+    });
+
+    // Skip all
+    this.querySelectorAll('[data-action="skip-all"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (this.currentStep === 2) {
+          this.nextStep(); // Go to step 3
+        } else if (this.currentStep === 3) {
+          this.currentStep = 3.5; // Show checkout
+          this.render();
+        }
+      });
+    });
+
+    // Submit order (from checkout form)
+    this.querySelectorAll('[data-action="submit-order"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const form = this.querySelector('#checkoutForm');
+        if (form && form.checkValidity()) {
+          // Collect form data
+          const formData = new FormData(form);
+          this.customerInfo = {
+            email: formData.get('email'),
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            address: formData.get('address'),
+            city: formData.get('city'),
+            state: formData.get('state'),
+            postalCode: formData.get('postalCode'),
+            country: formData.get('country'),
+            phone: formData.get('phone')
+          };
+
+          // Dispatch complete order event
+          this.dispatchEvent(new CustomEvent('completeOrder', {
+            detail: {
+              mainProduct: {
+                productId: this.mainProduct._id,
+                choices: this.selectedOptions,
+                quantity: this.quantity
+              },
+              upsells: this.selectedUpsells,
+              customerInfo: this.customerInfo
+            }
+          }));
+
+          // Show confirmation
+          this.currentStep = 4;
+          this.render();
+        } else {
+          form.reportValidity();
+        }
       });
     });
   }
